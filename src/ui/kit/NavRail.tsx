@@ -6,7 +6,7 @@ export interface NavItem {
 }
 
 interface NavRailProps {
-  items: NavItem[];
+  items?: NavItem[];
   activeId?: string;
   onSelect?: (id: string) => void;
   collapsed?: boolean;
