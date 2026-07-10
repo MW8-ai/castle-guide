@@ -1,10 +1,45 @@
+import { useEffect, useState } from 'preact/hooks';
 import { SerenityMeter } from '../../ui/SerenityMeter';
+import { ensureStorageReady } from '../storageContext';
+import type { Property } from '../../storage';
+
+const base = import.meta.env.BASE_URL;
 
 export function HomePage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [name, setName] = useState('The Serenity');
+  const [zip, setZip] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function refresh() {
+    const s = await ensureStorageReady();
+    setProperties(await s.listProperties());
+  }
+
+  useEffect(() => {
+    void refresh();
+  }, []);
+
+  async function onCreate(e: Event) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const s = await ensureStorageReady();
+      const p = await s.createProperty(name.trim() || 'My Castle', zip.trim() || null);
+      window.location.href = `${base}property/${p.id}`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section class="page">
       <header class="hero">
-        <p class="eyebrow">Phase 0 · Planning scaffold</p>
+        <p class="eyebrow">Phase 1 · Home Record</p>
         <h1>Castle Guide</h1>
         <p class="tagline">
           Your castle. Cataloged, maintained, defended, and leveled up.
@@ -13,35 +48,62 @@ export function HomePage() {
 
       <SerenityMeter score={100} label="How's the serenity?" />
 
-      <div class="card-grid">
-        <article class="card">
-          <h2>Data before decoration</h2>
-          <p>
-            The schema-validated home record is the product. House views are
-            swappable renderer plugins — isometric by default (ADR-0002).
-          </p>
-        </article>
-        <article class="card">
-          <h2>Local-first</h2>
-          <p>
-            No forced accounts. No telemetry. Full export and delete. AI is
-            BYO-key with a manual Prompt Pack path as the zero-cost default.
-          </p>
-        </article>
-        <article class="card">
-          <h2>What ships next</h2>
-          <p>
-            Phase 1: profiles, item cards, lineage, consumables, vaults, Pool
-            Room, ZIP export/import, and Prompt Pack v1 ingestion.
-          </p>
-        </article>
+      <div class="card" style={{ marginTop: '1.25rem' }}>
+        <h2>Create a property</h2>
+        <form class="form-grid" onSubmit={onCreate}>
+          <label>
+            House name
+            <input
+              value={name}
+              onInput={(e) => setName((e.target as HTMLInputElement).value)}
+              placeholder="The Serenity"
+              required
+            />
+          </label>
+          <label>
+            ZIP (optional)
+            <input
+              value={zip}
+              onInput={(e) => setZip((e.target as HTMLInputElement).value)}
+              placeholder="46240"
+            />
+          </label>
+          <button type="submit" class="btn primary" disabled={busy}>
+            {busy ? 'Creating…' : 'Create castle'}
+          </button>
+        </form>
+        {error && <p class="error-text">{error}</p>}
       </div>
 
-      <p class="muted">
-        Open <code>docs/PRD.md</code> in the repo for the full requirements. This
-        shell exists so GitHub Pages deploys a real page with working assets
-        under <code>/castle-guide/</code>.
-      </p>
+      <div class="card" style={{ marginTop: '1rem' }}>
+        <h2>Your properties</h2>
+        {properties.length === 0 ? (
+          <p class="muted">No castles yet — create one or import a Prompt Pack paste.</p>
+        ) : (
+          <ul class="plain-list">
+            {properties.map((p) => (
+              <li key={p.id}>
+                <a href={`${base}property/${p.id}`}>
+                  <strong>{p.name}</strong>
+                </a>
+                <span class="muted">
+                  {' '}
+                  · {p.items.filter((i) => i.active).length} active items ·{' '}
+                  {p.rooms.length} rooms
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p style={{ marginTop: '0.75rem' }}>
+          <a class="btn" href={`${base}import`}>
+            Import Prompt Pack JSON
+          </a>{' '}
+          <a class="btn" href={`${base}import-zip`}>
+            Import ZIP
+          </a>
+        </p>
+      </div>
     </section>
   );
 }

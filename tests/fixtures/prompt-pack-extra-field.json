@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "property": {
+    "name": "Extra",
+    "notARealField": true,
+    "items": [
+      {
+        "category": "water-heater",
+        "brand": "Rheem"
+      }
+    ]
+  }
+}

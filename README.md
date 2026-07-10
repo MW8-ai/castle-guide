@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Status** | Phase 0 — Planning scaffold (docs + hello shell) |
-| **Version** | 0.1.0 |
+| **Status** | Phase 1 — Home Record |
+| **Version** | 0.2.0 |
 | **Stack** | Preact · Vite · TypeScript · IndexedDB/OPFS (planned) |
 | **Default house view** | Isometric sim (ADR-0002) |
 | **Repo name / Pages base** | `castle-guide` → `base: '/castle-guide/'` |

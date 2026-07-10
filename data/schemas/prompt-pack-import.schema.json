@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://castle-guide.local/schemas/prompt-pack-import.schema.json",
+  "title": "PromptPackImport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "property"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "property": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "zip": { "type": ["string", "null"] },
+        "yearBuilt": { "type": ["integer", "null"] },
+        "rooms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "type": { "type": "string" },
+              "dims": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["L", "W", "H"],
+                "properties": {
+                  "L": { "type": "number", "exclusiveMinimum": 0 },
+                  "W": { "type": "number", "exclusiveMinimum": 0 },
+                  "H": { "type": "number", "exclusiveMinimum": 0 }
+                }
+              },
+              "paintCards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["brand", "number"],
+                  "properties": {
+                    "brand": { "type": "string", "minLength": 1 },
+                    "line": { "type": "string" },
+                    "number": { "type": "string", "minLength": 1 },
+                    "sheen": { "type": "string" },
+                    "room": { "type": "string" },
+                    "date": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["category", "brand"],
+            "properties": {
+              "category": { "type": "string", "minLength": 1 },
+              "roomName": { "type": ["string", "null"] },
+              "brand": { "type": "string", "minLength": 1 },
+              "model": { "type": ["string", "null"] },
+              "serial": { "type": ["string", "null"] },
+              "purchaseDate": { "type": ["string", "null"] },
+              "cameWithHouse": { "type": ["boolean", "null"] },
+              "filterSpecs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "sizeOrModel"],
+                  "properties": {
+                    "name": { "type": "string" },
+                    "sizeOrModel": { "type": "string" }
+                  }
+                }
+              },
+              "notes": { "type": ["string", "null"] },
+              "poolRoomWorthy": { "type": "boolean" }
+            }
+          }
+        },
+        "shutoffs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "locationNote"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "water",
+                  "gas",
+                  "electric-main",
+                  "breaker-panel",
+                  "sump",
+                  "septic",
+                  "other"
+                ]
+              },
+              "locationNote": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

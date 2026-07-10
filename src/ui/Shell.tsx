@@ -21,6 +21,7 @@ export function Shell({ theme, onToggleTheme, children }: ShellProps) {
         </a>
         <nav class="nav">
           <a href={base}>Home</a>
+          <a href={`${base}import`}>Import</a>
           <a href={`${base}docs`}>Docs</a>
           <a href={`${base}spike`}>Spike</a>
         </nav>
@@ -32,7 +33,7 @@ export function Shell({ theme, onToggleTheme, children }: ShellProps) {
       <footer class="footer">
         <Disclaimer />
         <p class="footer-meta">
-          v0.1.0 · Phase 0 · Local-first ·{' '}
+          v0.2.0 · Phase 1 · Local-first ·{' '}
           <span class="serenity-whisper">How's the serenity?</span>
         </p>
       </footer>

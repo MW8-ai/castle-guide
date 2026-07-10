@@ -8,7 +8,10 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    environment: 'happy-dom',
+    setupFiles: ['tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
+    // Sequential: shared IDB names per file use unique db names
+    fileParallelism: true,
   },
 });

@@ -7,14 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
+## [0.2.0] — 2026-07-09
 
-- Phase 1: Home Record core loop (profiles, items, lineage, export, Prompt Pack v1)
+### Added
 
-### Fixed
+- Phase 1 Home Record: profiles, multi-property, item catalog, rooms/dimensions, consumables, docs vault, shutoffs, notes/Someday, Pool Room
+- `CastleStorage` façade (Dexie IndexedDB + OPFS/IDB blob store); components never touch Dexie/OPFS directly
+- Immutable replacement lineage (`replaceItem` snapshots; lineage stripped from updates; soft-deleted items retained in export)
+- ZIP export/import with all-or-nothing validation; refuses future `schemaVersion`; reports missing media/manifest
+- CI tests: ZIP round-trip with blob SHA-256 + lineage order (IDB blob fallback path), tampered ZIP, future schema
+- Prompt Pack import: fence strip → AJV schema → dry-run preview → confirm; human-readable errors; partial import forbidden
+- Prompt Pack fixtures + tests (valid, missing brand, extra field, markdown fences)
+- Schema migrations scaffold at `schemaVersion` 1
+- HUMAN_DIRECTIONS socket #10: push to GitHub + live Pages verification (deferred until push)
+- UI: create property, catalog, import paste, import ZIP, export, Pool Room
 
-- Validate iso spike fixture against `house-view-model.schema.json` in CI
-- Expand `docs/ROADMAP.md` with per-phase gate proofs (Phase 0 marked PASSED)
+### Changed
+
+- App version 0.2.0; footer and export manifest appVersion
+- ROADMAP Phase 1 opened
 
 ## [0.1.0] — 2026-07-09
 
@@ -31,3 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions: CI (typecheck, schemas, tests, build, gitleaks) + Pages deploy
 - Cross-platform line endings (`.gitattributes` eol=lf)
 - Temporary All Rights Reserved LICENSE
+
+### Fixed
+
+- Validate iso spike fixture against `house-view-model.schema.json` in CI
+- Expand `docs/ROADMAP.md` with per-phase gate proofs (Phase 0 marked PASSED)

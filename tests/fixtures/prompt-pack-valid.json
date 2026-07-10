@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "property": {
+    "name": "The Serenity",
+    "zip": "46240",
+    "yearBuilt": 1998,
+    "rooms": [
+      {
+        "name": "Utility",
+        "type": "utility",
+        "dims": { "L": 8, "W": 6, "H": 8 },
+        "paintCards": [
+          {
+            "brand": "Sherwin-Williams",
+            "line": "Duration",
+            "number": "SW 7008",
+            "sheen": "eggshell",
+            "room": "Utility",
+            "date": "2022-04-01"
+          }
+        ]
+      }
+    ],
+    "items": [
+      {
+        "category": "water-heater",
+        "roomName": "Utility",
+        "brand": "Rheem",
+        "model": "XE50T10H45U0",
+        "serial": "ABC123",
+        "purchaseDate": "2019-05-01",
+        "cameWithHouse": false,
+        "filterSpecs": [],
+        "notes": "Label photo walkthrough"
+      },
+      {
+        "category": "furnace",
+        "roomName": "Utility",
+        "brand": "Carrier",
+        "model": "59TP6",
+        "serial": null,
+        "purchaseDate": null,
+        "cameWithHouse": true,
+        "filterSpecs": [{ "name": "furnace filter", "sizeOrModel": "16x25x1" }],
+        "notes": null
+      }
+    ],
+    "shutoffs": [
+      {
+        "type": "water",
+        "locationNote": "Front hose bib wall, red valve"
+      }
+    ]
+  },
+  "assumptions": ["Serial on furnace plate was unreadable"],
+  "unknowns": []
+}

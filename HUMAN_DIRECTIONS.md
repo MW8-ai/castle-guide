@@ -149,3 +149,36 @@ This is effectively a second company (supply-side sales, insurance, dispute reso
 1. If procedural/SVG quality is insufficient, commission an isometric tile pack + council portraits under a license that allows app distribution.
 2. Drop files under `assets/iso/` and `assets/council/`; keep paths data-driven.
 3. Never commit copyrighted third-party game assets or trademarked character art.
+
+---
+
+## 10. Push to GitHub + verify Pages URL renders with assets resolving
+
+| | |
+|---|---|
+| **Tier** | Deferred (not dropped) — parked until the repo is pushed |
+| **Status** | SOCKET READY (local + CI guards in place; live URL pending human push) |
+| **Spec** | `vite.config.ts` `base: '/castle-guide/'`; `.github/workflows/pages.yml` |
+
+### Already true in the repo (keep honest)
+
+1. `base: '/castle-guide/'` is set; comment documents that 404'd assets fail the gate.
+2. `pages.yml` greps built `dist/index.html` for `/castle-guide/` and fails deploy if missing.
+3. Local proxy honesty: after `npm run build`, `npm run preview` serves at the same base — open  
+   `http://localhost:4173/castle-guide/` (not the site root) and confirm JS/CSS load.
+4. Automated: `tests/base-path.test.ts` + Pages workflow check.
+
+### What a human does later (live verification)
+
+1. Create GitHub repo named **`castle-guide`** (name must match the base path).
+2. Push `main` (or enable Pages on the branch `pages.yml` uses).
+3. Settings → Pages → Source: **GitHub Actions**.
+4. Open `https://<owner>.github.io/castle-guide/` — confirm the shell renders (not a blank page).
+5. DevTools → Network: `index-*.js` and `index-*.css` return **200**, not 404.
+6. If assets 404, treat as **FAILED gate** — fix `base` / asset URLs before calling Pages done.
+
+### Do not
+
+- Claim live Pages works until this checklist is checked on a real URL.
+- Change repo name without updating `base` and docs together.
+
