@@ -5,8 +5,8 @@
 | Phase | Name | Version target | Status |
 |-------|------|----------------|--------|
 | **0** | Planning | 0.1.0 | **PASSED** (owner audit 2026-07-09) |
-| **1** | Home Record | 0.2.0 | **OPEN** — implement & gate |
-| **2** | Maintenance + Ops | 0.3.0 | Planned |
+| **1** | Home Record | 0.2.0 | **PASSED** (implemented) |
+| **2** | Maintenance + Ops | 0.3.0 | **OPEN** — implement & gate |
 | **3** | Money + Protection | 0.4.0 | Planned |
 | **4** | House View + Council + AI | 0.5.0 | Planned |
 | **5** | Area + Builders + Polish | 0.6.0 | Planned |

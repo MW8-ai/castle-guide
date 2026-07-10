@@ -180,17 +180,68 @@ export interface Consumable {
   notes?: string | null;
 }
 
-/** Phase 2 stubs kept empty in Phase 1 so export shape is stable. */
-export interface TaskStub {
+export type TaskStatus = 'pending' | 'done' | 'skipped';
+
+export interface TaskHistoryEntry {
   id: string;
-  title: string;
-  [key: string]: unknown;
+  completedAt: string;
+  note?: string;
 }
 
-export interface OpsEventStub {
+/** Maintenance / DIY task instance on a property. */
+export interface Task {
   id: string;
+  /** Links to shipped template id when auto-generated */
+  templateId?: string | null;
+  itemId?: string | null;
   title: string;
-  [key: string]: unknown;
+  /** Human cadence label, e.g. "every 90 days" */
+  cadence: string;
+  /** ISO date YYYY-MM-DD */
+  nextDue: string | null;
+  difficulty: number; // 1–5 wrenches
+  diyCost?: number | null;
+  proCost?: number | null;
+  tools: string[];
+  /** when-NOT-to-DIY and other safety lines — deadpan */
+  warnings: string[];
+  whenNotToDiy: boolean;
+  videoLinks: string[];
+  status: TaskStatus;
+  history: TaskHistoryEntry[];
+  /** Interpolated details e.g. filter size */
+  detail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type OpsEventType =
+  | 'trash'
+  | 'recycling'
+  | 'bill'
+  | 'tax'
+  | 'hoa'
+  | 'insurance'
+  | 'community'
+  | 'other';
+
+/** Household ops calendar entry (not repair-only). */
+export interface OpsEvent {
+  id: string;
+  type: OpsEventType;
+  title: string;
+  /**
+   * Schedule encoding:
+   * - weekly:weekday:0-6 (0=Sunday)
+   * - monthly:day:1-28
+   * - once:YYYY-MM-DD
+   * - yearly:MM-DD
+   */
+  schedule: string;
+  source?: string | null;
+  remind: boolean;
+  notes?: string | null;
+  createdAt: string;
 }
 
 export interface ImprovementStub {
@@ -223,8 +274,8 @@ export interface Property {
   hoa?: boolean | null;
   rooms: Room[];
   items: Item[];
-  tasks: TaskStub[];
-  opsEvents: OpsEventStub[];
+  tasks: Task[];
+  opsEvents: OpsEvent[];
   docs: DocMeta[];
   improvements: ImprovementStub[];
   quotes: QuoteStub[];

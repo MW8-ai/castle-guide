@@ -9,11 +9,23 @@ import type {
   DocMeta,
   Item,
   Note,
+  OpsEvent,
+  OpsEventType,
   Profile,
   Property,
   Room,
   Shutoff,
+  Task,
 } from './types';
+import {
+  scheduleTasksFromCatalog,
+  expandOpsOccurrences,
+  taskOccurrences,
+  mergeCalendar,
+  buildIcs,
+  type ScheduleResult,
+  type CalendarOccurrence,
+} from '../maintain';
 import {
   createEmptyProperty,
   createItem,
@@ -322,6 +334,99 @@ export class CastleStorage {
     property.consumables.push(row);
     await this.saveProperty(property);
     return row;
+  }
+
+  // ── Maintenance + Ops (Phase 2) ──────────────────────────
+
+  /**
+   * Generate tasks from catalog + shipped templates. Idempotent per template+item.
+   * Also sets property.climateZone from ZIP when missing.
+   */
+  async scheduleFromCatalog(propertyId: string): Promise<ScheduleResult> {
+    const property = await this.requireProperty(propertyId);
+    const result = scheduleTasksFromCatalog(property);
+    if (!property.climateZone) {
+      property.climateZone = result.zone;
+    }
+    if (result.created.length) {
+      property.tasks = [...property.tasks, ...result.created];
+      await this.saveProperty(property);
+    } else if (!property.climateZone || property.climateZone !== result.zone) {
+      property.climateZone = result.zone;
+      await this.saveProperty(property);
+    }
+    return result;
+  }
+
+  async addOpsEvent(
+    propertyId: string,
+    partial: {
+      type: OpsEventType;
+      title: string;
+      schedule: string;
+      source?: string | null;
+      remind?: boolean;
+      notes?: string | null;
+    }
+  ): Promise<OpsEvent> {
+    const property = await this.requireProperty(propertyId);
+    const row: OpsEvent = {
+      id: newId(),
+      type: partial.type,
+      title: partial.title,
+      schedule: partial.schedule,
+      source: partial.source ?? null,
+      remind: partial.remind ?? true,
+      notes: partial.notes ?? null,
+      createdAt: nowIso(),
+    };
+    property.opsEvents.push(row);
+    await this.saveProperty(property);
+    return row;
+  }
+
+  async completeTask(
+    propertyId: string,
+    taskId: string,
+    note?: string
+  ): Promise<Task> {
+    const property = await this.requireProperty(propertyId);
+    const idx = property.tasks.findIndex((t) => t.id === taskId);
+    if (idx < 0) throw new Error(`Task not found: ${taskId}`);
+    const t = property.tasks[idx];
+    const ts = nowIso();
+    const today = ts.slice(0, 10);
+    property.tasks[idx] = {
+      ...t,
+      status: 'done',
+      updatedAt: ts,
+      history: [
+        ...t.history,
+        { id: newId(), completedAt: today, note },
+      ],
+    };
+    await this.saveProperty(property);
+    return property.tasks[idx];
+  }
+
+  async getCalendar(
+    propertyId: string,
+    weeks = 12
+  ): Promise<CalendarOccurrence[]> {
+    const property = await this.requireProperty(propertyId);
+    const ops = expandOpsOccurrences(property.opsEvents, weeks);
+    const tasks = taskOccurrences(property.tasks);
+    return mergeCalendar(ops, tasks);
+  }
+
+  async exportIcs(propertyId: string, weeks = 16): Promise<string> {
+    const property = await this.requireProperty(propertyId);
+    const ops = expandOpsOccurrences(property.opsEvents, weeks);
+    const tasks = taskOccurrences(
+      property.tasks.filter((t) => t.status === 'pending')
+    );
+    const merged = mergeCalendar(ops, tasks);
+    return buildIcs(merged, `${property.name} — Castle Guide`);
   }
 
   // ── Export / import / wipe ───────────────────────────────

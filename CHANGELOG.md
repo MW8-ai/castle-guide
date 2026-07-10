@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-09
+
+### Added
+
+- Phase 2 Maintenance + Ops: auto-schedule from catalog + climate zone
+- Task templates in `/data/maintenance` (furnace filter with size, anode rod, dryer vent, sump, smoke/CO, gas/panel when-NOT-to-DIY)
+- Seasonal checklists with Gus lines (climate-aware)
+- Ops calendar: trash/recycling/tax/insurance templates; weekly/monthly/yearly schedules
+- ICS export for tasks + ops (Google/Apple/Outlook importable)
+- Maintain UI at `/property/:id/maintain`
+- CI tests for filter size on task title, trash day calendar, ICS content, when-NOT-to-DIY templates
+
 ## [0.2.0] — 2026-07-09
 
 ### Added

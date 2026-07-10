@@ -19,7 +19,7 @@ import { refreezePropertyLineage } from './lineage';
 import { nowIso } from './ids';
 import { toArrayBuffer } from './blobUtils';
 
-const APP_VERSION = '0.2.0';
+const APP_VERSION = '0.3.0';
 
 export type ImportResult =
   | { ok: true; propertyId: string; schemaVersion: number }

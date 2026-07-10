@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Status** | Phase 1 — Home Record |
-| **Version** | 0.2.0 |
+| **Status** | Phase 2 — Maintenance + Ops |
+| **Version** | 0.3.0 |
 | **Stack** | Preact · Vite · TypeScript · IndexedDB/OPFS (planned) |
 | **Default house view** | Isometric sim (ADR-0002) |
 | **Repo name / Pages base** | `castle-guide` → `base: '/castle-guide/'` |

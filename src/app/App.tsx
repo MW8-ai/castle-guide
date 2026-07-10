@@ -7,6 +7,7 @@ import { SpikeLinkPage } from './pages/SpikeLinkPage';
 import { PropertyPage } from './pages/PropertyPage';
 import { ImportPage } from './pages/ImportPage';
 import { ImportZipPage } from './pages/ImportZipPage';
+import { MaintainPage } from './pages/MaintainPage';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -32,6 +33,7 @@ export function App() {
           <Route path={`${base}/import`} component={ImportPage} />
           <Route path={`${base}/import-zip`} component={ImportZipPage} />
           <Route path={`${base}/property/:id`} component={PropertyPage} />
+          <Route path={`${base}/property/:id/maintain`} component={MaintainPage} />
           <Route default component={HomePage} />
         </Router>
       </Shell>

@@ -212,7 +212,10 @@ export function PropertyPage({ id }: Props) {
       </p>
 
       <div class="btn-row">
-        <button type="button" class="btn primary" onClick={() => void exportZip()}>
+        <a class="btn primary" href={`${base}property/${property.id}/maintain`}>
+          Maintenance & Ops
+        </a>
+        <button type="button" class="btn" onClick={() => void exportZip()}>
           Export ZIP
         </button>
         <a class="btn" href={`${base}import`}>

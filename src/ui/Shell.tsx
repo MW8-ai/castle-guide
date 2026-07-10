@@ -33,7 +33,7 @@ export function Shell({ theme, onToggleTheme, children }: ShellProps) {
       <footer class="footer">
         <Disclaimer />
         <p class="footer-meta">
-          v0.2.0 · Phase 1 · Local-first ·{' '}
+          v0.3.0 · Phase 2 · Local-first ·{' '}
           <span class="serenity-whisper">How's the serenity?</span>
         </p>
       </footer>

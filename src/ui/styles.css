@@ -440,3 +440,22 @@ code {
   cursor: pointer;
 }
 
+.warning-card {
+  border-color: var(--danger);
+}
+
+.danger-text {
+  color: var(--danger);
+}
+
+.gus-line {
+  font-style: italic;
+  color: var(--accent-warm);
+}
+
+.cal-list .cal-date {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin-right: 0.35rem;
+}
+

@@ -1,0 +1,67 @@
+{
+  "checklists": [
+    {
+      "id": "spring-mixed",
+      "season": "spring",
+      "climateZones": ["mixed", "cold", "hot-humid", "*"],
+      "title": "Spring wake-up",
+      "gusLine": "North side grows the mildew — walk the perimeter. And how is the serenity?",
+      "items": [
+        "Test sump pump with a bucket of water",
+        "Clean gutters if tree cover is heavy",
+        "Check grading: water should drain away from foundation",
+        "Replace HVAC filter if due",
+        "Inspect roof from ground for winter damage",
+        "Open outdoor faucets; check for freeze cracks"
+      ],
+      "asOfDate": "2026-01-01",
+      "confidence": "typical"
+    },
+    {
+      "id": "summer-mixed",
+      "season": "summer",
+      "climateZones": ["*"],
+      "title": "Summer watch",
+      "gusLine": "Fans counterclockwise in summer. Water the grass at dawn, not noon — Sod Father would approve.",
+      "items": [
+        "Ceiling fans: counterclockwise for cooling",
+        "Check AC condensate drain",
+        "Trim vegetation away from siding and AC condenser",
+        "Test smoke/CO alarms"
+      ],
+      "asOfDate": "2026-01-01",
+      "confidence": "typical"
+    },
+    {
+      "id": "fall-cold",
+      "season": "fall",
+      "climateZones": ["cold", "mixed"],
+      "title": "Fall button-up",
+      "gusLine": "First freeze is coming. Blow out the irrigation if you have one. Seal the drafts before Banks McCoin bills you for heat.",
+      "items": [
+        "Irrigation blow-out before first freeze",
+        "Service furnace / change filter",
+        "Reverse ceiling fans to clockwise-on-low for winter",
+        "Clean gutters before leaf dump ends",
+        "Disconnect and drain hoses"
+      ],
+      "asOfDate": "2026-01-01",
+      "confidence": "typical"
+    },
+    {
+      "id": "winter-cold",
+      "season": "winter",
+      "climateZones": ["cold", "mixed"],
+      "title": "Winter hold",
+      "gusLine": "If the ice dams start, check attic insulation and ventilation — don't just chip the roof like a maniac.",
+      "items": [
+        "Know your water main shutoff location",
+        "Keep cabinet doors open on extreme cold nights (pipes)",
+        "Clear snow from dryer/furnace exhaust and vents",
+        "Watch for ice dams and icicles at eaves"
+      ],
+      "asOfDate": "2026-01-01",
+      "confidence": "typical"
+    }
+  ]
+}

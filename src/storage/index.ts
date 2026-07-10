@@ -16,6 +16,9 @@ export {
   type LineageEntry,
   type PaintCard,
   type BlobRef,
+  type Task,
+  type OpsEvent,
+  type OpsEventType,
 } from './types';
 export {
   createItem,

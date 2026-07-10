@@ -1,0 +1,32 @@
+{
+  "templates": [
+    {
+      "id": "ops-trash-weekly",
+      "type": "trash",
+      "title": "Trash day",
+      "defaultSchedule": "weekly:weekday:2",
+      "notes": "Default Tuesday — change to your city's day."
+    },
+    {
+      "id": "ops-recycling-weekly",
+      "type": "recycling",
+      "title": "Recycling day",
+      "defaultSchedule": "weekly:weekday:2",
+      "notes": "Often same day as trash; adjust as needed."
+    },
+    {
+      "id": "ops-insurance-annual",
+      "type": "insurance",
+      "title": "Home insurance renewal",
+      "defaultSchedule": "yearly:06-01",
+      "notes": "Set to your policy anniversary."
+    },
+    {
+      "id": "ops-tax-installment",
+      "type": "tax",
+      "title": "Property tax installment",
+      "defaultSchedule": "yearly:05-10",
+      "notes": "Varies by county — set your real dates."
+    }
+  ]
+}
