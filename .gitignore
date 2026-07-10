@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-spike/
+*.local
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.vite/

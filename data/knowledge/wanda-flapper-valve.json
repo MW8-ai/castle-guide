@@ -1,0 +1,17 @@
+{
+  "id": "nugget-wanda-toilet-flapper",
+  "character": "wrench-wanda",
+  "category": "repair-maintenance",
+  "title": "Running toilet? Check the flapper first",
+  "body": "A common cause of a toilet that runs intermittently is a worn flapper valve. Replacement flappers are inexpensive and often a short DIY job. Match the flapper to your tank model when possible. If the fill valve or flush valve assembly is failing, costs and difficulty go up — know when to stop.",
+  "sources": [
+    {
+      "url": "https://www.epa.gov/watersense/toilet-fixes",
+      "date": "2023-01-15",
+      "label": "EPA WaterSense — toilet fixes (general)"
+    }
+  ],
+  "asOfDate": "2023-01-15",
+  "confidence": "typical",
+  "estSavings": 150
+}

@@ -1,0 +1,18 @@
+{
+  "id": "nugget-gus-ceiling-fan-direction",
+  "character": "grandpa-gus",
+  "category": "tribal-wisdom",
+  "title": "Ceiling fan direction by season",
+  "body": "In summer, run ceiling fans counterclockwise (downdraft) to feel cooler. In winter, run them clockwise on low to gently push warm air down the walls without a draft. This is a comfort tip, not a substitute for fixing insulation problems.",
+  "sources": [
+    {
+      "url": "https://www.energy.gov/energysaver/fans-cooling",
+      "date": "2024-06-01",
+      "label": "U.S. DOE Energy Saver — Fans for Cooling (general guidance)"
+    }
+  ],
+  "asOfDate": "2024-06-01",
+  "confidence": "typical",
+  "seasonTags": ["summer", "winter"],
+  "estSavings": 25
+}

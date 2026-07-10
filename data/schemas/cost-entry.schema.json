@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://castle-guide.local/schemas/cost-entry.schema.json",
+  "title": "CostEntry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "job",
+    "diyRange",
+    "proRange",
+    "currency",
+    "source",
+    "asOfDate",
+    "regionNote",
+    "confidence"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "job": { "type": "string", "minLength": 1 },
+    "diyRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 }
+      }
+    },
+    "proRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 }
+      }
+    },
+    "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+    "source": { "type": "string", "minLength": 1 },
+    "sourceUrl": { "type": "string" },
+    "asOfDate": { "type": "string", "format": "date" },
+    "regionNote": { "type": "string", "minLength": 1 },
+    "confidence": {
+      "type": "string",
+      "enum": ["verified", "typical", "regional"]
+    }
+  }
+}

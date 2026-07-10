@@ -1,0 +1,11 @@
+{
+  "id": "cost-water-heater-anode-rod",
+  "job": "Water heater anode rod inspection/replacement",
+  "diyRange": { "min": 20, "max": 80 },
+  "proRange": { "min": 150, "max": 400 },
+  "currency": "USD",
+  "source": "Industry typical ranges synthesized for educational UI seeding; not a contractor bid. Your market varies widely by tank type (standard vs power-vent), access, and whether the rod is stuck.",
+  "asOfDate": "2026-01-01",
+  "regionNote": "U.S. national ballpark only — obtain local quotes. Gas appliances and confined spaces may require a licensed pro.",
+  "confidence": "typical"
+}

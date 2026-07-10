@@ -1,0 +1,275 @@
+:root,
+.theme-dark {
+  --bg: #0f1419;
+  --bg-elevated: #1a2332;
+  --bg-card: #1e2a3a;
+  --text: #e8eef5;
+  --text-muted: #9aabbd;
+  --accent: #5b9fd4;
+  --accent-warm: #e8b86d;
+  --border: #2d3c4f;
+  --ok: #6bcf8e;
+  --danger: #e07a7a;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius: 12px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.theme-light {
+  --bg: #f4f1ea;
+  --bg-elevated: #fffdf8;
+  --bg-card: #ffffff;
+  --text: #1a2332;
+  --text-muted: #5a6a7a;
+  --accent: #2f6f9f;
+  --accent-warm: #b8860b;
+  --border: #d5cfc4;
+  --ok: #2d8a4e;
+  --danger: #b33a3a;
+  --shadow: 0 8px 24px rgba(26, 35, 50, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand-mark {
+  font-size: 1.25rem;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.nav a {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nav a:hover {
+  color: var(--text);
+}
+
+.theme-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-btn:hover {
+  border-color: var(--accent);
+}
+
+.main {
+  flex: 1;
+  width: min(960px, 100%);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2rem;
+}
+
+.page h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  letter-spacing: -0.02em;
+}
+
+.hero {
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  color: var(--accent-warm);
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+
+.tagline {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.serenity {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow);
+}
+
+.serenity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.serenity-label {
+  font-weight: 600;
+}
+
+.serenity-score {
+  font-variant-numeric: tabular-nums;
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.serenity-track {
+  height: 10px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.serenity-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--ok));
+  border-radius: 999px;
+}
+
+.serenity-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+}
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 1.25rem;
+  background: var(--bg-elevated);
+}
+
+.disclaimer {
+  max-width: 960px;
+  margin: 0 auto;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.footer-meta {
+  max-width: 960px;
+  margin: 0.75rem auto 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.serenity-whisper {
+  color: var(--accent-warm);
+  font-style: italic;
+}
+
+.doc-list {
+  padding-left: 1.2rem;
+}
+
+.doc-list li {
+  margin: 0.4rem 0;
+}
+
+.code-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+}

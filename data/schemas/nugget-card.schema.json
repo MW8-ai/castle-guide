@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://castle-guide.local/schemas/nugget-card.schema.json",
+  "title": "NuggetCard",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "character",
+    "category",
+    "title",
+    "body",
+    "sources",
+    "asOfDate",
+    "confidence"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "character": { "type": "string", "minLength": 1 },
+    "category": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "body": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["url", "date"],
+        "properties": {
+          "url": { "type": "string", "minLength": 1 },
+          "date": { "type": "string", "format": "date" },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "asOfDate": { "type": "string", "format": "date" },
+    "confidence": {
+      "type": "string",
+      "enum": ["verified", "typical", "regional"]
+    },
+    "regionTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "seasonTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "estSavings": { "type": "number" }
+  }
+}

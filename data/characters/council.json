@@ -1,0 +1,76 @@
+{
+  "characters": [
+    {
+      "id": "grandpa-gus",
+      "defaultName": "Grandpa Gus",
+      "role": "Tribal wisdom",
+      "categories": ["tribal-wisdom", "seasonal"]
+    },
+    {
+      "id": "frank-foreman",
+      "defaultName": "Frank the Foreman",
+      "role": "Builder / structural",
+      "categories": ["structural", "permits"]
+    },
+    {
+      "id": "deco-dee",
+      "defaultName": "Deco Dee",
+      "role": "Interior design",
+      "categories": ["design", "paint"]
+    },
+    {
+      "id": "wrench-wanda",
+      "defaultName": "Wrench Wanda",
+      "role": "Repair & maintenance",
+      "categories": ["repair-maintenance"]
+    },
+    {
+      "id": "sod-father",
+      "defaultName": "Sod Father",
+      "role": "Yard, soil & drainage",
+      "categories": ["yard", "drainage", "soil"]
+    },
+    {
+      "id": "rhonda-realty",
+      "defaultName": "Rhonda Realty",
+      "role": "Resale & market",
+      "categories": ["resale", "roi"]
+    },
+    {
+      "id": "banks-mccoin",
+      "defaultName": "Banks McCoin",
+      "role": "Financing & payoff",
+      "categories": ["finance", "equity"]
+    },
+    {
+      "id": "karen-reformed",
+      "defaultName": "Karen (Reformed)",
+      "role": "HOA + law vs. nosey neighbor",
+      "categories": ["hoa", "neighbor-law"]
+    },
+    {
+      "id": "scout",
+      "defaultName": "Scout",
+      "role": "Bugs, plants, wildlife ID",
+      "categories": ["field-guide"]
+    },
+    {
+      "id": "adjuster-ada",
+      "defaultName": "Adjuster Ada",
+      "role": "Insurance readiness",
+      "categories": ["insurance"]
+    },
+    {
+      "id": "the-colonel",
+      "defaultName": "The Colonel",
+      "role": "Mancave / bunker / she-shed / treehouse",
+      "categories": ["builders"]
+    },
+    {
+      "id": "dale",
+      "defaultName": "Dale",
+      "role": "Quote reviewer & gotcha detector",
+      "categories": ["quotes"]
+    }
+  ]
+}

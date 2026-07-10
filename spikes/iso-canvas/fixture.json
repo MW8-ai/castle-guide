@@ -1,0 +1,32 @@
+{
+  "houseName": "The Serenity",
+  "rooms": [
+    {
+      "id": "room-kitchen",
+      "name": "Kitchen",
+      "dims": { "L": 14, "W": 12, "H": 9 },
+      "materials": { "floor": "oak", "wall": "SW 7029" }
+    },
+    {
+      "id": "room-living",
+      "name": "Living Room",
+      "dims": { "L": 18, "W": 14, "H": 9 },
+      "materials": { "floor": "carpet", "wall": "SW 7008" }
+    }
+  ],
+  "placements": [
+    {
+      "id": "place-fridge",
+      "roomId": "room-kitchen",
+      "itemId": "item-fridge-2024",
+      "label": "Fridge",
+      "x": 1,
+      "y": 1,
+      "rotation": 0,
+      "footprint": { "L": 3, "W": 2.5 }
+    }
+  ],
+  "healthByItemId": {
+    "item-fridge-2024": "ok"
+  }
+}

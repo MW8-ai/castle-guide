@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://castle-guide.local/schemas/house-view-model.schema.json",
+  "title": "HouseViewModel",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["houseName", "rooms", "placements", "healthByItemId"],
+  "properties": {
+    "houseName": { "type": "string" },
+    "rooms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "dims"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "dims": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["L", "W", "H"],
+            "properties": {
+              "L": { "type": "number", "exclusiveMinimum": 0 },
+              "W": { "type": "number", "exclusiveMinimum": 0 },
+              "H": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          },
+          "materials": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "floor": { "type": "string" },
+              "wall": { "type": "string" },
+              "trim": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "placements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "roomId",
+          "itemId",
+          "label",
+          "x",
+          "y",
+          "rotation",
+          "footprint"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "roomId": { "type": "string" },
+          "itemId": { "type": "string" },
+          "label": { "type": "string" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "z": { "type": "number" },
+          "rotation": { "type": "number" },
+          "footprint": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["L", "W"],
+            "properties": {
+              "L": { "type": "number", "exclusiveMinimum": 0 },
+              "W": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "healthByItemId": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["ok", "due", "overdue"]
+      }
+    }
+  }
+}

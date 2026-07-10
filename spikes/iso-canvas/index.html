@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Castle Guide — iso spike</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #0f1419;
+        color: #e8eef5;
+      }
+      header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #2d3c4f;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      p {
+        margin: 0.35rem 0 0;
+        color: #9aabbd;
+        font-size: 0.9rem;
+      }
+      #host {
+        width: 100%;
+        height: calc(100vh - 88px);
+      }
+      #log {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        max-width: 320px;
+        background: #1a2332;
+        border: 1px solid #2d3c4f;
+        border-radius: 8px;
+        padding: 0.65rem 0.85rem;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>spikes/iso-canvas — contract proof (not product UI)</h1>
+      <p>
+        Two rooms from real dims + one clickable appliance. Click the fridge.
+      </p>
+    </header>
+    <div id="host"></div>
+    <div id="log">Selected: <span id="selected">—</span></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
