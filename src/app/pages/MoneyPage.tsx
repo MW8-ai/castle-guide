@@ -17,7 +17,7 @@ import {
 } from '../../protect';
 import { Disclaimer } from '../../ui/Disclaimer';
 
-const base = import.meta.env.BASE_URL;
+import { go } from '../paths';
 
 interface Props {
   id?: string;
@@ -131,7 +131,9 @@ export function MoneyPage({ id }: Props) {
   return (
     <section class="page">
       <p class="eyebrow">
-        <a href={`${base}property/${id}`}>← {property.name}</a>
+        <button type="button" class="btn" onClick={() => go('property', id!, 'house')}>
+          ← House
+        </button>
       </p>
       <h1>Money & Protection</h1>
       <p class="muted">

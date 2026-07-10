@@ -7,7 +7,7 @@ import {
 } from '../../ai';
 import { ensureStorageReady } from '../storageContext';
 
-const base = import.meta.env.BASE_URL;
+import { go, href } from '../paths';
 
 const SAMPLE = `{
   "schemaVersion": 1,
@@ -78,7 +78,7 @@ export function ImportPage() {
         setErrors(result.errors);
         return;
       }
-      window.location.href = `${base}property/${result.propertyId}`;
+      go('property', result.propertyId, 'house');
     } finally {
       setBusy(false);
     }
@@ -87,7 +87,7 @@ export function ImportPage() {
   return (
     <section class="page">
       <p class="eyebrow">
-        <a href={base}>← Home</a>
+        <a href={href()}>← Home</a>
       </p>
       <h1>Prompt Pack import</h1>
       <p class="muted">

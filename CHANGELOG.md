@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-07-09
+
+### Changed — UX quality reboot (guided by refs/1–4)
+
+- **Demo starter castle** auto-loads ("The Serenity") with rooms, appliances, placements, tasks, shutoffs, filter size
+- **Home** is enter-demo-first, not a blank create-form gauntlet
+- **Sidebar app shell** (House / Inventory / Maintenance / …) instead of random top links
+- **House View** is the default property screen: centered map, side detail panel, upcoming tasks
+- **Inventory** compact quick-add (not 20 fields); Pool Room is a trophy section not a lonely tab
+- **Navigation** via preact-router `route()` helpers (fixes view-hop breakage)
+- **Canvas** greener stage, room labels, emoji appliance icons, fit-to-center framing
+- Stronger text contrast tokens
+
 ## [0.7.0] — 2026-07-09
 
 ### Added

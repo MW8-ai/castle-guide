@@ -10,7 +10,7 @@ import {
 } from '../../ai';
 import { listRenderers } from '../../houseview';
 
-const base = import.meta.env.BASE_URL;
+import { go } from '../paths';
 
 export function SettingsPage() {
   const [keys, setKeys] = useState<AiKeyBag>({});
@@ -62,7 +62,9 @@ export function SettingsPage() {
   return (
     <section class="page">
       <p class="eyebrow">
-        <a href={base}>← Home</a>
+        <button type="button" class="btn" onClick={() => go()}>
+          ← Home
+        </button>
       </p>
       <h1>Settings</h1>
 

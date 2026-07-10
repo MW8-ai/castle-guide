@@ -8,7 +8,7 @@ import {
   characterName,
 } from '../../council';
 
-const base = import.meta.env.BASE_URL;
+import { go } from '../paths';
 
 interface Props {
   id?: string;
@@ -33,11 +33,13 @@ export function CouncilPage({ id }: Props) {
   return (
     <section class="page">
       <p class="eyebrow">
-        {id ? (
-          <a href={`${base}property/${id}`}>← Property</a>
-        ) : (
-          <a href={base}>← Home</a>
-        )}
+        <button
+          type="button"
+          class="btn"
+          onClick={() => (id ? go('property', id, 'house') : go())}
+        >
+          ← Back
+        </button>
       </p>
       <h1>The Council</h1>
       <p class="muted">

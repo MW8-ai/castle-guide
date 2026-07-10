@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 
-const base = import.meta.env.BASE_URL;
+import { go, href } from '../paths';
 
 export function ImportZipPage() {
   const [errors, setErrors] = useState<string[]>([]);
@@ -23,7 +23,7 @@ export function ImportZipPage() {
         return;
       }
       setOkMsg(`Imported property ${result.propertyId}`);
-      window.location.href = `${base}property/${result.propertyId}`;
+      go('property', result.propertyId, 'house');
     } catch (err) {
       setErrors([err instanceof Error ? err.message : String(err)]);
     } finally {
@@ -34,7 +34,7 @@ export function ImportZipPage() {
   return (
     <section class="page">
       <p class="eyebrow">
-        <a href={base}>← Home</a>
+        <a href={href()}>← Home</a>
       </p>
       <h1>Import ZIP export</h1>
       <p class="muted">

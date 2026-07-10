@@ -7,7 +7,7 @@ import {
   climateZoneFromZip,
 } from '../../maintain';
 
-const base = import.meta.env.BASE_URL;
+import { go } from '../paths';
 
 interface Props {
   id?: string;
@@ -111,7 +111,9 @@ export function MaintainPage({ id }: Props) {
   return (
     <section class="page">
       <p class="eyebrow">
-        <a href={`${base}property/${id}`}>← {property.name}</a>
+        <button type="button" class="btn" onClick={() => go('property', id!, 'house')}>
+          ← House
+        </button>
       </p>
       <h1>Maintenance & Ops</h1>
       <p class="muted">

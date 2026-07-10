@@ -6,74 +6,87 @@ import {
   computeSerenity,
   serenityLabel,
   getRenderer,
-  listRenderers,
 } from '../../houseview';
 import type { HouseRendererHandle } from '../../houseview';
 import { SerenityMeter } from '../../ui/SerenityMeter';
+import { useActiveCastle } from '../ActiveCastle';
+import { go } from '../paths';
 import { surfaceNuggets } from '../../council';
-
-const base = import.meta.env.BASE_URL;
 
 interface Props {
   id?: string;
 }
 
 export function HousePage({ id }: Props) {
+  const { property: active, refresh: refreshActive } = useActiveCastle();
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HouseRendererHandle | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
-  const [rendererId, setRendererId] = useState('iso');
   const [selected, setSelected] = useState<Item | null>(null);
-  const [listMode, setListMode] = useState(false);
-  const [nuggetLine, setNuggetLine] = useState<string | null>(null);
+  const [hint, setHint] = useState(
+    'Click an appliance for details · Drag to move · Use the left menu for Inventory'
+  );
 
-  async function load() {
-    if (!id) return;
+  const propertyId = id || active?.id;
+
+  async function load(selectItemId?: string | null) {
+    if (!propertyId) return;
     const s = await ensureStorageReady();
-    const p = await s.getProperty(id);
+    await s.setActiveProperty(propertyId);
+    let p = await s.getProperty(propertyId);
     if (!p) return;
-    const profile = await s.getProfile();
-    const rid = profile?.settings.activeRendererId ?? 'iso';
-    setRendererId(rid);
 
-    const { model, placementsChanged } = buildHouseViewModel(p, {
-      ensurePlacements: true,
-    });
-    if (placementsChanged) {
+    const built = buildHouseViewModel(p, { ensurePlacements: true });
+    if (built.placementsChanged) {
       await s.saveProperty(p);
+      p = (await s.getProperty(propertyId))!;
     }
-    setProperty(await s.getProperty(id));
+    setProperty(p);
+    await refreshActive();
 
+    if (selectItemId) {
+      setSelected(p.items.find((i) => i.id === selectItemId) ?? null);
+    }
+
+    const profile = await s.getProfile();
     const surfaced = surfaceNuggets(p, profile?.settings.characterNameOverrides);
     const gus = surfaced.find((x) => x.nugget.character === 'grandpa-gus');
     if (gus) {
-      setNuggetLine(
-        `${gus.characterDisplay}: "${gus.nugget.title}" — ${gus.reason}`
-      );
+      setHint(`${gus.characterDisplay}: ${gus.nugget.title}`);
     }
 
-    // Mount renderer after state
-    requestAnimationFrame(() => {
+    const model = buildHouseViewModel(p).model;
+    const mount = () => {
       if (!hostRef.current) return;
       handleRef.current?.destroy();
-      const plugin = getRenderer(rid);
+      const plugin = getRenderer('iso');
       handleRef.current = plugin.mount(hostRef.current, model, {
         onSelectItem: (itemId) => {
-          const item = p.items.find((i) => i.id === itemId) ?? null;
+          const item = p!.items.find((i) => i.id === itemId) ?? null;
           setSelected(item);
         },
-        onSelectRoom: () => {
-          /* list rooms in panel later */
+        onSelectRoom: (roomId) => {
+          const room = p!.rooms.find((r) => r.id === roomId);
+          if (room) setHint(`Room: ${room.name} · ${room.dims.L}'×${room.dims.W}'`);
         },
         onMovePlacement: (placementId, next) => {
           void (async () => {
             const st = await ensureStorageReady();
-            await st.movePlacement(id!, placementId, next);
-            await load();
+            await st.movePlacement(propertyId!, placementId, next);
+            // Soft refresh without full remount thrash
+            const updated = await st.getProperty(propertyId!);
+            if (!updated) return;
+            setProperty(updated);
+            const m = buildHouseViewModel(updated).model;
+            handleRef.current?.update(m);
+            await refreshActive();
           })();
         },
       });
-    });
+    };
+
+    // Double rAF so layout has size for centering
+    requestAnimationFrame(() => requestAnimationFrame(mount));
   }
 
   useEffect(() => {
@@ -82,108 +95,169 @@ export function HousePage({ id }: Props) {
       handleRef.current?.destroy();
       handleRef.current = null;
     };
-  }, [id]);
+  }, [propertyId]);
 
-  async function switchRenderer(rid: string) {
-    setRendererId(rid);
-    const s = await ensureStorageReady();
-    await s.setRendererPreference(rid);
-    handleRef.current?.destroy();
-    handleRef.current = null;
-    await load();
+  if (!propertyId) {
+    return (
+      <section class="page">
+        <p>No castle selected.</p>
+        <button type="button" class="btn primary" onClick={() => go()}>
+          Go home
+        </button>
+      </section>
+    );
   }
 
-  if (!id) return <p class="error-text">Missing property.</p>;
-  if (!property) return <p class="muted">Loading house view…</p>;
+  if (!property) {
+    return <div class="page loading-splash">Loading house…</div>;
+  }
 
   const score = computeSerenity(property);
-  const active = property.items.filter((i) => i.active && !i.softDeleted);
+  const upcoming = property.tasks
+    .filter((t) => t.status === 'pending')
+    .slice(0, 4);
 
   return (
-    <section class="page house-page">
-      <p class="eyebrow">
-        <a href={`${base}property/${id}`}>← {property.name}</a>
-      </p>
-      <h1>House view</h1>
-      <SerenityMeter score={score} label={serenityLabel(score)} />
-      {nuggetLine && <p class="gus-line">{nuggetLine}</p>}
-
-      <div class="btn-row">
-        {listRenderers().map((r) => (
+    <section class="house-workspace">
+      <header class="house-top">
+        <div>
+          <h1>{property.name}</h1>
+          <p class="muted house-hint">{hint}</p>
+        </div>
+        <div class="house-top-actions">
           <button
-            key={r.id}
             type="button"
-            class={rendererId === r.id ? 'btn primary' : 'btn'}
-            onClick={() => void switchRenderer(r.id)}
+            class="btn"
+            onClick={() => go('property', propertyId, 'inventory')}
           >
-            {r.label}
+            + Add item
           </button>
-        ))}
-        <button
-          type="button"
-          class="btn"
-          onClick={() => setListMode((v) => !v)}
-        >
-          {listMode ? 'Hide list view' : 'List view (a11y)'}
-        </button>
-      </div>
+          <button
+            type="button"
+            class="btn primary"
+            onClick={() => go('property', propertyId, 'maintain')}
+          >
+            Maintenance
+          </button>
+        </div>
+      </header>
 
-      {!listMode && (
-        <div class="house-canvas-host" ref={hostRef} />
-      )}
+      <div class="house-grid">
+        <div class="house-stage card">
+          <div class="house-stage-label">Castle View</div>
+          <div class="house-canvas-host" ref={hostRef} />
+          <div class="house-legend">
+            <span>
+              <i class="dot ok" /> Healthy
+            </span>
+            <span>
+              <i class="dot due" /> Due soon
+            </span>
+            <span>
+              <i class="dot overdue" /> Overdue
+            </span>
+          </div>
+        </div>
 
-      {listMode && (
-        <div class="card">
-          <h2>List view (equivalent navigation)</h2>
-          <ul class="item-list">
-            {active.map((item) => (
-              <li key={item.id} class="item-card">
+        <aside class="house-side">
+          <SerenityMeter score={score} label={serenityLabel(score)} />
+
+          {selected ? (
+            <div class="card item-panel">
+              <div class="item-panel-head">
+                <h2>
+                  {selected.brand} {selected.model}
+                </h2>
                 <button
                   type="button"
-                  class="btn"
-                  onClick={() => setSelected(item)}
+                  class="btn icon"
+                  onClick={() => setSelected(null)}
+                  aria-label="Close"
                 >
-                  Open {item.brand} {item.model || item.category}
+                  ✕
                 </button>
-                {item.lineage.length > 0 && (
-                  <span class="muted">
-                    {' '}
-                    · {item.lineage.length} prior gen
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+              </div>
+              <p class="item-cat">{selected.category}</p>
+              <dl class="fact-list">
+                <div>
+                  <dt>Serial</dt>
+                  <dd>{selected.serial ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Installed</dt>
+                  <dd>{selected.purchaseDate ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Warranty</dt>
+                  <dd>{selected.warrantyEnd ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Price</dt>
+                  <dd>
+                    {selected.price != null
+                      ? `$${selected.price.toLocaleString()}`
+                      : '—'}
+                  </dd>
+                </div>
+              </dl>
+              {selected.lineage.length > 0 && (
+                <div class="lineage-box">
+                  <strong>History</strong>
+                  <ol>
+                    {selected.lineage.map((L, i) => (
+                      <li key={i}>
+                        {L.snapshot.brand} {L.snapshot.model} ({L.activeFrom} →{' '}
+                        {L.activeTo})
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {selected.notes && <p class="muted">{selected.notes}</p>}
+              <div class="btn-row">
+                <button
+                  type="button"
+                  class="btn primary"
+                  onClick={() => go('property', propertyId, 'inventory')}
+                >
+                  Open in Inventory
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div class="card item-panel empty-panel">
+              <h2>Nothing selected</h2>
+              <p class="muted">
+                Click a colored block on the house (fridge, furnace, water
+                heater…). That's your data — not decoration.
+              </p>
+            </div>
+          )}
 
-      {selected && (
-        <div class="card item-detail">
-          <h2>
-            {selected.brand} {selected.model}
-          </h2>
-          <p class="muted">
-            {selected.category}
-            {selected.serial ? ` · ${selected.serial}` : ''}
-          </p>
-          {selected.lineage.length > 0 && (
-            <details open>
-              <summary>Lineage history</summary>
-              <ol>
-                {selected.lineage.map((L, i) => (
-                  <li key={i}>
-                    {L.snapshot.brand} {L.snapshot.model} ({L.activeFrom} →{' '}
-                    {L.activeTo})
+          <div class="card">
+            <h3>Up next</h3>
+            {upcoming.length === 0 ? (
+              <p class="muted">No pending tasks.</p>
+            ) : (
+              <ul class="plain-list tight">
+                {upcoming.map((t) => (
+                  <li key={t.id}>
+                    <strong>{t.title}</strong>
+                    <div class="muted">Due {t.nextDue}</div>
                   </li>
                 ))}
-              </ol>
-            </details>
-          )}
-          <a class="btn" href={`${base}property/${id}`}>
-            Open full catalog card
-          </a>
-        </div>
-      )}
+              </ul>
+            )}
+            <button
+              type="button"
+              class="btn"
+              onClick={() => go('property', propertyId, 'maintain')}
+            >
+              All maintenance
+            </button>
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }
