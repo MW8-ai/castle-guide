@@ -91,32 +91,101 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     let lastRoom: string | null = null;
     let roomOff = new Map<string, { x: number; y: number }>();
 
+    /**
+     * Pack rooms into a tight grid with ZERO gaps so you can walk
+     * room-to-room across shared edges (no island trapping).
+     */
     function layout(m: HouseViewModel) {
       roomOff.clear();
+      // Prefer a house-like order if names match sample seed
+      const preferred = [
+        'Primary Bedroom',
+        'Bedroom 2',
+        'Bath 1',
+        'Bedroom 3',
+        'Living Room',
+        'Kitchen',
+        'Dining',
+        'Bath 2',
+        'Family Room',
+        'Utility',
+        'Office',
+        'Bath 3',
+        'Bedroom 4',
+        'Bedroom 5',
+        'Garage 1',
+        'Garage 2',
+        'Garage 3',
+      ];
+      const rooms = [...m.rooms].sort((a, b) => {
+        const ia = preferred.indexOf(a.name);
+        const ib = preferred.indexOf(b.name);
+        if (ia === -1 && ib === -1) return a.name.localeCompare(b.name);
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
       const cols = 4;
+      const colWidths = Array.from({ length: cols }, () => 0);
+      const rowHeights: number[] = [];
+      const cells: { r: RoomView; col: number; row: number }[] = [];
       let col = 0;
       let row = 0;
-      const rowHeights: number[] = [];
-      const colWidths = [0, 0, 0, 0];
-      const cells: { r: RoomView; col: number; row: number }[] = [];
-      for (const r of m.rooms) {
+      for (const r of rooms) {
         cells.push({ r, col, row });
-        rowHeights[row] = Math.max(rowHeights[row] ?? 0, r.dims.W);
         colWidths[col] = Math.max(colWidths[col], r.dims.L);
+        rowHeights[row] = Math.max(rowHeights[row] ?? 0, r.dims.W);
         col++;
         if (col >= cols) {
           col = 0;
           row++;
         }
       }
-      const gap = 0.75;
+      // gap = 0 → shared walls; walkable across boundaries
       for (const c of cells) {
         let ox = 0;
-        for (let k = 0; k < c.col; k++) ox += colWidths[k] + gap;
+        for (let k = 0; k < c.col; k++) ox += colWidths[k];
         let oy = 0;
-        for (let k = 0; k < c.row; k++) oy += (rowHeights[k] ?? 0) + gap;
-        roomOff.set(c.r.id, { x: ox, y: oy });
+        for (let k = 0; k < c.row; k++) oy += rowHeights[k] ?? 0;
+        // Center smaller rooms inside their cell so edges still touch the grid
+        const cellL = colWidths[c.col];
+        const cellW = rowHeights[c.row] ?? c.r.dims.W;
+        const insetX = (cellL - c.r.dims.L) / 2;
+        const insetY = (cellW - c.r.dims.W) / 2;
+        roomOff.set(c.r.id, { x: ox + insetX, y: oy + insetY });
       }
+    }
+
+    /** Full house footprint — walkable floor (not just room islands). */
+    function houseBounds() {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      for (const r of current.rooms) {
+        const o = roomOff.get(r.id);
+        if (!o) continue;
+        minX = Math.min(minX, o.x);
+        minY = Math.min(minY, o.y);
+        maxX = Math.max(maxX, o.x + r.dims.L);
+        maxY = Math.max(maxY, o.y + r.dims.W);
+      }
+      if (!Number.isFinite(minX)) {
+        return { minX: 0, minY: 0, maxX: 20, maxY: 20 };
+      }
+      // expand slightly so doorways between slightly inset rooms still work
+      return {
+        minX: minX - 0.25,
+        minY: minY - 0.25,
+        maxX: maxX + 0.25,
+        maxY: maxY + 0.25,
+      };
+    }
+
+    function inHouse(wx: number, wy: number): boolean {
+      const b = houseBounds();
+      return wx >= b.minX && wx <= b.maxX && wy >= b.minY && wy <= b.maxY;
     }
 
     function iso(fx: number, fy: number, z = 0, panX = 0, panY = 0) {
@@ -127,7 +196,8 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       };
     }
 
-    function roomAt(wx: number, wy: number, pad = 0): string | null {
+    function roomAt(wx: number, wy: number, pad = 0.15): string | null {
+      let best: { id: string; d: number } | null = null;
       for (const r of current.rooms) {
         const o = roomOff.get(r.id);
         if (!o) continue;
@@ -137,10 +207,14 @@ export const walkIsoRenderer: HouseRendererPlugin = {
           wy >= o.y - pad &&
           wy <= o.y + r.dims.W + pad
         ) {
-          return r.id;
+          // prefer room whose center is closest (for edge cases)
+          const cx = o.x + r.dims.L / 2;
+          const cy = o.y + r.dims.W / 2;
+          const d = Math.hypot(wx - cx, wy - cy);
+          if (!best || d < best.d) best = { id: r.id, d };
         }
       }
-      return null;
+      return best?.id ?? null;
     }
 
     function drawRoom(
@@ -308,29 +382,16 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     }
 
     function tryMove(dx: number, dy: number) {
-      const speed = 0.22;
+      const speed = 0.28;
       const nx = px + dx * speed;
       const ny = py + dy * speed;
-      let ok = false;
-      for (const r of current.rooms) {
-        const o = roomOff.get(r.id)!;
-        const pad = 0.6;
-        if (
-          nx >= o.x - pad &&
-          nx <= o.x + r.dims.L + pad &&
-          ny >= o.y - pad &&
-          ny <= o.y + r.dims.W + pad
-        ) {
-          ok = true;
-          break;
-        }
-      }
-      if (ok) {
+      // Whole house footprint is walkable — rooms are zones, not cages
+      if (inHouse(nx, ny)) {
         px = nx;
         py = ny;
         if (dx || dy) facing = Math.atan2(dy, dx);
       }
-      const rid = roomAt(px, py, 0);
+      const rid = roomAt(px, py);
       if (rid !== lastRoom) {
         lastRoom = rid;
         cb.onEnterRoom?.(rid);
@@ -419,7 +480,7 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       ctx.font = '13px system-ui,sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(
-        'WASD walk · scroll zoom · walk into a room for notes · click furniture',
+        'WASD — walk between rooms  ·  scroll zoom  ·  click fridge / couch / water heater',
         20,
         h - 22
       );

@@ -9,16 +9,15 @@ interface Props {
   path?: string;
 }
 
-/** Calm nav — not a game menu. Visual is the product. */
-const NAV: { id: string; label: string; segment: string }[] = [
-  { id: 'house', label: 'Home', segment: 'house' },
-  { id: 'inventory', label: 'Inventory', segment: 'inventory' },
-  { id: 'maintain', label: 'Maintenance', segment: 'maintain' },
-  { id: 'money', label: 'Money', segment: 'money' },
-  { id: 'area', label: 'Area', segment: 'area' },
-  { id: 'council', label: 'Tips', segment: 'council' },
-  { id: 'builders', label: 'Projects', segment: 'builders' },
-  { id: 'settings', label: 'Settings', segment: 'settings' },
+const NAV: { id: string; label: string; segment: string; icon: string }[] = [
+  { id: 'house', label: 'Home', segment: 'house', icon: '🏠' },
+  { id: 'inventory', label: 'Inventory', segment: 'inventory', icon: '📦' },
+  { id: 'maintain', label: 'Maintenance', segment: 'maintain', icon: '🔧' },
+  { id: 'money', label: 'Money', segment: 'money', icon: '💵' },
+  { id: 'area', label: 'Area', segment: 'area', icon: '📍' },
+  { id: 'council', label: 'Tips', segment: 'council', icon: '💬' },
+  { id: 'builders', label: 'Projects', segment: 'builders', icon: '🛠️' },
+  { id: 'settings', label: 'Settings', segment: 'settings', icon: '⚙️' },
 ];
 
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
@@ -51,7 +50,6 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
       !path.includes('/settings') &&
       !path.includes('/import'));
 
-  // House view = full-bleed (map is the product); thin icon rail only
   const onHouse =
     path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
 
@@ -59,33 +57,10 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
     return <div class="shell-title">{loading ? null : children}</div>;
   }
 
+  // House: full map + bottom label bar (does not cover playable center)
   if (onHouse) {
     return (
-      <div class="shell house-bleed">
-        <nav class="icon-rail" aria-label="Main">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              title={item.label}
-              class={
-                isActive(item.segment) ? 'icon-rail-btn active' : 'icon-rail-btn'
-              }
-              disabled={!pid && item.segment !== 'settings'}
-              onClick={() => navTo(item.segment)}
-            >
-              {item.label.slice(0, 1)}
-            </button>
-          ))}
-          <button
-            type="button"
-            class="icon-rail-btn"
-            title="Theme"
-            onClick={onToggleTheme}
-          >
-            ◐
-          </button>
-        </nav>
+      <div class="shell house-bleed-v2">
         <div class="shell-main bleed">
           {loading ? (
             <div class="page loading-splash">Loading…</div>
@@ -93,6 +68,38 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             children
           )}
         </div>
+        <nav class="map-bottom-nav" aria-label="Main">
+          {NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              class={
+                isActive(item.segment)
+                  ? 'map-nav-btn active'
+                  : 'map-nav-btn'
+              }
+              disabled={!pid && item.segment !== 'settings'}
+              onClick={() => navTo(item.segment)}
+            >
+              <span class="map-nav-ico" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span class="map-nav-label">{item.label}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            class="map-nav-btn"
+            onClick={onToggleTheme}
+          >
+            <span class="map-nav-ico" aria-hidden="true">
+              {theme === 'dark' ? '☀' : '☾'}
+            </span>
+            <span class="map-nav-label">
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </span>
+          </button>
+        </nav>
       </div>
     );
   }
@@ -126,6 +133,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
               disabled={!pid && item.segment !== 'settings'}
               onClick={() => navTo(item.segment)}
             >
+              <span class="sidebar-ico">{item.icon}</span>
               {item.label}
             </button>
           ))}
