@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Phase 1: Home Record core loop (profiles, items, lineage, export, Prompt Pack v1)
 
+### Fixed
+
+- Validate iso spike fixture against `house-view-model.schema.json` in CI
+- Expand `docs/ROADMAP.md` with per-phase gate proofs (Phase 0 marked PASSED)
+
 ## [0.1.0] — 2026-07-09
 
 ### Added

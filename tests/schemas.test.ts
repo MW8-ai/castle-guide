@@ -51,4 +51,16 @@ describe('shipped content schemas', () => {
     };
     expect(validate(bad)).toBe(false);
   });
+
+  it('validates iso spike fixture against house-view-model schema', () => {
+    const validate = makeAjv().compile(
+      loadJson('data/schemas/house-view-model.schema.json')
+    );
+    const fixture = loadJson('spikes/iso-canvas/fixture.json');
+    expect(validate(fixture)).toBe(true);
+    expect(fixture.houseName).toBe('The Serenity');
+    expect(fixture.rooms).toHaveLength(2);
+    expect(fixture.placements).toHaveLength(1);
+  });
 });
+
