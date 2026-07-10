@@ -45,12 +45,13 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
     return path.includes(`/${segment}`);
   }
 
-  const onTitle =
-    !path.includes('/property') &&
-    !path.includes('/settings') &&
-    !path.includes('/import');
+  const bare =
+    path.includes('/kit') ||
+    (!path.includes('/property') &&
+      !path.includes('/settings') &&
+      !path.includes('/import'));
 
-  if (onTitle) {
+  if (bare) {
     return <div class="shell-title">{loading ? null : children}</div>;
   }
 

@@ -14,6 +14,7 @@ import { BuildersPage } from './pages/BuildersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
 import { ImportZipPage } from './pages/ImportZipPage';
+import { KitPage } from './pages/KitPage';
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -80,6 +81,7 @@ export function App() {
             <Route path={routePath('/settings')} component={SettingsPage} />
             <Route path={routePath('/council')} component={CouncilPage} />
             <Route path={routePath('/builders')} component={BuildersPage} />
+            <Route path={routePath('/kit')} component={KitPage} />
             <Route default component={HomePage} />
           </Router>
         </AppShell>

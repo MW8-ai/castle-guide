@@ -1,0 +1,67 @@
+/**
+ * Castle Guide design tokens — DESIGN_BIBLE §4
+ * Hearthlight (light) + Nightwatch (dark)
+ */
+
+:root,
+[data-theme='hearthlight'],
+.theme-light {
+  --parchment: #f6ebd2;
+  --timber: #8a5a33;
+  --hearth: #e4a33c;
+  --meadow: #5c8a4e;
+  --slateblue: #3e5c76;
+  --emberred: #c0503c;
+  --inkbrown: #3b2e25;
+
+  --bg: #f3e9d4;
+  --bg-elevated: var(--parchment);
+  --bg-card: var(--parchment);
+  --bg-sidebar: #2a2118;
+  --text: var(--inkbrown);
+  --text-muted: #6b5748;
+  --accent: var(--hearth);
+  --accent-2: var(--slateblue);
+  --accent-warm: var(--hearth);
+  --ok: var(--meadow);
+  --danger: var(--emberred);
+  --border: var(--timber);
+  --hud-text: #f6ebd2;
+  --panel: var(--parchment);
+  --shadow: 0 8px 24px rgba(59, 46, 37, 0.12);
+  --radius: 14px;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --font-display: 'Titan One', 'Bungee', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+[data-theme='nightwatch'],
+.theme-dark {
+  --deepink: #141b2d;
+  --stonewall: #232f47;
+  --lantern: #f0b441;
+  --serenity: #5fbf77;
+  --arcane: #8e6fd8;
+  --torchred: #e06a4f;
+  --moonmist: #d9e1f2;
+
+  --bg: var(--deepink);
+  --bg-elevated: var(--stonewall);
+  --bg-card: var(--stonewall);
+  --bg-sidebar: #0e1422;
+  --text: var(--moonmist);
+  --text-muted: #9aabc4;
+  --accent: var(--lantern);
+  --accent-2: var(--arcane);
+  --accent-warm: var(--lantern);
+  --ok: var(--serenity);
+  --danger: var(--torchred);
+  --border: #35466a;
+  --hud-text: var(--moonmist);
+  --panel: var(--stonewall);
+  --shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --radius: 14px;
+  --font-body: 'Nunito', system-ui, sans-serif;
+  --font-display: 'Titan One', 'Bungee', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
