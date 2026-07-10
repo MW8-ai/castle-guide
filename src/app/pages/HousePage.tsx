@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 import type { Item, Property } from '../../storage';
-import { buildHouseViewModel, getRenderer, listRenderers } from '../../houseview';
-import type { HouseRendererHandle } from '../../houseview';
+import { buildHouseViewModel } from '../../houseview';
+import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 
@@ -12,14 +12,8 @@ interface Props {
 
 export function HousePage({ id }: Props) {
   const { property: active, refresh: refreshActive } = useActiveCastle();
-  const hostRef = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<HouseRendererHandle | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
-  const [mode, setMode] = useState('explore');
-  const [hint, setHint] = useState(
-    'Walk with WASD · Scroll to zoom · Click anything to open its card'
-  );
 
   const propertyId = id || active?.id;
 
@@ -29,7 +23,6 @@ export function HousePage({ id }: Props) {
     await s.setActiveProperty(propertyId);
     let p = await s.getProperty(propertyId);
     if (!p) return;
-
     const built = buildHouseViewModel(p, { ensurePlacements: true });
     if (built.placementsChanged) {
       await s.saveProperty(p);
@@ -37,49 +30,11 @@ export function HousePage({ id }: Props) {
     }
     setProperty(p);
     await refreshActive();
-
-    const model = buildHouseViewModel(p).model;
-    const mount = () => {
-      if (!hostRef.current) return;
-      handleRef.current?.destroy();
-      const plugin = getRenderer(mode);
-      handleRef.current = plugin.mount(hostRef.current, model, {
-        onSelectItem: (itemId) => {
-          const item = p!.items.find((i) => i.id === itemId) ?? null;
-          setSelected(item);
-          if (item) {
-            setHint(`${item.brand} ${item.model ?? ''} — details on the right`);
-          }
-        },
-        onSelectRoom: (roomId) => {
-          const room = p!.rooms.find((r) => r.id === roomId);
-          if (room) {
-            setHint(`${room.name} · ${room.dims.L}' × ${room.dims.W}'`);
-          }
-        },
-        onMovePlacement: (placementId, next) => {
-          void (async () => {
-            const st = await ensureStorageReady();
-            await st.movePlacement(propertyId!, placementId, next);
-            const updated = await st.getProperty(propertyId!);
-            if (!updated) return;
-            setProperty(updated);
-            handleRef.current?.update(buildHouseViewModel(updated).model);
-            await refreshActive();
-          })();
-        },
-      });
-    };
-    requestAnimationFrame(() => requestAnimationFrame(mount));
   }
 
   useEffect(() => {
     void load();
-    return () => {
-      handleRef.current?.destroy();
-      handleRef.current = null;
-    };
-  }, [propertyId, mode]);
+  }, [propertyId]);
 
   if (!propertyId) {
     return (
@@ -105,32 +60,22 @@ export function HousePage({ id }: Props) {
       <header class="house-top">
         <div>
           <h1>{property.name}</h1>
-          <p class="muted house-hint">{hint}</p>
-        </div>
-        <div class="view-modes" role="group" aria-label="Map style">
-          {listRenderers().map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              class={mode === r.id ? 'btn primary' : 'btn'}
-              onClick={() => setMode(r.id)}
-            >
-              {r.label}
-            </button>
-          ))}
+          <p class="muted house-hint">
+            Illustrated home — zoom in, pan around, tap a glowing pin for the
+            real appliance card (brand, model, warranty).
+          </p>
         </div>
       </header>
 
       <div class="house-grid">
-        <div class="house-stage card">
-          <div class="house-stage-label">
-            {mode === 'explore'
-              ? 'Walk around your home'
-              : mode === 'iso'
-                ? 'Bird’s-eye map'
-                : listRenderers().find((r) => r.id === mode)?.label}
-          </div>
-          <div class="house-canvas-host" ref={hostRef} />
+        <div class="house-stage card art-stage-card">
+          <div class="house-stage-label">Your home</div>
+          <ImageHouseView
+            items={property.items}
+            houseName={property.name}
+            selectedItemId={selected?.id}
+            onSelectItem={setSelected}
+          />
         </div>
 
         <aside class="house-side">
@@ -148,6 +93,9 @@ export function HousePage({ id }: Props) {
                 >
                   ✕
                 </button>
+              </div>
+              <div class="item-hero-emoji" aria-hidden="true">
+                {heroGlyph(selected)}
               </div>
               <p class="item-cat">{selected.category.replace(/-/g, ' ')}</p>
               <dl class="fact-list">
@@ -176,43 +124,29 @@ export function HousePage({ id }: Props) {
                 <p>
                   <strong>Parts:</strong>{' '}
                   {selected.filterSpecs
-                    .map((f) => `${f.name} ${f.sizeOrModel}`)
-                    .join(', ')}
+                    .map((f) => `${f.name}: ${f.sizeOrModel}`)
+                    .join(' · ')}
                 </p>
               )}
               {selected.notes && <p class="muted">{selected.notes}</p>}
-              {selected.lineage.length > 0 && (
-                <div class="lineage-box">
-                  <strong>Replaced over time</strong>
-                  <ol>
-                    {selected.lineage.map((L, i) => (
-                      <li key={i}>
-                        {L.snapshot.brand} {L.snapshot.model} ({L.activeFrom} →{' '}
-                        {L.activeTo})
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
               <button
                 type="button"
                 class="btn primary"
                 onClick={() => go('property', propertyId, 'inventory')}
               >
-                Edit in Inventory
+                Edit in Stuff
               </button>
             </div>
           ) : (
             <div class="card item-panel empty-panel">
-              <h2>Explore the house</h2>
+              <h2>Look around</h2>
               <p class="muted">
-                You’re the little figure on the map. Walk into the kitchen and
-                living room, click the fridge or water heater — every block is
-                real data from your inventory.
+                This is a painted cutaway of the sample home — closer to a modern
+                game screenshot than a spreadsheet. Pins mark things you own.
               </p>
               <p class="muted">
-                Scroll the mouse wheel to zoom. Use the left menu for inventory
-                and to-dos.
+                Zoom until you can read the rooms, then tap the fridge or water
+                heater pin.
               </p>
             </div>
           )}
@@ -243,4 +177,17 @@ export function HousePage({ id }: Props) {
       </div>
     </section>
   );
+}
+
+function heroGlyph(item: Item): string {
+  const c = item.category.toLowerCase();
+  if (c.includes('refriger')) return '🧊';
+  if (c.includes('range') || c.includes('oven')) return '🔥';
+  if (c.includes('water-heater') || c.includes('water heater')) return '💧';
+  if (c.includes('furnace') || c.includes('hvac')) return '🌡️';
+  if (c.includes('wash')) return '👕';
+  if (c.includes('dry')) return '🌀';
+  if (c.includes('tv')) return '📺';
+  if (c.includes('bed')) return '🛏️';
+  return '📦';
 }

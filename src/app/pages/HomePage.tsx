@@ -120,18 +120,19 @@ export function HomePage() {
         <h2>60-second tour</h2>
         <ol class="steps">
           <li>
-            <strong>Walk</strong> with WASD or arrow keys inside the house map.
+            <strong>Look</strong> at the illustrated cutaway of the sample home
+            (angled art, not a grid of squares).
           </li>
           <li>
-            <strong>Zoom</strong> with the mouse wheel until rooms feel roomy.
+            <strong>Zoom / drag</strong> to look around the painting.
           </li>
           <li>
-            <strong>Click</strong> the fridge or water heater for brand, model,
-            warranty.
+            <strong>Tap a glowing pin</strong> (fridge, furnace, water heater…)
+            for brand, model, warranty.
           </li>
           <li>
-            <strong>Stuff</strong> in the left menu adds rooms and items without
-            a tax-form UI.
+            <strong>Stuff</strong> in the left menu is where you add real items
+            later.
           </li>
         </ol>
       </div>

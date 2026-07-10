@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-07-10
+
+### Changed
+
+- **Default house view is illustrated art** (angled cutaway from sample painting), not bird’s-eye walker
+- Glow **pins** on real appliances; click opens detail card (no green squares-as-fridges)
+- Pan + zoom on the painting; removed wall-collision walk mode from the main path
+- Sample art lives in `assets/house/sample-home.png`
+
 ## [0.9.0] — 2026-07-10
 
 ### Changed — playable home, plain English
