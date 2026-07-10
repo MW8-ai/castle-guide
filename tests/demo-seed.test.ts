@@ -21,8 +21,13 @@ describe('demo starter castle', () => {
     const p = await ensureDemoCastle(storage);
     expect(p.name).toBe(DEMO_PROPERTY_NAME);
     expect(p.name).not.toMatch(/serenity/i);
-    expect(p.rooms.length).toBeGreaterThanOrEqual(5);
-    expect(p.items.filter((i) => i.active).length).toBeGreaterThanOrEqual(10);
+    expect(p.rooms.length).toBeGreaterThanOrEqual(12);
+    expect(p.items.filter((i) => i.active).length).toBeGreaterThanOrEqual(20);
+    expect(p.items.some((i) => /sofa|couch|sven/i.test(`${i.brand} ${i.model}`))).toBe(
+      true
+    );
+    expect(p.items.some((i) => i.category === 'refrigerator')).toBe(true);
+    expect(p.items.some((i) => i.category === 'water-heater')).toBe(true);
     expect(p.tasks.some((t) => /filter/i.test(t.title))).toBe(true);
     expect(p.consumables.some((c) => c.sizeOrModel === '16x25x1')).toBe(true);
 

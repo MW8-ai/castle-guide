@@ -16,7 +16,7 @@ const QUICK = [
   'range',
   'washer',
   'dryer',
-  'dishwasher',
+  'furniture',
   'other',
 ];
 
@@ -28,7 +28,6 @@ export function InventoryPage({ id }: Props) {
   const [model, setModel] = useState('');
   const [category, setCategory] = useState('refrigerator');
   const [roomId, setRoomId] = useState('');
-  const [msg, setMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [picked, setPicked] = useState<Item | null>(null);
 
@@ -49,9 +48,7 @@ export function InventoryPage({ id }: Props) {
   }, [propertyId]);
 
   if (!propertyId) return null;
-  if (!property) {
-    return <div class="page loading-splash game-font">Loading stuff…</div>;
-  }
+  if (!property) return <div class="page loading-splash">Loading…</div>;
 
   const active = property.items.filter((i) => i.active && !i.softDeleted);
   const q = filter.toLowerCase();
@@ -83,7 +80,7 @@ export function InventoryPage({ id }: Props) {
             x: 1 + room.placements.length * 2.5,
             y: 1,
             rotation: 0,
-            footprint: { L: 2, W: 2 },
+            footprint: { L: 2.5, W: 2.5 },
           });
           await s.saveProperty(p);
         }
@@ -92,7 +89,6 @@ export function InventoryPage({ id }: Props) {
     setBrand('');
     setModel('');
     setShowAdd(false);
-    setMsg('Added to your stuff — check the home map.');
     await load();
   }
 
@@ -105,7 +101,6 @@ export function InventoryPage({ id }: Props) {
       type: 'other',
       dims: { L: 12, W: 11, H: 9 },
     });
-    setMsg(`Room “${name.trim()}” unlocked.`);
     await load();
   }
 
@@ -113,45 +108,40 @@ export function InventoryPage({ id }: Props) {
     property.rooms.find((r) => r.id === rid)?.name ?? '—';
 
   return (
-    <section class="page game-inv">
+    <section class="page inv-calm">
       <header class="inv-head">
         <div>
-          <div class="game-kicker">STUFF BAG</div>
-          <h1 class="game-title">Everything you own</h1>
+          <h1>Inventory</h1>
           <p class="muted">
-            {active.length} items · tap a tile for details · map stays the fun
-            part
+            {active.length} items · {property.rooms.length} rooms
           </p>
         </div>
         <div class="btn-row">
           <button type="button" class="btn" onClick={() => void addRoom()}>
-            + Room
+            Add room
           </button>
           <button
             type="button"
             class="btn primary"
             onClick={() => setShowAdd((v) => !v)}
           >
-            {showAdd ? 'Cancel' : '+ Add item'}
+            {showAdd ? 'Cancel' : 'Add item'}
           </button>
           <button
             type="button"
             class="btn"
             onClick={() => go('property', propertyId, 'house')}
           >
-            ⌂ Map
+            Back to map
           </button>
         </div>
       </header>
 
-      {msg && <p class="ok-text">{msg}</p>}
-
       {showAdd && (
-        <form class="game-card add-strip" onSubmit={(e) => void addItem(e)}>
-          <h2>Quick add</h2>
+        <form class="card add-strip" onSubmit={(e) => void addItem(e)}>
           <div class="add-row">
             <label>
-              Kind
+              Type
               <select
                 value={category}
                 onChange={(e) =>
@@ -170,7 +160,6 @@ export function InventoryPage({ id }: Props) {
               <input
                 value={brand}
                 onInput={(e) => setBrand((e.target as HTMLInputElement).value)}
-                placeholder="LG"
                 required
               />
             </label>
@@ -179,7 +168,6 @@ export function InventoryPage({ id }: Props) {
               <input
                 value={model}
                 onInput={(e) => setModel((e.target as HTMLInputElement).value)}
-                placeholder="optional"
               />
             </label>
             <label>
@@ -206,7 +194,7 @@ export function InventoryPage({ id }: Props) {
 
       <input
         class="search"
-        placeholder="Filter stuff…"
+        placeholder="Search…"
         value={filter}
         onInput={(e) => setFilter((e.target as HTMLInputElement).value)}
       />
@@ -216,12 +204,9 @@ export function InventoryPage({ id }: Props) {
           <button
             key={item.id}
             type="button"
-            class={
-              picked?.id === item.id ? 'item-tile active' : 'item-tile'
-            }
+            class={picked?.id === item.id ? 'item-tile active' : 'item-tile'}
             onClick={() => setPicked(item)}
           >
-            <span class="item-tile-icon">{tileGlyph(item)}</span>
             <span class="item-tile-brand">{item.brand}</span>
             <span class="item-tile-model">{item.model ?? item.category}</span>
             <span class="item-tile-room">{roomName(item.roomId)}</span>
@@ -230,40 +215,16 @@ export function InventoryPage({ id }: Props) {
       </div>
 
       {picked && (
-        <div class="game-card picked-panel">
+        <div class="card picked-panel">
           <h2>
             {picked.brand} {picked.model}
           </h2>
           <p class="muted">
-            {picked.category} · {roomName(picked.roomId)} · serial{' '}
-            {picked.serial ?? '—'}
+            {picked.category} · {roomName(picked.roomId)} ·{' '}
+            {picked.serial ?? 'no serial'}
           </p>
-          {picked.warrantyEnd && (
-            <p>
-              Warranty until <strong>{picked.warrantyEnd}</strong>
-            </p>
-          )}
-          <button
-            type="button"
-            class="btn"
-            onClick={() => go('property', propertyId, 'house')}
-          >
-            Find on map
-          </button>
         </div>
       )}
     </section>
   );
-}
-
-function tileGlyph(item: Item): string {
-  const c = item.category.toLowerCase();
-  if (c.includes('refriger')) return '🧊';
-  if (c.includes('range')) return '🔥';
-  if (c.includes('water')) return '💧';
-  if (c.includes('furnace')) return '🌡️';
-  if (c.includes('wash')) return '👕';
-  if (c.includes('dry')) return '🌀';
-  if (c.includes('tv')) return '📺';
-  return '📦';
 }

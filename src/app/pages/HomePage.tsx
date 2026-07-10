@@ -8,34 +8,29 @@ import {
 import { go } from '../paths';
 import { useActiveCastle } from '../ActiveCastle';
 
-/**
- * Game title screen — always push people into a FULL demo, never a blank form.
- */
 export function HomePage() {
   const { refresh, setPropertyId } = useActiveCastle();
   const [busy, setBusy] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [itemCount, setItemCount] = useState(0);
+  const [summary, setSummary] = useState('');
 
   useEffect(() => {
     void (async () => {
       const s = await ensureStorageReady();
       let demo = await ensureDemoCastle(s);
-      if (demo.items.length < 10) {
-        demo = await resetDemoCastle(s);
-      }
-      setItemCount(demo.items.filter((i) => i.active).length);
+      if (demo.rooms.length < 12) demo = await resetDemoCastle(s);
+      setSummary(
+        `${demo.rooms.length} rooms · ${demo.items.filter((i) => i.active).length} items`
+      );
       await refresh();
-      setReady(true);
     })();
   }, []);
 
-  async function play() {
+  async function openSample() {
     setBusy(true);
     try {
       const s = await ensureStorageReady();
       let demo = await ensureDemoCastle(s);
-      if (demo.items.length < 10) demo = await resetDemoCastle(s);
+      if (demo.rooms.length < 12) demo = await resetDemoCastle(s);
       await setPropertyId(demo.id);
       await refresh();
       go('property', demo.id, 'house');
@@ -44,7 +39,7 @@ export function HomePage() {
     }
   }
 
-  async function freshDemo() {
+  async function reloadSample() {
     setBusy(true);
     try {
       const s = await ensureStorageReady();
@@ -58,7 +53,7 @@ export function HomePage() {
   }
 
   async function blank() {
-    const name = prompt('Name your home', 'My House');
+    const name = prompt('Home name', 'My House');
     if (!name?.trim()) return;
     setBusy(true);
     try {
@@ -73,40 +68,40 @@ export function HomePage() {
   }
 
   return (
-    <div class="title-screen">
+    <div class="title-screen calm-title">
       <div class="title-sky" />
       <div class="title-panel">
-        <div class="title-badge">HOME GUIDE</div>
-        <h1 class="title-logo">
-          Your whole house
+        <p class="title-badge">HOME GUIDE</p>
+        <h1 class="title-logo-calm">
+          Your home,
           <br />
-          <span>in one place</span>
+          all in one place
         </h1>
         <p class="title-tag">
-          Catalog appliances, remember filter sizes, get reminders before things
-          break — wrapped in a little game so you’ll actually open it.
+          See the house, click the fridge or water heater, keep records without
+          digging through folders. Sample home is fully filled so you can judge
+          the best case first.
         </p>
-
-        <div class="title-demo-blurb">
-          <strong>{DEMO_PROPERTY_NAME}</strong> is preloaded with kitchen,
-          living room, bath, bedroom, utility, garage, and{' '}
-          {ready ? itemCount : '…'} real items + to-dos.
-        </div>
-
+        {summary && (
+          <p class="title-demo-blurb">
+            <strong>{DEMO_PROPERTY_NAME}</strong> — {summary} (5 bedrooms, 3
+            baths, 3 garages, kitchen, living, utility…)
+          </p>
+        )}
         <div class="title-actions">
           <button
             type="button"
-            class="btn primary big title-play"
-            disabled={busy || !ready}
-            onClick={() => void play()}
+            class="btn primary big"
+            disabled={busy}
+            onClick={() => void openSample()}
           >
-            {busy ? 'Loading…' : '▶  Enter sample home'}
+            {busy ? 'Opening…' : 'Open sample home'}
           </button>
           <button
             type="button"
-            class="btn big"
+            class="btn"
             disabled={busy}
-            onClick={() => void freshDemo()}
+            onClick={() => void reloadSample()}
           >
             Reload full sample
           </button>
@@ -116,15 +111,9 @@ export function HomePage() {
             disabled={busy}
             onClick={() => void blank()}
           >
-            Empty home (advanced)
+            Empty home
           </button>
         </div>
-
-        <ol class="title-steps">
-          <li>Open the map and click the fridge</li>
-          <li>Check Quests for filter change</li>
-          <li>Stuff bag = inventory without the tax form</li>
-        </ol>
       </div>
     </div>
   );

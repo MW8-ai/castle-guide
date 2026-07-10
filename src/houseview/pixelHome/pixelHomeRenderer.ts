@@ -6,7 +6,7 @@ import type {
   RoomView,
 } from '../types';
 
-const TILE = 20; // feet → iso scale base
+const TILE = 14; // feet → iso scale (many rooms fit better)
 
 type SpriteKind =
   | 'fridge'

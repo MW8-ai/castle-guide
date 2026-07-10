@@ -10,6 +10,7 @@ interface Props {
   id?: string;
 }
 
+/** Visual-first home map. Side panel only when something is selected. */
 export function HousePage({ id }: Props) {
   const { property: active, refresh: refreshActive } = useActiveCastle();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -65,159 +66,85 @@ export function HousePage({ id }: Props) {
     return (
       <section class="page">
         <button type="button" class="btn primary" onClick={() => go()}>
-          Title screen
+          Home
         </button>
       </section>
     );
   }
   if (!property) {
-    return <div class="page loading-splash game-font">Loading home…</div>;
+    return <div class="page loading-splash">Loading…</div>;
   }
 
-  const quests = property.tasks.filter((t) => t.status === 'pending').slice(0, 4);
-  const itemCount = property.items.filter((i) => i.active).length;
-
   return (
-    <section class="game-home">
-      <header class="game-home-bar">
-        <div>
-          <div class="game-kicker">YOUR HOME</div>
-          <h1 class="game-title">{property.name}</h1>
-        </div>
-        <div class="game-stats">
-          <div class="stat-pill">
-            <span>Rooms</span>
-            <strong>{property.rooms.length}</strong>
-          </div>
-          <div class="stat-pill">
-            <span>Stuff</span>
-            <strong>{itemCount}</strong>
-          </div>
-          <div class="stat-pill warn">
-            <span>To-dos</span>
-            <strong>{quests.length}</strong>
+    <section class={`visual-home ${selected ? 'has-panel' : ''}`}>
+      <div class="visual-map-wrap">
+        <div class="visual-map-bar">
+          <div>
+            <h1 class="visual-home-name">{property.name}</h1>
+            <p class="visual-meta muted">
+              {property.style ?? 'Home'} · {property.rooms.length} rooms ·{' '}
+              {property.items.filter((i) => i.active).length} items · drag to pan
+              · scroll to zoom · click an item
+            </p>
           </div>
         </div>
-      </header>
+        <div class="visual-map-host" ref={hostRef} />
+      </div>
 
-      <div class="game-home-grid">
-        <div class="game-map-frame">
-          <div class="game-map-title">⌂ House map · click furniture</div>
-          <div class="game-map-host" ref={hostRef} />
-        </div>
-
-        <aside class="game-side">
-          {selected ? (
-            <div class="game-card item-card-game">
-              <div class="game-card-head">
-                <h2>
-                  {selected.brand}
-                  <br />
-                  <span class="model">{selected.model}</span>
-                </h2>
-                <button
-                  type="button"
-                  class="btn icon"
-                  onClick={() => setSelected(null)}
-                >
-                  ✕
-                </button>
-              </div>
-              <div class="item-big-icon">{glyph(selected)}</div>
-              <div class="pixel-facts">
-                <div>
-                  <span>TYPE</span>
-                  {selected.category.replace(/-/g, ' ')}
-                </div>
-                <div>
-                  <span>SERIAL</span>
-                  {selected.serial ?? '—'}
-                </div>
-                <div>
-                  <span>INSTALLED</span>
-                  {selected.purchaseDate ?? '—'}
-                </div>
-                <div>
-                  <span>WARRANTY</span>
-                  {selected.warrantyEnd ?? '—'}
-                </div>
-                <div>
-                  <span>COST</span>
-                  {selected.price != null
-                    ? `$${selected.price.toLocaleString()}`
-                    : '—'}
-                </div>
-              </div>
-              {selected.filterSpecs[0] && (
-                <p class="part-callout">
-                  Filter / part: <strong>{selected.filterSpecs[0].sizeOrModel}</strong>
-                </p>
-              )}
-              {selected.notes && <p class="muted">{selected.notes}</p>}
-              <button
-                type="button"
-                class="btn primary block"
-                onClick={() => go('property', propertyId, 'inventory')}
-              >
-                Open in Stuff bag
-              </button>
-            </div>
-          ) : (
-            <div class="game-card">
-              <h2>Welcome home</h2>
-              <p class="muted">
-                This is a <strong>filled demo</strong> so you can see the best
-                case. Drag the map, scroll to zoom, click the fridge or water
-                heater.
-              </p>
-              <p class="muted">
-                Left menu: <strong>Stuff</strong> (inventory),{' '}
-                <strong>To-dos</strong> (maintenance).
-              </p>
-            </div>
-          )}
-
-          <div class="game-card quest-card">
-            <h3>★ Quest board</h3>
-            {quests.length === 0 ? (
-              <p class="muted">All clear for now.</p>
-            ) : (
-              <ul class="quest-list">
-                {quests.map((t) => (
-                  <li key={t.id}>
-                    <span class="quest-mark">!</span>
-                    <div>
-                      <strong>{t.title}</strong>
-                      <div class="muted">Due {t.nextDue}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {selected && (
+        <aside class="visual-detail" aria-label="Item details">
+          <div class="visual-detail-head">
+            <h2>
+              {selected.brand} {selected.model}
+            </h2>
             <button
               type="button"
-              class="btn block"
-              onClick={() => go('property', propertyId, 'maintain')}
+              class="btn icon"
+              onClick={() => setSelected(null)}
+              aria-label="Close"
             >
-              Full quest list
+              ✕
             </button>
           </div>
+          <p class="muted cap">{selected.category.replace(/-/g, ' ')}</p>
+          <dl class="detail-dl">
+            <div>
+              <dt>Serial</dt>
+              <dd>{selected.serial ?? '—'}</dd>
+            </div>
+            <div>
+              <dt>Installed</dt>
+              <dd>{selected.purchaseDate ?? '—'}</dd>
+            </div>
+            <div>
+              <dt>Warranty</dt>
+              <dd>{selected.warrantyEnd ?? '—'}</dd>
+            </div>
+            <div>
+              <dt>Price</dt>
+              <dd>
+                {selected.price != null
+                  ? `$${selected.price.toLocaleString()}`
+                  : '—'}
+              </dd>
+            </div>
+            {selected.filterSpecs[0] && (
+              <div>
+                <dt>Part / filter</dt>
+                <dd>{selected.filterSpecs[0].sizeOrModel}</dd>
+              </div>
+            )}
+          </dl>
+          {selected.notes && <p class="muted">{selected.notes}</p>}
+          <button
+            type="button"
+            class="btn"
+            onClick={() => go('property', propertyId, 'inventory')}
+          >
+            Edit in inventory
+          </button>
         </aside>
-      </div>
+      )}
     </section>
   );
-}
-
-function glyph(item: Item): string {
-  const c = item.category.toLowerCase();
-  if (c.includes('refriger')) return '🧊';
-  if (c.includes('range')) return '🔥';
-  if (c.includes('water')) return '💧';
-  if (c.includes('furnace')) return '🌡️';
-  if (c.includes('wash')) return '👕';
-  if (c.includes('dry')) return '🌀';
-  if (c.includes('tv')) return '📺';
-  if (c.includes('bed')) return '🛏️';
-  if (c.includes('sofa') || c.includes('furniture')) return '🛋️';
-  return '📦';
 }

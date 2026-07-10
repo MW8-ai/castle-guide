@@ -115,21 +115,21 @@ export function MaintainPage({ id }: Props) {
           ← House
         </button>
       </p>
-      <h1 class="game-title">Quest board</h1>
+      <h1>Maintenance</h1>
       <p class="muted">
-        Region tip level: <strong>{zone}</strong>
-        {property.zip ? ` (from ZIP ${property.zip})` : ' — add a ZIP for better seasonal tips'}
+        {zone}
+        {property.zip ? ` · ZIP ${property.zip}` : ''}
       </p>
 
       <div class="btn-row">
         <button type="button" class="btn primary" onClick={() => void runSchedule()}>
-          Build to-dos from my stuff
+          Schedule from inventory
         </button>
         <button type="button" class="btn" onClick={() => void addTrashDay()}>
           Add trash day
         </button>
         <button type="button" class="btn" onClick={() => void downloadIcs()}>
-          Download calendar file
+          Export calendar
         </button>
       </div>
 
@@ -157,11 +157,11 @@ export function MaintainPage({ id }: Props) {
       )}
 
       <div class="card">
-        <h2>Things to do</h2>
+        <h2>Tasks</h2>
         {pending.length === 0 ? (
           <p class="muted">
-            Nothing pending. Add appliances under Stuff, then hit “Build to-dos
-            from my stuff” (filter size comes from your saved filter size).
+            No open tasks. Add appliances in Inventory, then schedule from
+            inventory.
           </p>
         ) : (
           <ul class="item-list">
@@ -198,11 +198,8 @@ export function MaintainPage({ id }: Props) {
       </div>
 
       <div class="card">
-        <h2>Home calendar (next 8 weeks)</h2>
-        <p class="muted">
-          Trash day, bill reminders, and maintenance dates — not a corporate
-          “ops” tool.
-        </p>
+        <h2>Calendar</h2>
+        <p class="muted">Trash, bills, and maintenance dates for the next 8 weeks.</p>
         <div class="btn-row compact">
           {getOpsTemplates().map((tpl) => (
             <button

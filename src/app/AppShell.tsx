@@ -9,22 +9,21 @@ interface Props {
   path?: string;
 }
 
-const NAV: { id: string; label: string; segment: string; icon: string }[] = [
-  { id: 'house', label: 'Home map', segment: 'house', icon: '⌂' },
-  { id: 'inventory', label: 'Stuff', segment: 'inventory', icon: '🎒' },
-  { id: 'maintain', label: 'Quests', segment: 'maintain', icon: '!' },
-  { id: 'money', label: 'Coins', segment: 'money', icon: '$' },
-  { id: 'area', label: 'World', segment: 'area', icon: '◎' },
-  { id: 'council', label: 'Hints', segment: 'council', icon: '?' },
-  { id: 'builders', label: 'Builds', segment: 'builders', icon: '⚒' },
-  { id: 'settings', label: 'Options', segment: 'settings', icon: '⚙' },
+/** Calm nav — not a game menu. Visual is the product. */
+const NAV: { id: string; label: string; segment: string }[] = [
+  { id: 'house', label: 'Home', segment: 'house' },
+  { id: 'inventory', label: 'Inventory', segment: 'inventory' },
+  { id: 'maintain', label: 'Maintenance', segment: 'maintain' },
+  { id: 'money', label: 'Money', segment: 'money' },
+  { id: 'area', label: 'Area', segment: 'area' },
+  { id: 'council', label: 'Tips', segment: 'council' },
+  { id: 'builders', label: 'Projects', segment: 'builders' },
+  { id: 'settings', label: 'Settings', segment: 'settings' },
 ];
 
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const { property, loading } = useActiveCastle();
   const pid = property?.id;
-  const taskDue =
-    property?.tasks.filter((t) => t.status === 'pending').length ?? 0;
 
   function navTo(segment: string) {
     if (!pid) {
@@ -46,16 +45,18 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
     return path.includes(`/${segment}`);
   }
 
-  // Title screen: no chrome
-  const titleScreen = !path.includes('/property') && !path.includes('/settings') && !path.includes('/import');
+  const onTitle =
+    !path.includes('/property') &&
+    !path.includes('/settings') &&
+    !path.includes('/import');
 
-  if (titleScreen) {
+  if (onTitle) {
     return <div class="shell-title">{loading ? null : children}</div>;
   }
 
   return (
-    <div class="shell game-shell">
-      <aside class="sidebar game-sidebar">
+    <div class="shell calm-shell">
+      <aside class="sidebar calm-sidebar">
         <a
           class="sidebar-brand"
           href={href()}
@@ -64,22 +65,14 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             go();
           }}
         >
-          <div class="logo-pixel">HG</div>
+          <span class="brand-mark">⌂</span>
           <div>
             <div class="brand-title">Home Guide</div>
-            <div class="brand-sub">All your house stuff</div>
+            {property && (
+              <div class="brand-sub">{property.name}</div>
+            )}
           </div>
         </a>
-
-        {property && (
-          <div class="sidebar-castle">
-            <div class="sidebar-castle-name">{property.name}</div>
-            <div class="sidebar-castle-meta">
-              {property.rooms.length} rooms ·{' '}
-              {property.items.filter((i) => i.active).length} items
-            </div>
-          </div>
-        )}
 
         <nav class="sidebar-nav">
           {NAV.map((item) => (
@@ -92,28 +85,21 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
               disabled={!pid && item.segment !== 'settings'}
               onClick={() => navTo(item.segment)}
             >
-              <span class="sidebar-ico">{item.icon}</span>
               {item.label}
-              {item.segment === 'maintain' && taskDue > 0 && (
-                <span class="nav-badge">{taskDue}</span>
-              )}
             </button>
           ))}
         </nav>
 
         <div class="sidebar-foot">
           <button type="button" class="theme-btn" onClick={onToggleTheme}>
-            {theme === 'dark' ? 'Day' : 'Night'}
-          </button>
-          <button type="button" class="sidebar-link subtle" onClick={() => go()}>
-            Title screen
+            {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
         </div>
       </aside>
 
-      <div class="shell-main game-main">
+      <div class="shell-main">
         {loading ? (
-          <div class="page loading-splash game-font">Loading…</div>
+          <div class="page loading-splash">Loading…</div>
         ) : (
           children
         )}

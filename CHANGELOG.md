@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-07-10
+
+### Changed — art & clarity
+
+- **Visual is the product**: house map is nearly full-viewport; detail panel only when you click something
+- Removed welcome / quest board / gamified nav labels (Home · Inventory · Maintenance)
+- Sample Home is a **large filled house**: 5 bedrooms, 3 baths, 3 garages + kitchen/living/dining/family/utility/office; couch, fridge, water heater, and many more placed items
+- Calmer chrome (no chunky “Press Start” game UI on every surface)
+
 ## [1.0.0] — 2026-07-10
 
 ### Changed — fun-first product pass (design lead)
