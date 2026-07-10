@@ -215,6 +215,9 @@ export function PropertyPage({ id }: Props) {
         <a class="btn primary" href={`${base}property/${property.id}/maintain`}>
           Maintenance & Ops
         </a>
+        <a class="btn primary" href={`${base}property/${property.id}/money`}>
+          Money & Protect
+        </a>
         <button type="button" class="btn" onClick={() => void exportZip()}>
           Export ZIP
         </button>

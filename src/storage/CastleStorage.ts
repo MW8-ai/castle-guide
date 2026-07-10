@@ -7,12 +7,16 @@ import {
 import type {
   Consumable,
   DocMeta,
+  Improvement,
   Item,
+  MortgageInfo,
   Note,
   OpsEvent,
   OpsEventType,
   Profile,
   Property,
+  Quote,
+  QuoteLineItem,
   Room,
   Shutoff,
   Task,
@@ -26,6 +30,9 @@ import {
   type ScheduleResult,
   type CalendarOccurrence,
 } from '../maintain';
+import { reviewQuote } from '../money/dale';
+import { getCostById } from '../money/costLibrary';
+import { buildInsurancePacket } from '../protect/insurancePacket';
 import {
   createEmptyProperty,
   createItem,
@@ -427,6 +434,99 @@ export class CastleStorage {
     );
     const merged = mergeCalendar(ops, tasks);
     return buildIcs(merged, `${property.name} — Castle Guide`);
+  }
+
+  // ── Money + Protection (Phase 3) ─────────────────────────
+
+  async addImprovement(
+    propertyId: string,
+    partial: {
+      date: string;
+      desc: string;
+      cost: number;
+      currency?: string;
+      basisEligible?: boolean;
+      receiptDocIds?: string[];
+      notes?: string | null;
+    }
+  ): Promise<Improvement> {
+    const property = await this.requireProperty(propertyId);
+    const row: Improvement = {
+      id: newId(),
+      date: partial.date,
+      desc: partial.desc,
+      cost: partial.cost,
+      currency: partial.currency ?? 'USD',
+      basisEligible: partial.basisEligible ?? true,
+      receiptDocIds: partial.receiptDocIds ?? [],
+      notes: partial.notes ?? null,
+    };
+    property.improvements.push(row);
+    await this.saveProperty(property);
+    return row;
+  }
+
+  async addQuote(
+    propertyId: string,
+    partial: {
+      job: string;
+      vendor: string;
+      amount: number;
+      date: string;
+      lineItems?: QuoteLineItem[];
+      scopeNotes?: string | null;
+      costEntryId?: string | null;
+      currency?: string;
+    }
+  ): Promise<Quote> {
+    const property = await this.requireProperty(propertyId);
+    const lineItems = (partial.lineItems ?? []).map((l) => ({
+      id: l.id || newId(),
+      description: l.description,
+      amount: l.amount,
+    }));
+    const costEntry = partial.costEntryId
+      ? getCostById(partial.costEntryId)
+      : undefined;
+    const dale = reviewQuote({
+      job: partial.job,
+      amount: partial.amount,
+      lineItems,
+      scopeNotes: partial.scopeNotes,
+      costEntry,
+    });
+    const row: Quote = {
+      id: newId(),
+      job: partial.job,
+      vendor: partial.vendor,
+      amount: partial.amount,
+      currency: partial.currency ?? 'USD',
+      date: partial.date,
+      lineItems,
+      scopeNotes: partial.scopeNotes ?? null,
+      costEntryId: dale.costEntryId,
+      daleVerdict: dale.verdict,
+      daleReasons: dale.reasons,
+      createdAt: nowIso(),
+    };
+    property.quotes.push(row);
+    await this.saveProperty(property);
+    return row;
+  }
+
+  async setMortgage(
+    propertyId: string,
+    mortgage: MortgageInfo | null
+  ): Promise<void> {
+    const property = await this.requireProperty(propertyId);
+    property.mortgage = mortgage;
+    await this.saveProperty(property);
+  }
+
+  async exportInsurancePacket(propertyId: string): Promise<Blob> {
+    const property = await this.requireProperty(propertyId);
+    const blobs = await this.store();
+    return buildInsurancePacket({ property, blobs });
   }
 
   // ── Export / import / wipe ───────────────────────────────

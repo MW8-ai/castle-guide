@@ -1,0 +1,11 @@
+{
+  "id": "cost-roof-asphalt-replace",
+  "job": "Asphalt shingle roof replacement (typical single-family, mid-size)",
+  "diyRange": { "min": 2000, "max": 6000 },
+  "proRange": { "min": 8000, "max": 18000 },
+  "currency": "USD",
+  "source": "Industry typical installed ranges for asphalt shingle reroof; steep pitch, layers, and tear-off drive variance. Educational only — not a bid.",
+  "asOfDate": "2026-01-01",
+  "regionNote": "U.S. national ballpark; coastal, mountain, and metro markets often run higher.",
+  "confidence": "typical"
+}

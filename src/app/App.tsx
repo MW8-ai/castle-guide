@@ -8,6 +8,7 @@ import { PropertyPage } from './pages/PropertyPage';
 import { ImportPage } from './pages/ImportPage';
 import { ImportZipPage } from './pages/ImportZipPage';
 import { MaintainPage } from './pages/MaintainPage';
+import { MoneyPage } from './pages/MoneyPage';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -34,6 +35,7 @@ export function App() {
           <Route path={`${base}/import-zip`} component={ImportZipPage} />
           <Route path={`${base}/property/:id`} component={PropertyPage} />
           <Route path={`${base}/property/:id/maintain`} component={MaintainPage} />
+          <Route path={`${base}/property/:id/money`} component={MoneyPage} />
           <Route default component={HomePage} />
         </Router>
       </Shell>

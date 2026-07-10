@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-09
+
+### Added
+
+- Phase 3 Money + Protection: cost library UI, IRS 25C/25D + DSIRE rebate cards (sourced, dated)
+- Dale's Desk quote reviewer (fair-dinkum → dreamin' with catchphrase)
+- Capital improvements ledger with basis-eligible totals
+- Payoff/amortization + extra principal scenarios
+- Insurance readiness packet ZIP (inventory + media)
+- Warranty tracker flags; insurance gotcha library
+- Money & Protect UI at `/property/:id/money`
+- CI tests for undated-cost ban, 25C source, Dale dreamin', insurance ZIP, warranties, payoff
+
 ## [0.3.0] — 2026-07-09
 
 ### Added

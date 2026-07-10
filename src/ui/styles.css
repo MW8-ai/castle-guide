@@ -459,3 +459,65 @@ code {
   margin-right: 0.35rem;
 }
 
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.data-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.tiny {
+  font-size: 0.8em;
+}
+
+.badge.conf-verified {
+  background: var(--ok);
+  color: #0a1a10;
+}
+
+.badge.conf-typical {
+  background: var(--accent-warm);
+  color: #1a1200;
+}
+
+.badge.conf-regional {
+  background: var(--accent);
+  color: #0f1419;
+}
+
+.rebate-card.highlight {
+  border: 1px solid var(--ok);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--bg);
+}
+
+.dale-verdict {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.dale-verdict.dreamin {
+  border-color: var(--danger);
+}
+
+.dale-line {
+  font-size: 1.05rem;
+}
+

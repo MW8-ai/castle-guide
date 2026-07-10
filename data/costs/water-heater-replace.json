@@ -1,0 +1,11 @@
+{
+  "id": "cost-water-heater-replace-tank",
+  "job": "Replace standard tank water heater (40–50 gal, like-for-like)",
+  "diyRange": { "min": 400, "max": 900 },
+  "proRange": { "min": 1200, "max": 2800 },
+  "currency": "USD",
+  "source": "Typical equipment + install ranges for standard tank units; power-vent, heat-pump, and tankless are higher. Educational only.",
+  "asOfDate": "2026-01-01",
+  "regionNote": "U.S. typical; permit and code upgrades (pan, expansion tank) add cost.",
+  "confidence": "typical"
+}

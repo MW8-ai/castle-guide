@@ -19,6 +19,10 @@ export {
   type Task,
   type OpsEvent,
   type OpsEventType,
+  type Quote,
+  type Improvement,
+  type MortgageInfo,
+  type DaleVerdict,
 } from './types';
 export {
   createItem,

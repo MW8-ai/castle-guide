@@ -1,0 +1,11 @@
+{
+  "id": "cost-hvac-tuneup",
+  "job": "HVAC seasonal tune-up / service call",
+  "diyRange": { "min": 0, "max": 50 },
+  "proRange": { "min": 89, "max": 250 },
+  "currency": "USD",
+  "source": "Typical residential service-call and tune-up price bands; membership plans change effective cost. Educational typical range.",
+  "asOfDate": "2026-01-01",
+  "regionNote": "U.S. typical; after-hours and refrigerant work extra.",
+  "confidence": "typical"
+}

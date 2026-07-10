@@ -1,0 +1,22 @@
+{
+  "gotchas": [
+    {
+      "id": "gotcha-roof-acv",
+      "title": "Older roofs may switch to actual cash value (ACV)",
+      "body": "Some carriers reduce payouts on aging roofs from replacement cost to actual cash value after a stated age threshold. Photograph and document roof condition while healthy; read your declarations and roof endorsement.",
+      "source": "Common homeowners policy pattern (carrier-specific). Educational — not insurance advice.",
+      "asOfDate": "2026-01-01",
+      "confidence": "typical",
+      "regionNote": "Varies by carrier, state, and endorsement."
+    },
+    {
+      "id": "gotcha-water-backup",
+      "title": "Sewer/sump backup often needs a rider",
+      "body": "Standard policies frequently exclude or tightly limit water backup / sump overflow. If you have a basement, ask explicitly about water-backup coverage limits and deductibles.",
+      "source": "Common HO-3 style exclusion pattern. Educational only.",
+      "asOfDate": "2026-01-01",
+      "confidence": "typical",
+      "regionNote": "Policy language controls."
+    }
+  ]
+}

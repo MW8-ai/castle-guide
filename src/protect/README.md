@@ -2,9 +2,12 @@
 
 ## Owns
 
-- Insurance readiness packet, warranty tracker, shutoff map UI, disaster prep
+- Insurance readiness packet ZIP export
+- Warranty flags on items/tasks
+- Fine-print gotcha library from `/data/protect`
 
 ## Must never
 
 - Present content as insurance advice
-- Omit the standing disclaimer on insurance surfaces
+- Omit disclaimers on insurance surfaces
+- Joke in gotcha / registry-style content

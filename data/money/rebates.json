@@ -1,0 +1,46 @@
+{
+  "rebates": [
+    {
+      "id": "rebate-irs-25c",
+      "code": "25C",
+      "title": "Energy Efficient Home Improvement Credit (IRC §25C)",
+      "summary": "Federal tax credit for qualifying energy-efficient home improvements (e.g., certain insulation, windows, doors, heat pumps, electrical panel upgrades meeting IRS criteria). Annual limits and product requirements apply; percentages and caps change by tax year.",
+      "eligibilityPattern": "Generally: you must own and use the home as your principal residence (some exceptions), place qualifying property in service in the tax year, and meet manufacturer/efficiency criteria for that year. Keep receipts and manufacturer certifications. This is a pattern summary — verify against current IRS instructions before claiming.",
+      "howToClaim": "Typically claimed on your federal income tax return using the form/instructions IRS publishes for the Energy Efficient Home Improvement Credit for that tax year (see IRS.gov).",
+      "source": "Internal Revenue Service — Energy Efficient Home Improvement Credit (Section 25C)",
+      "sourceUrl": "https://www.irs.gov/credits-deductions/energy-efficient-home-improvement-credit",
+      "asOfDate": "2025-01-15",
+      "confidence": "verified",
+      "regionNote": "U.S. federal. State/utility rebates are separate.",
+      "relatedJobHints": ["hvac", "heat pump", "insulation", "windows", "electrical panel"]
+    },
+    {
+      "id": "rebate-irs-25d",
+      "code": "25D",
+      "title": "Residential Clean Energy Credit (IRC §25D)",
+      "summary": "Federal tax credit for qualifying clean energy property for the home (e.g., solar electric, solar water heating, certain battery storage when paired per rules). Percentage and phase rules depend on the year placed in service.",
+      "eligibilityPattern": "Generally: qualifying residential clean energy property for a home you use, meeting IRS and manufacturer criteria for the tax year. Recordkeeping required. Verify current rate and eligible property lists on IRS.gov before acting.",
+      "howToClaim": "Claimed on the federal return per IRS instructions for the Residential Clean Energy Credit for the applicable year.",
+      "source": "Internal Revenue Service — Residential Clean Energy Credit (Section 25D)",
+      "sourceUrl": "https://www.irs.gov/credits-deductions/residential-clean-energy-credit",
+      "asOfDate": "2025-01-15",
+      "confidence": "verified",
+      "regionNote": "U.S. federal.",
+      "relatedJobHints": ["solar", "battery", "clean energy"]
+    },
+    {
+      "id": "rebate-dsire-pattern",
+      "code": "DSIRE",
+      "title": "State / utility incentives (DSIRE pattern)",
+      "summary": "Many states and utilities offer rebates for efficiency and electrification. The Database of State Incentives for Renewables & Efficiency (DSIRE) is a common starting point to find programs by ZIP/state.",
+      "eligibilityPattern": "Varies entirely by program: income limits, pre-approval, approved contractors, and product lists. Always verify on the official program page — not on secondary summaries alone.",
+      "howToClaim": "Follow the specific utility/state program application; stack carefully with federal credits where allowed.",
+      "source": "NC Clean Energy Technology Center — DSIRE",
+      "sourceUrl": "https://www.dsireusa.org/",
+      "asOfDate": "2025-06-01",
+      "confidence": "verified",
+      "regionNote": "U.S. state and local — lookup by location required.",
+      "relatedJobHints": ["rebate", "utility", "efficiency"]
+    }
+  ]
+}

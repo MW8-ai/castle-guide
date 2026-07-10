@@ -244,16 +244,49 @@ export interface OpsEvent {
   createdAt: string;
 }
 
-export interface ImprovementStub {
+export interface Improvement {
   id: string;
+  date: string;
   desc: string;
-  [key: string]: unknown;
+  cost: number;
+  currency: string;
+  receiptDocIds: string[];
+  basisEligible: boolean;
+  notes?: string | null;
 }
 
-export interface QuoteStub {
+export type DaleVerdict = 'fair-dinkum' | 'steep' | 'dreamin' | 'unknown';
+
+export interface QuoteLineItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+export interface Quote {
   id: string;
   job: string;
-  [key: string]: unknown;
+  vendor: string;
+  amount: number;
+  currency: string;
+  date: string;
+  lineItems: QuoteLineItem[];
+  scopeNotes?: string | null;
+  costEntryId?: string | null;
+  daleVerdict: DaleVerdict;
+  daleReasons: string[];
+  createdAt: string;
+}
+
+/** Optional mortgage fields for payoff tools (stored on property). */
+export interface MortgageInfo {
+  principal: number;
+  annualRatePercent: number;
+  termMonths: number;
+  startDate?: string | null;
+  extraMonthly?: number | null;
+  pmiMonthly?: number | null;
+  homeValue?: number | null;
 }
 
 export interface AreaLink {
@@ -277,12 +310,13 @@ export interface Property {
   tasks: Task[];
   opsEvents: OpsEvent[];
   docs: DocMeta[];
-  improvements: ImprovementStub[];
-  quotes: QuoteStub[];
+  improvements: Improvement[];
+  quotes: Quote[];
   notes: Note[];
   areaLinks: AreaLink[];
   shutoffs: Shutoff[];
   consumables: Consumable[];
+  mortgage?: MortgageInfo | null;
   createdAt: string;
   updatedAt: string;
 }
