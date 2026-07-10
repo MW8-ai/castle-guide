@@ -108,30 +108,53 @@ export function MaintainPage({ id }: Props) {
     setMessage('ICS downloaded — import into Google, Apple, or Outlook.');
   }
 
-  return (
-    <section class="page">
-      <p class="eyebrow">
-        <button type="button" class="btn" onClick={() => go('property', id!, 'house')}>
-          ← House
-        </button>
-      </p>
-      <h1>Maintenance</h1>
-      <p class="muted">
-        {zone}
-        {property.zip ? ` · ZIP ${property.zip}` : ''}
-      </p>
+  const overdue = pending.filter(
+    (t) => t.nextDue && t.nextDue < new Date().toISOString().slice(0, 10)
+  );
+  const soon = pending.filter((t) => {
+    if (!t.nextDue) return false;
+    const today = new Date().toISOString().slice(0, 10);
+    if (t.nextDue < today) return false;
+    const d = new Date(t.nextDue + 'T00:00:00Z');
+    const lim = new Date(today + 'T00:00:00Z');
+    lim.setUTCDate(lim.getUTCDate() + 14);
+    return d <= lim;
+  });
 
-      <div class="btn-row">
-        <button type="button" class="btn primary" onClick={() => void runSchedule()}>
-          Schedule from inventory
-        </button>
-        <button type="button" class="btn" onClick={() => void addTrashDay()}>
-          Add trash day
-        </button>
-        <button type="button" class="btn" onClick={() => void downloadIcs()}>
-          Export calendar
-        </button>
-      </div>
+  return (
+    <section class="page inv-calm">
+      <header class="inv-head">
+        <div>
+          <h1>Maintenance</h1>
+          <p class="muted">
+            Climate {zone}
+            {property.zip ? ` · ZIP ${property.zip}` : ''} · {pending.length}{' '}
+            open · {overdue.length} overdue · {soon.length} due in 2 weeks
+          </p>
+        </div>
+        <div class="btn-row">
+          <button
+            type="button"
+            class="btn"
+            onClick={() => go('property', id!, 'house')}
+          >
+            Back to map
+          </button>
+          <button
+            type="button"
+            class="btn primary"
+            onClick={() => void runSchedule()}
+          >
+            Schedule from inventory
+          </button>
+          <button type="button" class="btn" onClick={() => void addTrashDay()}>
+            Add trash day
+          </button>
+          <button type="button" class="btn" onClick={() => void downloadIcs()}>
+            Export calendar
+          </button>
+        </div>
+      </header>
 
       {message && <p class="ok-text">{message}</p>}
 

@@ -1,8 +1,7 @@
-/* Walkable house home screen — map is 100% of the stage */
+/* Walkable house home screen — map is the stage, data is the HUD */
 
 .live-house {
   position: relative;
-  /* leave room for bottom nav (~72px) so map + nav don't fight */
   height: calc(100vh - 72px);
   min-height: 420px;
   background: #141b2d;
@@ -17,6 +16,8 @@
   z-index: 0;
 }
 
+/* ── Top HUD ───────────────────────────────────────── */
+
 .live-hud-top {
   position: absolute;
   top: 0;
@@ -26,37 +27,217 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem 1.25rem;
   background: linear-gradient(
     180deg,
-    rgba(14, 20, 34, 0.92) 0%,
-    rgba(14, 20, 34, 0.55) 70%,
+    rgba(14, 20, 34, 0.94) 0%,
+    rgba(14, 20, 34, 0.55) 72%,
     transparent 100%
   );
   pointer-events: none;
 }
 
+.live-hud-left {
+  pointer-events: none;
+}
+
 .live-home-name {
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   letter-spacing: -0.02em;
 }
 
 .live-hint {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #9aabc4;
+  margin-top: 0.15rem;
 }
+
+.live-hud-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  pointer-events: auto;
+  justify-content: flex-end;
+}
+
+.live-stat-chip {
+  background: rgba(35, 47, 71, 0.92);
+  border: 1px solid #3a4d72;
+  border-radius: 10px;
+  padding: 0.35rem 0.65rem;
+  min-width: 5.5rem;
+}
+
+.live-stat-chip.muted-chip {
+  border-color: #2a3858;
+  opacity: 0.95;
+}
+
+.live-stat-k {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a9bb4;
+  font-weight: 700;
+}
+
+.live-stat-chip strong {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #eef2f8;
+}
+
+.live-stat-chip .warn {
+  color: #e06a4f;
+}
+
+/* ── Up Next left rail ─────────────────────────────── */
+
+.live-up-next {
+  position: absolute;
+  top: 78px;
+  left: 12px;
+  width: min(248px, 32vw);
+  max-height: calc(100% - 150px);
+  z-index: 3;
+  background: rgba(35, 47, 71, 0.93);
+  border: 2px solid #35466a;
+  border-radius: 14px;
+  padding: 0.7rem 0.75rem;
+  overflow: auto;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+}
+
+.live-up-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.live-up-head h3 {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f0b441;
+}
+
+.live-link-btn {
+  border: none;
+  background: transparent;
+  color: #8eb4e8;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+}
+
+.live-link-btn:hover {
+  color: #f0b441;
+}
+
+.live-up-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.live-up-item {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+  padding: 0.45rem 0.5rem;
+  border-radius: 10px;
+  background: rgba(14, 20, 34, 0.55);
+  border-left: 3px solid #5fbf77;
+}
+
+.live-up-item.soon {
+  border-left-color: #f0b441;
+}
+
+.live-up-item.overdue {
+  border-left-color: #e06a4f;
+}
+
+.live-up-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.live-up-main strong {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.live-up-main .muted {
+  font-size: 0.72rem;
+}
+
+.live-check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #3a4d72;
+  background: rgba(95, 191, 119, 0.12);
+  color: #5fbf77;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.live-check:hover {
+  background: rgba(95, 191, 119, 0.28);
+  border-color: #5fbf77;
+}
+
+.live-shutoffs {
+  margin-top: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #35466a;
+}
+
+.live-shutoffs h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8a9bb4;
+}
+
+.live-shutoffs ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: #c5d0e0;
+}
+
+.live-shutoffs li {
+  margin-bottom: 0.25rem;
+}
+
+/* ── Right docks ───────────────────────────────────── */
 
 .live-dock {
   position: absolute;
-  top: 56px;
+  top: 78px;
   right: 12px;
-  bottom: 12px;
-  width: min(320px, 90vw);
+  bottom: 88px;
+  width: min(340px, 38vw);
   z-index: 3;
-  background: rgba(35, 47, 71, 0.94);
+  background: rgba(35, 47, 71, 0.95);
   border: 2px solid #35466a;
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
@@ -75,7 +256,8 @@
 
 .live-dock-head h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
+  line-height: 1.2;
 }
 
 .live-kicker {
@@ -89,7 +271,7 @@
 
 .live-dims {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #9aabc4;
   margin: 0 0 0.75rem;
 }
@@ -97,17 +279,30 @@
 .live-block {
   margin: 0.85rem 0;
 }
+
 .live-block h3 {
   margin: 0 0 0.4rem;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: #9aabc4;
 }
+
 .live-block ul {
   margin: 0;
   padding-left: 1rem;
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+}
+
+.live-facts {
+  list-style: none;
+  padding: 0 !important;
+  font-size: 0.88rem;
+  color: #c5d0e0;
+}
+
+.live-facts li {
+  margin-bottom: 0.25rem;
 }
 
 .live-item-list {
@@ -115,27 +310,61 @@
   padding: 0 !important;
   margin: 0;
 }
+
 .live-item-btn {
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
   text-align: left;
   border: 1px solid #35466a;
   background: rgba(20, 27, 45, 0.65);
   color: #d9e1f2;
   font: inherit;
   font-weight: 600;
-  padding: 0.45rem 0.6rem;
+  font-size: 0.88rem;
+  padding: 0.5rem 0.6rem;
   border-radius: 8px;
   margin-bottom: 0.35rem;
   cursor: pointer;
 }
+
 .live-item-btn:hover {
   border-color: #f0b441;
+  background: rgba(240, 180, 65, 0.08);
+}
+
+.live-w-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.live-w-pill.w-active {
+  background: rgba(95, 191, 119, 0.2);
+  color: #5fbf77;
+}
+
+.live-w-pill.w-expiring {
+  background: rgba(240, 180, 65, 0.2);
+  color: #f0b441;
+}
+
+.live-w-pill.w-expired {
+  background: rgba(224, 106, 79, 0.2);
+  color: #e06a4f;
 }
 
 .live-note {
   font-size: 0.9rem;
   margin: 0.25rem 0;
   color: #c5d0e0;
+  line-height: 1.4;
 }
 
 .live-council {
@@ -148,6 +377,7 @@
   border-radius: 12px;
   border: 1px solid #35466a;
 }
+
 .live-council-face {
   width: 44px;
   height: 44px;
@@ -159,16 +389,19 @@
   font-size: 1.4rem;
   flex-shrink: 0;
 }
+
 .live-council-face.sm {
   width: 36px;
   height: 36px;
   font-size: 1.15rem;
 }
+
 .live-council strong {
   display: block;
   font-size: 0.85rem;
   color: #f0b441;
 }
+
 .live-council p {
   margin: 0.2rem 0 0;
   font-size: 0.88rem;
@@ -181,39 +414,42 @@
   font-size: 0.9rem;
 }
 
+/* ── Council strip ─────────────────────────────────── */
+
 .live-council-strip {
   position: absolute;
   left: 12px;
-  right: 12px;
-  /* sits above bottom of map, not under overlapping letter nav */
+  right: min(360px, 40vw);
   bottom: 10px;
   z-index: 2;
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
   padding: 0.35rem 0;
-  pointer-events: none;
-  max-width: calc(100% - 340px);
+  max-width: calc(100% - 280px);
 }
+
 .live-council-chip {
-  pointer-events: auto;
   display: flex;
   gap: 0.5rem;
-  min-width: 220px;
-  max-width: 280px;
-  background: rgba(35, 47, 71, 0.92);
+  min-width: 210px;
+  max-width: 270px;
+  background: rgba(35, 47, 71, 0.94);
   border: 1px solid #35466a;
   border-radius: 12px;
   padding: 0.5rem 0.65rem;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
+
 .live-council-chip strong {
   font-size: 0.78rem;
   color: #f0b441;
 }
+
 .live-council-chip p {
   margin: 0.15rem 0 0;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: #b8c4d8;
   line-height: 1.3;
   display: -webkit-box;
@@ -226,6 +462,16 @@
   font-size: 0.78rem;
 }
 
+@media (max-width: 900px) {
+  .live-up-next {
+    display: none;
+  }
+  .live-council-strip {
+    max-width: calc(100% - 24px);
+    right: 12px;
+  }
+}
+
 @media (max-width: 720px) {
   .live-dock {
     top: auto;
@@ -233,10 +479,13 @@
     left: 8px;
     right: 8px;
     width: auto;
-    max-height: 38vh;
+    max-height: 40vh;
   }
   .live-council-strip {
     display: none;
+  }
+  .live-hud-stats {
+    width: 100%;
   }
   .map-nav-label {
     font-size: 0.65rem;

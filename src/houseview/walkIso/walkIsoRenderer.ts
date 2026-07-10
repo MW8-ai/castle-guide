@@ -59,6 +59,35 @@ const BODY: Record<Kind, string> = {
   generic: '#9ab0c0',
 };
 
+const ICON: Record<Kind, string> = {
+  fridge: '🧊',
+  range: '🔥',
+  washer: '🫧',
+  dryer: '💨',
+  heater: '💧',
+  furnace: '♨️',
+  ac: '❄️',
+  tv: '📺',
+  sofa: '🛋️',
+  bed: '🛏️',
+  toilet: '🚽',
+  desk: '🖥️',
+  car: '🚗',
+  generic: '📦',
+};
+
+function floorColor(name: string): string {
+  const s = name.toLowerCase();
+  if (/bath|toilet/.test(s)) return '#b8c8c4';
+  if (/kitchen/.test(s)) return '#d4c4a0';
+  if (/garage/.test(s)) return '#8a9098';
+  if (/utility|laundry|mech/.test(s)) return '#9aa0a8';
+  if (/bed|primary/.test(s)) return '#c9b8a0';
+  if (/living|family|dining/.test(s)) return '#c4a574';
+  if (/office/.test(s)) return '#b8a888';
+  return '#c2a878';
+}
+
 function shade(hex: string, amt: number): string {
   const n = parseInt(hex.slice(1), 16);
   const r = Math.max(0, Math.min(255, (n >> 16) + amt));
@@ -225,6 +254,40 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       return best?.id ?? null;
     }
 
+    function drawFoundation(
+      ctx: CanvasRenderingContext2D,
+      panX: number,
+      panY: number
+    ) {
+      const b = houseBounds();
+      const pad = 0.6;
+      const c0 = iso(b.minX - pad, b.minY - pad, 0, panX, panY);
+      const c1 = iso(b.maxX + pad, b.minY - pad, 0, panX, panY);
+      const c2 = iso(b.maxX + pad, b.maxY + pad, 0, panX, panY);
+      const c3 = iso(b.minX - pad, b.maxY + pad, 0, panX, panY);
+      // soft ground shadow
+      ctx.beginPath();
+      ctx.moveTo(c0.sx, c0.sy + 10);
+      ctx.lineTo(c1.sx, c1.sy + 10);
+      ctx.lineTo(c2.sx, c2.sy + 10);
+      ctx.lineTo(c3.sx, c3.sy + 10);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(20, 40, 20, 0.28)';
+      ctx.fill();
+      // stone skirt
+      ctx.beginPath();
+      ctx.moveTo(c0.sx, c0.sy);
+      ctx.lineTo(c1.sx, c1.sy);
+      ctx.lineTo(c2.sx, c2.sy);
+      ctx.lineTo(c3.sx, c3.sy);
+      ctx.closePath();
+      ctx.fillStyle = '#6a7068';
+      ctx.fill();
+      ctx.strokeStyle = '#3a4038';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
     function drawRoom(
       ctx: CanvasRenderingContext2D,
       room: RoomView,
@@ -233,12 +296,11 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       panY: number,
       highlight: boolean
     ) {
-      const floors = ['#c4a574', '#d2b896', '#b8956a', '#c9b48a', '#a89070'];
-      const idx = Math.abs(room.name.charCodeAt(0)) % floors.length;
+      const floor = floorColor(room.name);
       const f = floorOf(room);
       const L = f.L;
       const W = f.W;
-      const hWall = 1.1;
+      const hWall = 1.15;
       const c0 = iso(o.x, o.y, 0, panX, panY);
       const c1 = iso(o.x + L, o.y, 0, panX, panY);
       const c2 = iso(o.x + L, o.y + W, 0, panX, panY);
@@ -247,28 +309,51 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       const t1 = iso(o.x + L, o.y, hWall, panX, panY);
       const t3 = iso(o.x, o.y + W, hWall, panX, panY);
 
+      // floor
       ctx.beginPath();
       ctx.moveTo(c0.sx, c0.sy);
       ctx.lineTo(c1.sx, c1.sy);
       ctx.lineTo(c2.sx, c2.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      ctx.fillStyle = floors[idx];
+      ctx.fillStyle = floor;
       ctx.fill();
-      ctx.strokeStyle = highlight ? '#f0b441' : '#5a3d28';
-      ctx.lineWidth = highlight ? 3.5 : 2;
+      if (highlight) {
+        ctx.fillStyle = 'rgba(240, 180, 65, 0.18)';
+        ctx.fill();
+      }
+      // floor grain
+      ctx.strokeStyle = 'rgba(60,40,20,0.12)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        const a = iso(o.x + (L * i) / 4, o.y, 0, panX, panY);
+        const b2 = iso(o.x + (L * i) / 4, o.y + W, 0, panX, panY);
+        ctx.beginPath();
+        ctx.moveTo(a.sx, a.sy);
+        ctx.lineTo(b2.sx, b2.sy);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = highlight ? '#f0b441' : 'rgba(60,40,25,0.45)';
+      ctx.lineWidth = highlight ? 3 : 1.5;
+      ctx.beginPath();
+      ctx.moveTo(c0.sx, c0.sy);
+      ctx.lineTo(c1.sx, c1.sy);
+      ctx.lineTo(c2.sx, c2.sy);
+      ctx.lineTo(c3.sx, c3.sy);
+      ctx.closePath();
       ctx.stroke();
 
+      // low walls (cutaway)
       ctx.beginPath();
       ctx.moveTo(c0.sx, c0.sy);
       ctx.lineTo(t0.sx, t0.sy);
       ctx.lineTo(t3.sx, t3.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      ctx.fillStyle = highlight ? '#9a7a55' : '#8b6b4a';
+      ctx.fillStyle = highlight ? '#9a7a55' : '#7d6548';
       ctx.fill();
       ctx.strokeStyle = '#4a3020';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.2;
       ctx.stroke();
 
       ctx.beginPath();
@@ -277,18 +362,29 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       ctx.lineTo(t1.sx, t1.sy);
       ctx.lineTo(c1.sx, c1.sy);
       ctx.closePath();
-      ctx.fillStyle = highlight ? '#b09068' : '#a08060';
+      ctx.fillStyle = highlight ? '#b09068' : '#947858';
       ctx.fill();
       ctx.stroke();
 
+      // door notch on right edge (passage cue)
+      const doorY = o.y + W * 0.35;
+      const d0 = iso(o.x + L, doorY, 0, panX, panY);
+      const d1 = iso(o.x + L, doorY + W * 0.22, 0, panX, panY);
+      ctx.strokeStyle = highlight ? '#f0b441' : '#c4a060';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(d0.sx, d0.sy);
+      ctx.lineTo(d1.sx, d1.sy);
+      ctx.stroke();
+
       const mid = iso(o.x + L / 2, o.y + W / 2, 0, panX, panY);
-      ctx.fillStyle = 'rgba(15,12,8,0.72)';
-      ctx.font = 'bold 12px system-ui,sans-serif';
-      const tw = ctx.measureText(room.name).width + 14;
-      ctx.fillRect(mid.sx - tw / 2, mid.sy - 26, tw, 18);
-      ctx.fillStyle = '#fff8ee';
+      ctx.fillStyle = 'rgba(15,12,8,0.78)';
+      ctx.font = 'bold 11px system-ui,sans-serif';
+      const tw = ctx.measureText(room.name).width + 12;
+      ctx.fillRect(mid.sx - tw / 2, mid.sy - 28, tw, 16);
+      ctx.fillStyle = highlight ? '#ffe8a0' : '#fff8ee';
       ctx.textAlign = 'center';
-      ctx.fillText(room.name, mid.sx, mid.sy - 13);
+      ctx.fillText(room.name, mid.sx, mid.sy - 16);
     }
 
     function drawItem(
@@ -374,15 +470,31 @@ export const walkIsoRenderer: HouseRendererPlugin = {
         ctx.fill();
       }
 
+      // health pulse ring for due/overdue
+      if (health !== 'ok') {
+        const pulse = iso(fx + L / 2, fy + W / 2, H + 0.4, panX, panY);
+        ctx.beginPath();
+        ctx.arc(pulse.sx, pulse.sy, 14 * zoom, 0, Math.PI * 2);
+        ctx.strokeStyle =
+          health === 'overdue'
+            ? 'rgba(224,80,80,0.85)'
+            : 'rgba(232,168,56,0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+
       const mid = iso(fx + L / 2, fy + W / 2, H + 0.15, panX, panY);
-      const short = p.label.length > 14 ? p.label.slice(0, 13) + '…' : p.label;
-      ctx.fillStyle = 'rgba(10,8,6,0.85)';
+      // glyph so furniture is scannable at a glance
+      ctx.font = `${Math.round(14 * zoom)}px system-ui,sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(ICON[kind], mid.sx, mid.sy - 2);
+      const short = p.label.length > 16 ? p.label.slice(0, 15) + '…' : p.label;
+      ctx.fillStyle = 'rgba(10,8,6,0.88)';
       ctx.font = 'bold 10px system-ui,sans-serif';
       const tw = ctx.measureText(short).width + 8;
-      ctx.fillRect(mid.sx - tw / 2, mid.sy + 2, tw, 13);
+      ctx.fillRect(mid.sx - tw / 2, mid.sy + 4, tw, 13);
       ctx.fillStyle = '#ffe8c8';
-      ctx.textAlign = 'center';
-      ctx.fillText(short, mid.sx, mid.sy + 12);
+      ctx.fillText(short, mid.sx, mid.sy + 14);
       return mid;
     }
 
@@ -427,6 +539,8 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       const cam = iso(px, py, 0, 0, 0);
       const panX = w / 2 - cam.sx;
       const panY = h / 2 - cam.sy + 28;
+
+      drawFoundation(ctx, panX, panY);
 
       const roomsSorted = [...current.rooms].sort((a, b) => {
         const oa = roomOff.get(a.id)!;

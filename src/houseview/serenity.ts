@@ -45,6 +45,71 @@ export function serenityLabel(score: number): string {
   return 'Home needs care soon';
 }
 
+/** Letter grade for the house — homeowner signal, not a game score. */
+export function healthGrade(score: number): string {
+  if (score >= 92) return 'A';
+  if (score >= 85) return 'A-';
+  if (score >= 78) return 'B+';
+  if (score >= 70) return 'B';
+  if (score >= 60) return 'C';
+  if (score >= 50) return 'D';
+  return 'F';
+}
+
+export function daysUntil(iso: string | null | undefined, asOf = todayUtc()): number | null {
+  if (!iso) return null;
+  const a = new Date(asOf + 'T00:00:00Z').getTime();
+  const b = new Date(iso + 'T00:00:00Z').getTime();
+  return Math.round((b - a) / 86400000);
+}
+
+export function ageFromInstall(
+  iso: string | null | undefined,
+  asOf = todayUtc()
+): string | null {
+  if (!iso) return null;
+  const a = new Date(iso + 'T00:00:00Z').getTime();
+  const b = new Date(asOf + 'T00:00:00Z').getTime();
+  const days = Math.max(0, Math.round((b - a) / 86400000));
+  if (days < 60) return `${days} days`;
+  const y = Math.floor(days / 365);
+  const m = Math.floor((days % 365) / 30);
+  if (y <= 0) return `${m || 1} mo`;
+  if (m === 0) return `${y} yr`;
+  return `${y} yr ${m} mo`;
+}
+
+export function upcomingTasks(property: Property, limit = 6, asOf = todayUtc()) {
+  return property.tasks
+    .filter((t) => t.status === 'pending' && t.nextDue)
+    .sort((a, b) => (a.nextDue! < b.nextDue! ? -1 : 1))
+    .slice(0, limit)
+    .map((t) => ({
+      ...t,
+      dueInDays: daysUntil(t.nextDue, asOf),
+    }));
+}
+
+export function catalogStats(property: Property) {
+  const items = property.items.filter((i) => i.active && !i.softDeleted);
+  const withSerial = items.filter((i) => i.serial).length;
+  const withWarranty = items.filter((i) => i.warrantyEnd).length;
+  const pending = property.tasks.filter((t) => t.status === 'pending');
+  const overdue = pending.filter(
+    (t) => t.nextDue && t.nextDue < todayUtc()
+  ).length;
+  return {
+    rooms: property.rooms.length,
+    items: items.length,
+    withSerial,
+    withWarranty,
+    pending: pending.length,
+    overdue,
+    docs: property.docs.length,
+    yearBuilt: property.yearBuilt ?? null,
+  };
+}
+
 function addDays(iso: string, n: number): string {
   const d = new Date(iso + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + n);

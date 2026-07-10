@@ -6,7 +6,15 @@ export type {
   HealthState,
 } from './types';
 export { buildHouseViewModel, healthFromTasks, itemLabel } from './buildModel';
-export { computeSerenity, serenityLabel } from './serenity';
+export {
+  computeSerenity,
+  serenityLabel,
+  healthGrade,
+  daysUntil,
+  ageFromInstall,
+  upcomingTasks,
+  catalogStats,
+} from './serenity';
 export { listRenderers, getRenderer } from './registry';
 export { ImageHouseView } from './imageMap/ImageHouseView';
 

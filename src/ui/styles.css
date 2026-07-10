@@ -762,6 +762,33 @@ h3 {
   margin-bottom: 0.75rem;
 }
 
+.inv-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 360px);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .inv-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.inv-room-group {
+  margin-bottom: 1.1rem;
+}
+.inv-room-group h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+.inv-detail {
+  position: sticky;
+  top: 0.75rem;
+  margin-top: 0;
+}
+.inv-detail .kit-item-card {
+  max-width: none;
+}
+
 .item-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));

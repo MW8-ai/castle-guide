@@ -4,6 +4,9 @@ import type { Item, Property } from '../../storage';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 import { newId } from '../../storage';
+import { ageFromInstall, daysUntil } from '../../houseview';
+import { ItemCard } from '../../ui/kit/ItemCard';
+import '../../ui/kit/kit.css';
 
 interface Props {
   id?: string;
@@ -107,13 +110,33 @@ export function InventoryPage({ id }: Props) {
   const roomName = (rid?: string | null) =>
     property.rooms.find((r) => r.id === rid)?.name ?? '—';
 
+  const warrantyState = (item: Item) => {
+    if (!item.warrantyEnd) return 'none' as const;
+    const end = item.warrantyEnd;
+    const soon = new Date();
+    soon.setMonth(soon.getMonth() + 6);
+    if (end < new Date().toISOString().slice(0, 10)) return 'expired' as const;
+    if (end < soon.toISOString().slice(0, 10)) return 'expiring' as const;
+    return 'active' as const;
+  };
+
+  // Group by room for a house-shaped inventory
+  const byRoom = property.rooms
+    .map((r) => ({
+      room: r,
+      items: shown.filter((i) => i.roomId === r.id),
+    }))
+    .filter((g) => g.items.length > 0);
+  const unassigned = shown.filter((i) => !i.roomId);
+
   return (
     <section class="page inv-calm">
       <header class="inv-head">
         <div>
           <h1>Inventory</h1>
           <p class="muted">
-            {active.length} items · {property.rooms.length} rooms
+            {active.length} items · {property.rooms.length} rooms · serials,
+            warranties, and where each thing lives
           </p>
         </div>
         <div class="btn-row">
@@ -199,32 +222,110 @@ export function InventoryPage({ id }: Props) {
         onInput={(e) => setFilter((e.target as HTMLInputElement).value)}
       />
 
-      <div class="item-grid">
-        {shown.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            class={picked?.id === item.id ? 'item-tile active' : 'item-tile'}
-            onClick={() => setPicked(item)}
-          >
-            <span class="item-tile-brand">{item.brand}</span>
-            <span class="item-tile-model">{item.model ?? item.category}</span>
-            <span class="item-tile-room">{roomName(item.roomId)}</span>
-          </button>
-        ))}
-      </div>
-
-      {picked && (
-        <div class="card picked-panel">
-          <h2>
-            {picked.brand} {picked.model}
-          </h2>
-          <p class="muted">
-            {picked.category} · {roomName(picked.roomId)} ·{' '}
-            {picked.serial ?? 'no serial'}
-          </p>
+      <div class="inv-layout">
+        <div class="inv-groups">
+          {byRoom.map(({ room, items }) => (
+            <section key={room.id} class="inv-room-group">
+              <h2>
+                {room.name}{' '}
+                <span class="muted">
+                  · {room.dims.L}'×{room.dims.W}' · {items.length}
+                </span>
+              </h2>
+              <div class="item-grid">
+                {items.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    class={
+                      picked?.id === item.id ? 'item-tile active' : 'item-tile'
+                    }
+                    onClick={() => setPicked(item)}
+                  >
+                    <span class="item-tile-brand">
+                      {item.brand ?? item.category}
+                    </span>
+                    <span class="item-tile-model">
+                      {item.model ?? item.category}
+                    </span>
+                    <span class="item-tile-room">
+                      {item.serial ? `S/N ${item.serial}` : 'No serial yet'}
+                      {item.warrantyEnd ? ` · W ${item.warrantyEnd}` : ''}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
+          {unassigned.length > 0 && (
+            <section class="inv-room-group">
+              <h2>Unassigned</h2>
+              <div class="item-grid">
+                {unassigned.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    class={
+                      picked?.id === item.id ? 'item-tile active' : 'item-tile'
+                    }
+                    onClick={() => setPicked(item)}
+                  >
+                    <span class="item-tile-brand">
+                      {item.brand ?? item.category}
+                    </span>
+                    <span class="item-tile-model">
+                      {item.model ?? item.category}
+                    </span>
+                    <span class="item-tile-room">No room</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+          {shown.length === 0 && (
+            <p class="muted">No items match that search.</p>
+          )}
         </div>
-      )}
+
+        {picked && (
+          <div class="card picked-panel inv-detail">
+            <ItemCard
+              brand={picked.brand ?? picked.category}
+              model={picked.model ?? ''}
+              serial={picked.serial}
+              installed={picked.purchaseDate}
+              ageLabel={ageFromInstall(picked.purchaseDate) ?? undefined}
+              warranty={warrantyState(picked)}
+              warrantyEnd={picked.warrantyEnd}
+              price={picked.price}
+              room={roomName(picked.roomId)}
+              category={picked.category}
+              maintenanceNext={
+                property.tasks.find(
+                  (t) => t.itemId === picked.id && t.status === 'pending'
+                )?.title ?? null
+              }
+              maintenanceDueInDays={daysUntil(
+                property.tasks.find(
+                  (t) => t.itemId === picked.id && t.status === 'pending'
+                )?.nextDue
+              )}
+              docsCount={
+                picked.manualDocIds.length + (picked.photos?.length ?? 0)
+              }
+              onView={() => go('property', propertyId, 'house')}
+              onEdit={() => setPicked(null)}
+            />
+            {picked.filterSpecs[0] && (
+              <p class="muted" style={{ marginTop: '0.75rem' }}>
+                {picked.filterSpecs[0].name}:{' '}
+                <strong>{picked.filterSpecs[0].sizeOrModel}</strong>
+              </p>
+            )}
+            {picked.notes && <p class="muted">{picked.notes}</p>}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-07-10
+
+### Added — homeowner command center
+
+- **House HUD**: real home health grade, due-soon counts, catalog size — not XP
+- **Up Next rail** on the map with check-off; shutoff quick list
+- **Room dock**: finishes/paint, warranty pills on items, richer council tips
+- **Item dock**: age, due days, filter size, service log, real ItemCard data
+- Inventory grouped by room with sticky detail card
+- Walk map: foundation, floor types by room, door cues, health rings, furniture glyphs
+- Continuous multi-room walk + labeled bottom nav (from 1.1)
+
 ## [1.1.0] — 2026-07-10
 
 ### Changed — walk the house (look & feel)

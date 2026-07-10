@@ -66,7 +66,17 @@ export function KitPage() {
                 title="Item"
                 onClose={() => setDockOpen(false)}
               >
-                <ItemCard />
+                <ItemCard
+                  brand="LG"
+                  model="LRFCS2503S"
+                  category="Refrigerator"
+                  room="Kitchen"
+                  warranty="active"
+                  warrantyEnd="2026-05-12"
+                  price={1899}
+                  maintenanceNext="Clean filter"
+                  maintenanceDueInDays={23}
+                />
               </ContextDock>
             ) : undefined
           }
@@ -96,17 +106,38 @@ export function KitPage() {
       <section class="kit-section">
         <h2>ItemCard (REF-3 anatomy)</h2>
         <div class="kit-row">
-          <ItemCard warranty="active" />
+          <ItemCard
+            brand="LG"
+            model="LRFCS2503S"
+            category="Refrigerator"
+            room="Kitchen"
+            serial="803KWT0A1234"
+            installed="2021-05-12"
+            ageLabel="4 yr"
+            warranty="active"
+            warrantyEnd="2026-05-12"
+            price={1899}
+            maintenanceNext="Clean filter"
+            maintenanceDueInDays={23}
+            docsCount={3}
+          />
           <ItemCard
             brand="Rheem"
             model="XE50"
             category="Water heater"
+            room="Utility"
             warranty="expiring"
             warrantyEnd="2025-08-01"
             maintenanceNext="Anode rod"
             maintenanceDueInDays={45}
           />
-          <ItemCard warranty="expired" brand="Old" model="Unit" />
+          <ItemCard
+            warranty="expired"
+            brand="Old"
+            model="Unit"
+            category="Furnace"
+            room="Utility"
+          />
         </div>
       </section>
 
