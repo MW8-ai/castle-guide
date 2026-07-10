@@ -89,14 +89,18 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     let py = 6;
     let facing = 0;
     let lastRoom: string | null = null;
+    /** World origin of each room cell (grid-packed, no gaps). */
     let roomOff = new Map<string, { x: number; y: number }>();
+    /** Floor size of each cell — fills the grid so rooms share edges. */
+    let roomFloor = new Map<string, { L: number; W: number }>();
 
     /**
-     * Pack rooms into a tight grid with ZERO gaps so you can walk
-     * room-to-room across shared edges (no island trapping).
+     * Pack rooms into a tight grid with ZERO gaps. Each room fills its full
+     * cell so floors share edges — walk room-to-room without island traps.
      */
     function layout(m: HouseViewModel) {
       roomOff.clear();
+      roomFloor.clear();
       // Prefer a house-like order if names match sample seed
       const preferred = [
         'Primary Bedroom',
@@ -142,22 +146,24 @@ export const walkIsoRenderer: HouseRendererPlugin = {
           row++;
         }
       }
-      // gap = 0 → shared walls; walkable across boundaries
+      // gap = 0 → shared walls; each room occupies its full cell
       for (const c of cells) {
         let ox = 0;
         for (let k = 0; k < c.col; k++) ox += colWidths[k];
         let oy = 0;
         for (let k = 0; k < c.row; k++) oy += rowHeights[k] ?? 0;
-        // Center smaller rooms inside their cell so edges still touch the grid
         const cellL = colWidths[c.col];
         const cellW = rowHeights[c.row] ?? c.r.dims.W;
-        const insetX = (cellL - c.r.dims.L) / 2;
-        const insetY = (cellW - c.r.dims.W) / 2;
-        roomOff.set(c.r.id, { x: ox + insetX, y: oy + insetY });
+        roomOff.set(c.r.id, { x: ox, y: oy });
+        roomFloor.set(c.r.id, { L: cellL, W: cellW });
       }
     }
 
-    /** Full house footprint — walkable floor (not just room islands). */
+    function floorOf(room: RoomView): { L: number; W: number } {
+      return roomFloor.get(room.id) ?? { L: room.dims.L, W: room.dims.W };
+    }
+
+    /** Full house footprint — continuous rectangle of tiled cells. */
     function houseBounds() {
       let minX = Infinity;
       let minY = Infinity;
@@ -166,26 +172,27 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       for (const r of current.rooms) {
         const o = roomOff.get(r.id);
         if (!o) continue;
+        const f = floorOf(r);
         minX = Math.min(minX, o.x);
         minY = Math.min(minY, o.y);
-        maxX = Math.max(maxX, o.x + r.dims.L);
-        maxY = Math.max(maxY, o.y + r.dims.W);
+        maxX = Math.max(maxX, o.x + f.L);
+        maxY = Math.max(maxY, o.y + f.W);
       }
       if (!Number.isFinite(minX)) {
         return { minX: 0, minY: 0, maxX: 20, maxY: 20 };
       }
-      // expand slightly so doorways between slightly inset rooms still work
-      return {
-        minX: minX - 0.25,
-        minY: minY - 0.25,
-        maxX: maxX + 0.25,
-        maxY: maxY + 0.25,
-      };
+      return { minX, minY, maxX, maxY };
     }
 
     function inHouse(wx: number, wy: number): boolean {
       const b = houseBounds();
-      return wx >= b.minX && wx <= b.maxX && wy >= b.minY && wy <= b.maxY;
+      // tiny edge pad so you don't snag on float boundaries
+      return (
+        wx >= b.minX - 0.05 &&
+        wx <= b.maxX + 0.05 &&
+        wy >= b.minY - 0.05 &&
+        wy <= b.maxY + 0.05
+      );
     }
 
     function iso(fx: number, fy: number, z = 0, panX = 0, panY = 0) {
@@ -196,20 +203,21 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       };
     }
 
-    function roomAt(wx: number, wy: number, pad = 0.15): string | null {
+    function roomAt(wx: number, wy: number, pad = 0.05): string | null {
       let best: { id: string; d: number } | null = null;
       for (const r of current.rooms) {
         const o = roomOff.get(r.id);
         if (!o) continue;
+        const f = floorOf(r);
         if (
           wx >= o.x - pad &&
-          wx <= o.x + r.dims.L + pad &&
+          wx <= o.x + f.L + pad &&
           wy >= o.y - pad &&
-          wy <= o.y + r.dims.W + pad
+          wy <= o.y + f.W + pad
         ) {
-          // prefer room whose center is closest (for edge cases)
-          const cx = o.x + r.dims.L / 2;
-          const cy = o.y + r.dims.W / 2;
+          // prefer room whose center is closest (edge / corner ties)
+          const cx = o.x + f.L / 2;
+          const cy = o.y + f.W / 2;
           const d = Math.hypot(wx - cx, wy - cy);
           if (!best || d < best.d) best = { id: r.id, d };
         }
@@ -227,14 +235,17 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     ) {
       const floors = ['#c4a574', '#d2b896', '#b8956a', '#c9b48a', '#a89070'];
       const idx = Math.abs(room.name.charCodeAt(0)) % floors.length;
+      const f = floorOf(room);
+      const L = f.L;
+      const W = f.W;
       const hWall = 1.1;
       const c0 = iso(o.x, o.y, 0, panX, panY);
-      const c1 = iso(o.x + room.dims.L, o.y, 0, panX, panY);
-      const c2 = iso(o.x + room.dims.L, o.y + room.dims.W, 0, panX, panY);
-      const c3 = iso(o.x, o.y + room.dims.W, 0, panX, panY);
+      const c1 = iso(o.x + L, o.y, 0, panX, panY);
+      const c2 = iso(o.x + L, o.y + W, 0, panX, panY);
+      const c3 = iso(o.x, o.y + W, 0, panX, panY);
       const t0 = iso(o.x, o.y, hWall, panX, panY);
-      const t1 = iso(o.x + room.dims.L, o.y, hWall, panX, panY);
-      const t3 = iso(o.x, o.y + room.dims.W, hWall, panX, panY);
+      const t1 = iso(o.x + L, o.y, hWall, panX, panY);
+      const t3 = iso(o.x, o.y + W, hWall, panX, panY);
 
       ctx.beginPath();
       ctx.moveTo(c0.sx, c0.sy);
@@ -270,13 +281,7 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       ctx.fill();
       ctx.stroke();
 
-      const mid = iso(
-        o.x + room.dims.L / 2,
-        o.y + room.dims.W / 2,
-        0,
-        panX,
-        panY
-      );
+      const mid = iso(o.x + L / 2, o.y + W / 2, 0, panX, panY);
       ctx.fillStyle = 'rgba(15,12,8,0.72)';
       ctx.font = 'bold 12px system-ui,sans-serif';
       const tw = ctx.measureText(room.name).width + 14;
@@ -382,15 +387,13 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     }
 
     function tryMove(dx: number, dy: number) {
-      const speed = 0.28;
+      const speed = 0.38;
+      // Axis-separate so you can slide along walls into the next room
       const nx = px + dx * speed;
       const ny = py + dy * speed;
-      // Whole house footprint is walkable — rooms are zones, not cages
-      if (inHouse(nx, ny)) {
-        px = nx;
-        py = ny;
-        if (dx || dy) facing = Math.atan2(dy, dx);
-      }
+      if (inHouse(nx, py)) px = nx;
+      if (inHouse(px, ny)) py = ny;
+      if (dx || dy) facing = Math.atan2(dy, dx);
       const rid = roomAt(px, py);
       if (rid !== lastRoom) {
         lastRoom = rid;
@@ -480,7 +483,7 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       ctx.font = '13px system-ui,sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(
-        'WASD — walk between rooms  ·  scroll zoom  ·  click fridge / couch / water heater',
+        'WASD / arrows — walk room to room  ·  scroll zoom  ·  click furniture',
         20,
         h - 22
       );
@@ -503,16 +506,31 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     };
 
     layout(current);
-    if (current.rooms[0]) {
-      const r0 = current.rooms[0];
-      const o = roomOff.get(r0.id)!;
-      px = o.x + r0.dims.L / 2;
-      py = o.y + r0.dims.W / 2;
-      lastRoom = r0.id;
-      cb.onEnterRoom?.(r0.id);
+    // Spawn in Living Room if present, else first room center
+    const spawn =
+      current.rooms.find((r) => /living/i.test(r.name)) ?? current.rooms[0];
+    if (spawn) {
+      const o = roomOff.get(spawn.id)!;
+      const f = floorOf(spawn);
+      px = o.x + f.L / 2;
+      py = o.y + f.W / 2;
+      lastRoom = spawn.id;
+      cb.onEnterRoom?.(spawn.id);
+      cb.onSelectRoom(spawn.id);
     }
 
+    // Keys work even when canvas isn't focused (map is the main stage)
     const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (
+        t &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      ) {
+        return;
+      }
       const k = e.key.toLowerCase();
       if (
         [
