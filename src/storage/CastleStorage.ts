@@ -529,6 +529,64 @@ export class CastleStorage {
     return buildInsurancePacket({ property, blobs });
   }
 
+  async movePlacement(
+    propertyId: string,
+    placementId: string,
+    next: { x: number; y: number; rotation: number }
+  ): Promise<void> {
+    const property = await this.requireProperty(propertyId);
+    for (const room of property.rooms) {
+      const p = room.placements.find((x) => x.id === placementId);
+      if (p) {
+        p.x = next.x;
+        p.y = next.y;
+        p.rotation = next.rotation;
+        await this.saveProperty(property);
+        return;
+      }
+    }
+    throw new Error(`Placement not found: ${placementId}`);
+  }
+
+  async addAreaLink(
+    propertyId: string,
+    link: {
+      label: string;
+      url: string;
+      category:
+        | 'social'
+        | 'crime'
+        | 'gov'
+        | 'school'
+        | 'pets'
+        | 'utility'
+        | 'other';
+    }
+  ) {
+    const property = await this.requireProperty(propertyId);
+    property.areaLinks.push({
+      id: newId(),
+      label: link.label,
+      url: link.url,
+      category: link.category,
+    });
+    await this.saveProperty(property);
+  }
+
+  async setRendererPreference(rendererId: string): Promise<void> {
+    const profile = await this.getOrCreateProfile();
+    profile.settings.activeRendererId = rendererId;
+    await this.saveProfile(profile);
+  }
+
+  async updateRealtorGift(
+    gift: NonNullable<Profile['settings']['realtorGift']>
+  ): Promise<void> {
+    const profile = await this.getOrCreateProfile();
+    profile.settings.realtorGift = gift;
+    await this.saveProfile(profile);
+  }
+
   // ── Export / import / wipe ───────────────────────────────
 
   async exportZip(propertyId: string): Promise<Blob> {

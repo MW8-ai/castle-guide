@@ -212,12 +212,25 @@ export function PropertyPage({ id }: Props) {
       </p>
 
       <div class="btn-row">
+        <a class="btn primary" href={`${base}property/${property.id}/house`}>
+          House view
+        </a>
         <a class="btn primary" href={`${base}property/${property.id}/maintain`}>
           Maintenance & Ops
         </a>
         <a class="btn primary" href={`${base}property/${property.id}/money`}>
           Money & Protect
         </a>
+        <a class="btn" href={`${base}property/${property.id}/council`}>
+          Council
+        </a>
+        <a class="btn" href={`${base}property/${property.id}/area`}>
+          Area
+        </a>
+        <a class="btn" href={`${base}property/${property.id}/builders`}>
+          Builders
+        </a>
+
         <button type="button" class="btn" onClick={() => void exportZip()}>
           Export ZIP
         </button>

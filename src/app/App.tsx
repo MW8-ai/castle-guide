@@ -9,6 +9,11 @@ import { ImportPage } from './pages/ImportPage';
 import { ImportZipPage } from './pages/ImportZipPage';
 import { MaintainPage } from './pages/MaintainPage';
 import { MoneyPage } from './pages/MoneyPage';
+import { HousePage } from './pages/HousePage';
+import { CouncilPage } from './pages/CouncilPage';
+import { AreaPage } from './pages/AreaPage';
+import { BuildersPage } from './pages/BuildersPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -36,6 +41,13 @@ export function App() {
           <Route path={`${base}/property/:id`} component={PropertyPage} />
           <Route path={`${base}/property/:id/maintain`} component={MaintainPage} />
           <Route path={`${base}/property/:id/money`} component={MoneyPage} />
+          <Route path={`${base}/property/:id/house`} component={HousePage} />
+          <Route path={`${base}/property/:id/council`} component={CouncilPage} />
+          <Route path={`${base}/property/:id/area`} component={AreaPage} />
+          <Route path={`${base}/property/:id/builders`} component={BuildersPage} />
+          <Route path={`${base}/council`} component={CouncilPage} />
+          <Route path={`${base}/builders`} component={BuildersPage} />
+          <Route path={`${base}/settings`} component={SettingsPage} />
           <Route default component={HomePage} />
         </Router>
       </Shell>

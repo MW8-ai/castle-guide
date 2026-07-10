@@ -521,3 +521,22 @@ code {
   font-size: 1.05rem;
 }
 
+.house-page .house-canvas-host {
+  width: 100%;
+  height: min(55vh, 480px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin: 0.75rem 0 1rem;
+  background: #0f1419;
+}
+
+.gus-feature {
+  border-color: var(--accent-warm);
+}
+
+.item-detail {
+  border-color: var(--accent);
+}
+
+

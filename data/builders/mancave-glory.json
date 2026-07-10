@@ -1,0 +1,56 @@
+{
+  "id": "builder-mancave",
+  "type": "mancave",
+  "title": "Mancave / She-shed planner",
+  "host": "the-colonel",
+  "tiers": [
+    {
+      "name": "Budget",
+      "lineItems": [
+        { "item": "Paint + lighting refresh", "low": 150, "high": 400 },
+        { "item": "Mini-fridge", "low": 120, "high": 300 },
+        { "item": "Seating / thrift furniture", "low": 100, "high": 400 },
+        { "item": "Misc decor / cables", "low": 50, "high": 150 }
+      ],
+      "considerations": [
+        "Does your spouse know?",
+        "Outlet capacity for fridge + TV",
+        "No structural changes"
+      ]
+    },
+    {
+      "name": "Solid",
+      "lineItems": [
+        { "item": "Flooring upgrade", "low": 800, "high": 2500 },
+        { "item": "Dedicated circuit / electrician", "low": 300, "high": 900 },
+        { "item": "TV + mount + soundbar", "low": 400, "high": 1500 },
+        { "item": "Furniture set", "low": 600, "high": 2000 },
+        { "item": "Mini-fridge / wet bar basics", "low": 250, "high": 800 }
+      ],
+      "considerations": [
+        "Permit rarely needed for furniture-only; electrical may need permit",
+        "Ventilation if garage shop adjacent"
+      ]
+    },
+    {
+      "name": "Glory",
+      "lineItems": [
+        { "item": "Soundproofing + insulation", "low": 1500, "high": 5000 },
+        { "item": "Kegerator / wet bar plumbing", "low": 800, "high": 3500 },
+        { "item": "Custom millwork / bar", "low": 2000, "high": 8000 },
+        { "item": "AV rack + theater seating", "low": 1500, "high": 6000 },
+        { "item": "HVAC tweak / mini-split", "low": 2000, "high": 7000 },
+        { "item": "Latin KEEP OUT door lettering (optional)", "low": 20, "high": 80 }
+      ],
+      "considerations": [
+        "Permits likely for plumbing/electrical/HVAC",
+        "Does your spouse know?",
+        "Resale: not every buyer pays for Glory-tier vibes"
+      ]
+    }
+  ],
+  "asOfDate": "2026-01-01",
+  "confidence": "typical",
+  "currency": "USD",
+  "regionNote": "U.S. ballpark DIY+pro mixed ranges; your market varies."
+}

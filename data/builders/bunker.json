@@ -1,0 +1,42 @@
+{
+  "id": "builder-bunker",
+  "type": "bunker",
+  "title": "Bunker / storm shelter planner",
+  "host": "the-colonel",
+  "tiers": [
+    {
+      "name": "Budget",
+      "lineItems": [
+        { "item": "Go-bag + water + radio", "low": 100, "high": 300 },
+        { "item": "Interior safe room reinforcement (limited)", "low": 500, "high": 2000 }
+      ],
+      "considerations": [
+        "Not a FEMA-rated shelter unless built to standard",
+        "Local storm patterns matter more than vibes"
+      ]
+    },
+    {
+      "name": "Solid",
+      "lineItems": [
+        { "item": "Prefabricated storm shelter (installed)", "low": 4000, "high": 12000 },
+        { "item": "Anchoring / slab work", "low": 1000, "high": 4000 }
+      ],
+      "considerations": ["Use rated products; follow manufacturer anchoring"]
+    },
+    {
+      "name": "Glory",
+      "lineItems": [
+        { "item": "Site-built below-grade shelter", "low": 15000, "high": 60000 },
+        { "item": "Ventilation, power, drainage", "low": 3000, "high": 15000 }
+      ],
+      "considerations": [
+        "Engineering and permits required",
+        "This is not a DIY weekend project"
+      ]
+    }
+  ],
+  "asOfDate": "2026-01-01",
+  "confidence": "typical",
+  "currency": "USD",
+  "regionNote": "Highly regional; get local engineered quotes."
+}

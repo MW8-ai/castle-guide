@@ -1,0 +1,40 @@
+{
+  "links": [
+    {
+      "id": "fema-flood",
+      "label": "FEMA Flood Map Service Center",
+      "url": "https://msc.fema.gov/portal/home",
+      "category": "gov",
+      "note": "Look up flood zone by address."
+    },
+    {
+      "id": "nsopw",
+      "label": "NSOPW.gov (national sex offender public website)",
+      "url": "https://www.nsopw.gov/",
+      "category": "crime",
+      "note": "Official public registry portal. Awareness only — never harass."
+    },
+    {
+      "id": "fbi-cde",
+      "label": "FBI Crime Data Explorer",
+      "url": "https://cde.ucr.cjis.gov/",
+      "category": "crime",
+      "note": "Official crime statistics explorer."
+    },
+    {
+      "id": "epa-radon",
+      "label": "EPA Radon zones / guidance",
+      "url": "https://www.epa.gov/radon",
+      "category": "gov",
+      "note": "Radon testing guidance."
+    },
+    {
+      "id": "dsire",
+      "label": "DSIRE incentives",
+      "url": "https://www.dsireusa.org/",
+      "category": "utility",
+      "note": "State and utility incentive lookup."
+    }
+  ],
+  "legalNotice": "Crime and registry links point to official public sources. Registry information may not lawfully be used to harass or commit any crime against any person. Castle Guide does not scrape or rehost registry PII."
+}

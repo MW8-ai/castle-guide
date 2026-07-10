@@ -116,7 +116,14 @@ function runBatch(
   }
 }
 
-runBatch('knowledge', walk(join(dataDir, 'knowledge')), nuggetValidate, true);
+// knowledge/*.json may include non-nugget files later; only validate nugget-shaped objects
+{
+  const knowledgeFiles = walk(join(dataDir, 'knowledge')).filter((f) => {
+    const data = loadJson(f);
+    return typeof data.character === 'string' && typeof data.body === 'string';
+  });
+  runBatch('knowledge', knowledgeFiles, nuggetValidate, true);
+}
 runBatch('cost', walk(join(dataDir, 'costs')), costValidate, true);
 
 // Spike fixture must stay aligned with the production HouseViewModel schema

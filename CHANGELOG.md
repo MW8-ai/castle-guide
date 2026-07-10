@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-09
+
+### Added
+
+#### Phase 4 — House View + Council + AI
+- Production isometric renderer with drag-drop placements + health overlay
+- House view page: click item → catalog card with lineage; list-view a11y twin
+- Serenity score from tasks/shutoffs/catalog
+- Council page + contextual/seasonal nugget surfacing (Gus)
+- BYO-key settings (browser-only) + manual OCR/triage prompt generators
+
+#### Phase 5 — Area + Builders + Polish
+- Neighborhood official link hub (FEMA, NSOPW, FBI CDE, etc.) + anti-harassment notice
+- User socials links per property
+- Law vs Nosey Neighbor fence module (Karen) with source link
+- Mancave + bunker builders with Budget/Solid/Glory estimates (Colonel)
+- Dream Home wishlist board; realtor gift LIGHT in Settings
+
+#### Phase 6 — Stretch (implemented skins + sockets)
+- Retro **pixel** renderer skin (same plugin contract)
+- **walk3d** canvas walkthrough plug (WASD); full Three.js still in HUMAN_DIRECTIONS
+- Settings panel documents valuation/PWA/sync/Pages BLUEPRINT sockets
+
+### Changed
+- App version 0.7.0; footer and export manifest
+
 ## [0.4.0] — 2026-07-09
 
 ### Added

@@ -1,0 +1,18 @@
+{
+  "id": "nugget-karen-fence-basics",
+  "character": "karen-reformed",
+  "category": "neighbor-law",
+  "title": "Fence disputes: law vs Brenda energy",
+  "body": "Fence rules are usually a mix of local ordinance, recorded easements, and (if any) HOA CC&Rs — not your neighbor's preferred aesthetic. Common patterns: setbacks, height limits, and who pays for a boundary fence vary by state and city. Ask your county/city for fence height and setback rules, check your survey for the property line, and read any HOA docs. This is educational pattern language — not legal advice for your lot.",
+  "sources": [
+    {
+      "url": "https://www.usa.gov/state-legal-help",
+      "date": "2025-01-01",
+      "label": "USA.gov — find state legal resources"
+    }
+  ],
+  "asOfDate": "2025-01-01",
+  "confidence": "regional",
+  "regionTags": ["US"],
+  "estSavings": 500
+}

@@ -4,13 +4,13 @@
 
 | Phase | Name | Version target | Status |
 |-------|------|----------------|--------|
-| **0** | Planning | 0.1.0 | **PASSED** (owner audit 2026-07-09) |
-| **1** | Home Record | 0.2.0 | **PASSED** (implemented) |
-| **2** | Maintenance + Ops | 0.3.0 | **PASSED** (implemented) |
-| **3** | Money + Protection | 0.4.0 | **OPEN** — implement & gate |
-| **4** | House View + Council + AI | 0.5.0 | Planned |
-| **5** | Area + Builders + Polish | 0.6.0 | Planned |
-| **6** | Stretch | 0.7.0+ | Planned (order by ADR) |
+| **0** | Planning | 0.1.0 | **PASSED** |
+| **1** | Home Record | 0.2.0 | **PASSED** |
+| **2** | Maintenance + Ops | 0.3.0 | **PASSED** |
+| **3** | Money + Protection | 0.4.0 | **PASSED** |
+| **4** | House View + Council + AI | 0.5.0 | **PASSED** (iso + council + BYO prompts) |
+| **5** | Area + Builders + Polish | 0.6.0 | **PASSED** (area hub, Karen, Colonel, dream board) |
+| **6** | Stretch | 0.7.0 | **PASSED** (pixel + walk3d plugs; live APIs/PWA/sync remain BLUEPRINT sockets) |
 
 ---
 

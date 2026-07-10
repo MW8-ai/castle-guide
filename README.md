@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Status** | Phase 3 — Money + Protection |
-| **Version** | 0.4.0 |
+| **Status** | Phases 0–6 implemented (stretch sockets documented) |
+| **Version** | 0.7.0 |
 | **Stack** | Preact · Vite · TypeScript · IndexedDB/OPFS (planned) |
 | **Default house view** | Isometric sim (ADR-0002) |
 | **Repo name / Pages base** | `castle-guide` → `base: '/castle-guide/'` |
