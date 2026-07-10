@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-07-10
+
+### Changed — fun-first product pass (design lead)
+
+- **Title screen** pushes a full Sample Home (never blank forms first)
+- **Pixel-game shell**: Press Start vibe, chunky borders, quest language
+- **Default map**: angled pixel-iso house with walls, grass/sky, furniture blocks that read as appliances (FR/WH/HV…), pan + zoom, click for cards
+- **Stuff bag** inventory grid; **Quest board** for maintenance
+- Backend/data rules unchanged — only experience layer redesigned
+- Removed random scores / phase chrome / Serenity branding from primary path
+
 ## [0.9.1] — 2026-07-10
 
 ### Changed

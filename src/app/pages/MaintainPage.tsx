@@ -115,7 +115,7 @@ export function MaintainPage({ id }: Props) {
           ← House
         </button>
       </p>
-      <h1>To-dos & calendar</h1>
+      <h1 class="game-title">Quest board</h1>
       <p class="muted">
         Region tip level: <strong>{zone}</strong>
         {property.zip ? ` (from ZIP ${property.zip})` : ' — add a ZIP for better seasonal tips'}

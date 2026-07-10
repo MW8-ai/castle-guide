@@ -1,51 +1,42 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { Property } from '../../storage';
 import {
   ensureDemoCastle,
   resetDemoCastle,
   DEMO_PROPERTY_NAME,
 } from '../../record/demoSeed';
-import { go, href } from '../paths';
+import { go } from '../paths';
 import { useActiveCastle } from '../ActiveCastle';
 
+/**
+ * Game title screen — always push people into a FULL demo, never a blank form.
+ */
 export function HomePage() {
   const { refresh, setPropertyId } = useActiveCastle();
-  const [properties, setProperties] = useState<Property[]>([]);
   const [busy, setBusy] = useState(false);
-
-  async function load() {
-    const s = await ensureStorageReady();
-    let list = await s.listProperties();
-    if (list.length === 0) {
-      await ensureDemoCastle(s);
-      list = await s.listProperties();
-      await refresh();
-    }
-    setProperties(list);
-  }
+  const [ready, setReady] = useState(false);
+  const [itemCount, setItemCount] = useState(0);
 
   useEffect(() => {
-    void load();
+    void (async () => {
+      const s = await ensureStorageReady();
+      let demo = await ensureDemoCastle(s);
+      if (demo.items.length < 10) {
+        demo = await resetDemoCastle(s);
+      }
+      setItemCount(demo.items.filter((i) => i.active).length);
+      await refresh();
+      setReady(true);
+    })();
   }, []);
 
-  async function openHome(id: string) {
-    await setPropertyId(id);
-    go('property', id, 'house');
-  }
-
-  async function openDemo() {
+  async function play() {
     setBusy(true);
     try {
       const s = await ensureStorageReady();
-      const demo = await ensureDemoCastle(s);
-      // Force rebuild if old thin demo
-      if (demo.items.length < 8) {
-        const rebuilt = await resetDemoCastle(s);
-        await refresh();
-        go('property', rebuilt.id, 'house');
-        return;
-      }
+      let demo = await ensureDemoCastle(s);
+      if (demo.items.length < 10) demo = await resetDemoCastle(s);
+      await setPropertyId(demo.id);
       await refresh();
       go('property', demo.id, 'house');
     } finally {
@@ -53,28 +44,27 @@ export function HomePage() {
     }
   }
 
-  async function resetDemo() {
-    if (!confirm('Reload the sample home with full demo furniture and appliances?'))
-      return;
+  async function freshDemo() {
     setBusy(true);
     try {
       const s = await ensureStorageReady();
       const demo = await resetDemoCastle(s);
+      await setPropertyId(demo.id);
       await refresh();
-      await load();
       go('property', demo.id, 'house');
     } finally {
       setBusy(false);
     }
   }
 
-  async function blankHome() {
-    const name = prompt('Name this home', 'My House');
+  async function blank() {
+    const name = prompt('Name your home', 'My House');
     if (!name?.trim()) return;
     setBusy(true);
     try {
       const s = await ensureStorageReady();
       const p = await s.createProperty(name.trim(), null);
+      await setPropertyId(p.id);
       await refresh();
       go('property', p.id, 'house');
     } finally {
@@ -82,117 +72,60 @@ export function HomePage() {
     }
   }
 
-  const demo = properties.find((p) => p.name === DEMO_PROPERTY_NAME);
-  const others = properties.filter((p) => p.name !== DEMO_PROPERTY_NAME);
-
   return (
-    <section class="page home-v2">
-      <header class="home-hero">
-        <p class="eyebrow">Home Guide</p>
-        <h1>Walk through a real house — not a blank form.</h1>
-        <p class="tagline">
-          The sample home is packed with kitchens, utilities, appliances, and
-          to-dos. Move around like a game, click stuff you own, then replace the
-          demo with your own place when you’re ready.
+    <div class="title-screen">
+      <div class="title-sky" />
+      <div class="title-panel">
+        <div class="title-badge">HOME GUIDE</div>
+        <h1 class="title-logo">
+          Your whole house
+          <br />
+          <span>in one place</span>
+        </h1>
+        <p class="title-tag">
+          Catalog appliances, remember filter sizes, get reminders before things
+          break — wrapped in a little game so you’ll actually open it.
         </p>
-      </header>
 
-      <div class="home-cta-row">
-        <button
-          type="button"
-          class="btn primary big"
-          disabled={busy}
-          onClick={() => void openDemo()}
-        >
-          {busy ? 'Opening…' : '▶ Play sample home'}
-        </button>
-        <button
-          type="button"
-          class="btn big"
-          disabled={busy}
-          onClick={() => void blankHome()}
-        >
-          Start empty home
-        </button>
-      </div>
+        <div class="title-demo-blurb">
+          <strong>{DEMO_PROPERTY_NAME}</strong> is preloaded with kitchen,
+          living room, bath, bedroom, utility, garage, and{' '}
+          {ready ? itemCount : '…'} real items + to-dos.
+        </div>
 
-      <div class="home-guide card">
-        <h2>60-second tour</h2>
-        <ol class="steps">
-          <li>
-            <strong>Look</strong> at the illustrated cutaway of the sample home
-            (angled art, not a grid of squares).
-          </li>
-          <li>
-            <strong>Zoom / drag</strong> to look around the painting.
-          </li>
-          <li>
-            <strong>Tap a glowing pin</strong> (fridge, furnace, water heater…)
-            for brand, model, warranty.
-          </li>
-          <li>
-            <strong>Stuff</strong> in the left menu is where you add real items
-            later.
-          </li>
+        <div class="title-actions">
+          <button
+            type="button"
+            class="btn primary big title-play"
+            disabled={busy || !ready}
+            onClick={() => void play()}
+          >
+            {busy ? 'Loading…' : '▶  Enter sample home'}
+          </button>
+          <button
+            type="button"
+            class="btn big"
+            disabled={busy}
+            onClick={() => void freshDemo()}
+          >
+            Reload full sample
+          </button>
+          <button
+            type="button"
+            class="btn ghost"
+            disabled={busy}
+            onClick={() => void blank()}
+          >
+            Empty home (advanced)
+          </button>
+        </div>
+
+        <ol class="title-steps">
+          <li>Open the map and click the fridge</li>
+          <li>Check Quests for filter change</li>
+          <li>Stuff bag = inventory without the tax form</li>
         </ol>
       </div>
-
-      {demo && (
-        <div class="card home-demo-card">
-          <div class="home-demo-head">
-            <div>
-              <h2>{demo.name}</h2>
-              <p class="muted">
-                {demo.rooms.length} rooms ·{' '}
-                {demo.items.filter((i) => i.active).length} items · ready to
-                explore
-              </p>
-            </div>
-            <div class="btn-row">
-              <button
-                type="button"
-                class="btn primary"
-                onClick={() => void openHome(demo.id)}
-              >
-                Open
-              </button>
-              <button type="button" class="btn" onClick={() => void resetDemo()}>
-                Reload full sample
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {others.length > 0 && (
-        <div class="card">
-          <h2>Your homes</h2>
-          <ul class="castle-list">
-            {others.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  class="castle-row"
-                  onClick={() => void openHome(p.id)}
-                >
-                  <strong>{p.name}</strong>
-                  <span class="muted">
-                    {p.items.filter((i) => i.active).length} items ·{' '}
-                    {p.rooms.length} rooms
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <p class="home-advanced muted">
-        Power users:{' '}
-        <a href={href('import')}>Import from a chat checklist</a>
-        {' · '}
-        <a href={href('import-zip')}>Import backup ZIP</a>
-      </p>
-    </section>
+    </div>
   );
 }

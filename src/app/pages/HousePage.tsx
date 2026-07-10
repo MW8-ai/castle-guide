@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 import type { Item, Property } from '../../storage';
-import { buildHouseViewModel } from '../../houseview';
-import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
+import { buildHouseViewModel, getRenderer } from '../../houseview';
+import type { HouseRendererHandle } from '../../houseview';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 
@@ -12,6 +12,8 @@ interface Props {
 
 export function HousePage({ id }: Props) {
   const { property: active, refresh: refreshActive } = useActiveCastle();
+  const hostRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HouseRendererHandle | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
 
@@ -30,147 +32,174 @@ export function HousePage({ id }: Props) {
     }
     setProperty(p);
     await refreshActive();
+
+    const model = buildHouseViewModel(p).model;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!hostRef.current) return;
+        handleRef.current?.destroy();
+        handleRef.current = getRenderer('pixel-home').mount(
+          hostRef.current,
+          model,
+          {
+            onSelectItem: (itemId) => {
+              setSelected(p!.items.find((i) => i.id === itemId) ?? null);
+            },
+            onSelectRoom: () => {},
+            onMovePlacement: () => {},
+          }
+        );
+      });
+    });
   }
 
   useEffect(() => {
     void load();
+    return () => {
+      handleRef.current?.destroy();
+      handleRef.current = null;
+    };
   }, [propertyId]);
 
   if (!propertyId) {
     return (
       <section class="page">
-        <p>No home selected.</p>
         <button type="button" class="btn primary" onClick={() => go()}>
-          Home
+          Title screen
         </button>
       </section>
     );
   }
-
   if (!property) {
-    return <div class="page loading-splash">Loading your home…</div>;
+    return <div class="page loading-splash game-font">Loading home…</div>;
   }
 
-  const upcoming = property.tasks
-    .filter((t) => t.status === 'pending')
-    .slice(0, 5);
+  const quests = property.tasks.filter((t) => t.status === 'pending').slice(0, 4);
+  const itemCount = property.items.filter((i) => i.active).length;
 
   return (
-    <section class="house-workspace">
-      <header class="house-top">
+    <section class="game-home">
+      <header class="game-home-bar">
         <div>
-          <h1>{property.name}</h1>
-          <p class="muted house-hint">
-            Illustrated home — zoom in, pan around, tap a glowing pin for the
-            real appliance card (brand, model, warranty).
-          </p>
+          <div class="game-kicker">YOUR HOME</div>
+          <h1 class="game-title">{property.name}</h1>
+        </div>
+        <div class="game-stats">
+          <div class="stat-pill">
+            <span>Rooms</span>
+            <strong>{property.rooms.length}</strong>
+          </div>
+          <div class="stat-pill">
+            <span>Stuff</span>
+            <strong>{itemCount}</strong>
+          </div>
+          <div class="stat-pill warn">
+            <span>To-dos</span>
+            <strong>{quests.length}</strong>
+          </div>
         </div>
       </header>
 
-      <div class="house-grid">
-        <div class="house-stage card art-stage-card">
-          <div class="house-stage-label">Your home</div>
-          <ImageHouseView
-            items={property.items}
-            houseName={property.name}
-            selectedItemId={selected?.id}
-            onSelectItem={setSelected}
-          />
+      <div class="game-home-grid">
+        <div class="game-map-frame">
+          <div class="game-map-title">⌂ House map · click furniture</div>
+          <div class="game-map-host" ref={hostRef} />
         </div>
 
-        <aside class="house-side">
+        <aside class="game-side">
           {selected ? (
-            <div class="card item-panel">
-              <div class="item-panel-head">
+            <div class="game-card item-card-game">
+              <div class="game-card-head">
                 <h2>
-                  {selected.brand} {selected.model}
+                  {selected.brand}
+                  <br />
+                  <span class="model">{selected.model}</span>
                 </h2>
                 <button
                   type="button"
                   class="btn icon"
                   onClick={() => setSelected(null)}
-                  aria-label="Close"
                 >
                   ✕
                 </button>
               </div>
-              <div class="item-hero-emoji" aria-hidden="true">
-                {heroGlyph(selected)}
+              <div class="item-big-icon">{glyph(selected)}</div>
+              <div class="pixel-facts">
+                <div>
+                  <span>TYPE</span>
+                  {selected.category.replace(/-/g, ' ')}
+                </div>
+                <div>
+                  <span>SERIAL</span>
+                  {selected.serial ?? '—'}
+                </div>
+                <div>
+                  <span>INSTALLED</span>
+                  {selected.purchaseDate ?? '—'}
+                </div>
+                <div>
+                  <span>WARRANTY</span>
+                  {selected.warrantyEnd ?? '—'}
+                </div>
+                <div>
+                  <span>COST</span>
+                  {selected.price != null
+                    ? `$${selected.price.toLocaleString()}`
+                    : '—'}
+                </div>
               </div>
-              <p class="item-cat">{selected.category.replace(/-/g, ' ')}</p>
-              <dl class="fact-list">
-                <div>
-                  <dt>Serial</dt>
-                  <dd>{selected.serial ?? '—'}</dd>
-                </div>
-                <div>
-                  <dt>Installed</dt>
-                  <dd>{selected.purchaseDate ?? '—'}</dd>
-                </div>
-                <div>
-                  <dt>Warranty until</dt>
-                  <dd>{selected.warrantyEnd ?? '—'}</dd>
-                </div>
-                <div>
-                  <dt>You paid</dt>
-                  <dd>
-                    {selected.price != null
-                      ? `$${selected.price.toLocaleString()}`
-                      : '—'}
-                  </dd>
-                </div>
-              </dl>
-              {selected.filterSpecs.length > 0 && (
-                <p>
-                  <strong>Parts:</strong>{' '}
-                  {selected.filterSpecs
-                    .map((f) => `${f.name}: ${f.sizeOrModel}`)
-                    .join(' · ')}
+              {selected.filterSpecs[0] && (
+                <p class="part-callout">
+                  Filter / part: <strong>{selected.filterSpecs[0].sizeOrModel}</strong>
                 </p>
               )}
               {selected.notes && <p class="muted">{selected.notes}</p>}
               <button
                 type="button"
-                class="btn primary"
+                class="btn primary block"
                 onClick={() => go('property', propertyId, 'inventory')}
               >
-                Edit in Stuff
+                Open in Stuff bag
               </button>
             </div>
           ) : (
-            <div class="card item-panel empty-panel">
-              <h2>Look around</h2>
+            <div class="game-card">
+              <h2>Welcome home</h2>
               <p class="muted">
-                This is a painted cutaway of the sample home — closer to a modern
-                game screenshot than a spreadsheet. Pins mark things you own.
+                This is a <strong>filled demo</strong> so you can see the best
+                case. Drag the map, scroll to zoom, click the fridge or water
+                heater.
               </p>
               <p class="muted">
-                Zoom until you can read the rooms, then tap the fridge or water
-                heater pin.
+                Left menu: <strong>Stuff</strong> (inventory),{' '}
+                <strong>To-dos</strong> (maintenance).
               </p>
             </div>
           )}
 
-          <div class="card">
-            <h3>Coming up</h3>
-            {upcoming.length === 0 ? (
-              <p class="muted">Nothing due right now.</p>
+          <div class="game-card quest-card">
+            <h3>★ Quest board</h3>
+            {quests.length === 0 ? (
+              <p class="muted">All clear for now.</p>
             ) : (
-              <ul class="plain-list tight">
-                {upcoming.map((t) => (
+              <ul class="quest-list">
+                {quests.map((t) => (
                   <li key={t.id}>
-                    <strong>{t.title}</strong>
-                    <div class="muted">Due {t.nextDue}</div>
+                    <span class="quest-mark">!</span>
+                    <div>
+                      <strong>{t.title}</strong>
+                      <div class="muted">Due {t.nextDue}</div>
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
             <button
               type="button"
-              class="btn"
+              class="btn block"
               onClick={() => go('property', propertyId, 'maintain')}
             >
-              Open to-do list
+              Full quest list
             </button>
           </div>
         </aside>
@@ -179,15 +208,16 @@ export function HousePage({ id }: Props) {
   );
 }
 
-function heroGlyph(item: Item): string {
+function glyph(item: Item): string {
   const c = item.category.toLowerCase();
   if (c.includes('refriger')) return '🧊';
-  if (c.includes('range') || c.includes('oven')) return '🔥';
-  if (c.includes('water-heater') || c.includes('water heater')) return '💧';
-  if (c.includes('furnace') || c.includes('hvac')) return '🌡️';
+  if (c.includes('range')) return '🔥';
+  if (c.includes('water')) return '💧';
+  if (c.includes('furnace')) return '🌡️';
   if (c.includes('wash')) return '👕';
   if (c.includes('dry')) return '🌀';
   if (c.includes('tv')) return '📺';
   if (c.includes('bed')) return '🛏️';
+  if (c.includes('sofa') || c.includes('furniture')) return '🛋️';
   return '📦';
 }

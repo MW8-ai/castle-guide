@@ -10,14 +10,14 @@ interface Props {
 }
 
 const NAV: { id: string; label: string; segment: string; icon: string }[] = [
-  { id: 'house', label: 'My Home', segment: 'house', icon: '🏠' },
-  { id: 'inventory', label: 'Stuff', segment: 'inventory', icon: '📦' },
-  { id: 'maintain', label: 'To-Dos', segment: 'maintain', icon: '✓' },
-  { id: 'money', label: 'Money', segment: 'money', icon: '💵' },
-  { id: 'area', label: 'Area', segment: 'area', icon: '📍' },
-  { id: 'council', label: 'Tips', segment: 'council', icon: '💡' },
-  { id: 'builders', label: 'Projects', segment: 'builders', icon: '🛠️' },
-  { id: 'settings', label: 'Settings', segment: 'settings', icon: '⚙️' },
+  { id: 'house', label: 'Home map', segment: 'house', icon: '⌂' },
+  { id: 'inventory', label: 'Stuff', segment: 'inventory', icon: '🎒' },
+  { id: 'maintain', label: 'Quests', segment: 'maintain', icon: '!' },
+  { id: 'money', label: 'Coins', segment: 'money', icon: '$' },
+  { id: 'area', label: 'World', segment: 'area', icon: '◎' },
+  { id: 'council', label: 'Hints', segment: 'council', icon: '?' },
+  { id: 'builders', label: 'Builds', segment: 'builders', icon: '⚒' },
+  { id: 'settings', label: 'Options', segment: 'settings', icon: '⚙' },
 ];
 
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
@@ -41,17 +41,21 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   function isActive(segment: string): boolean {
     if (segment === 'settings') return path.includes('/settings');
     if (segment === 'house') {
-      return (
-        path.includes('/house') ||
-        /\/property\/[^/]+\/?$/.test(path)
-      );
+      return path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
     }
     return path.includes(`/${segment}`);
   }
 
+  // Title screen: no chrome
+  const titleScreen = !path.includes('/property') && !path.includes('/settings') && !path.includes('/import');
+
+  if (titleScreen) {
+    return <div class="shell-title">{loading ? null : children}</div>;
+  }
+
   return (
-    <div class="shell">
-      <aside class="sidebar">
+    <div class="shell game-shell">
+      <aside class="sidebar game-sidebar">
         <a
           class="sidebar-brand"
           href={href()}
@@ -60,12 +64,10 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             go();
           }}
         >
-          <span class="brand-mark" aria-hidden="true">
-            🏠
-          </span>
+          <div class="logo-pixel">HG</div>
           <div>
             <div class="brand-title">Home Guide</div>
-            <div class="brand-sub">Walk your house. Keep the records.</div>
+            <div class="brand-sub">All your house stuff</div>
           </div>
         </a>
 
@@ -73,8 +75,8 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           <div class="sidebar-castle">
             <div class="sidebar-castle-name">{property.name}</div>
             <div class="sidebar-castle-meta">
+              {property.rooms.length} rooms ·{' '}
               {property.items.filter((i) => i.active).length} items
-              {taskDue > 0 ? ` · ${taskDue} to-dos` : ''}
             </div>
           </div>
         )}
@@ -101,17 +103,17 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
 
         <div class="sidebar-foot">
           <button type="button" class="theme-btn" onClick={onToggleTheme}>
-            {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+            {theme === 'dark' ? 'Day' : 'Night'}
           </button>
           <button type="button" class="sidebar-link subtle" onClick={() => go()}>
-            Switch home
+            Title screen
           </button>
         </div>
       </aside>
 
-      <div class="shell-main">
+      <div class="shell-main game-main">
         {loading ? (
-          <div class="page loading-splash">Loading…</div>
+          <div class="page loading-splash game-font">Loading…</div>
         ) : (
           children
         )}
