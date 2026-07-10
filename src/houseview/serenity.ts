@@ -39,10 +39,10 @@ export function computeSerenity(property: Property, asOf = todayUtc()): number {
 }
 
 export function serenityLabel(score: number): string {
-  if (score >= 85) return "How's the serenity? Pretty good.";
-  if (score >= 60) return "How's the serenity? A few things need love.";
-  if (score >= 35) return "How's the serenity? The house is whispering.";
-  return "How's the serenity? The house is yelling.";
+  if (score >= 85) return 'Home looks solid';
+  if (score >= 60) return 'A few things need attention';
+  if (score >= 35) return 'Several to-dos are stacking up';
+  return 'Home needs care soon';
 }
 
 function addDays(iso: string, n: number): string {

@@ -1,7 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useActiveCastle } from './ActiveCastle';
 import { href, go } from './paths';
-import { computeSerenity } from '../houseview';
 
 interface Props {
   children: ComponentChildren;
@@ -11,20 +10,19 @@ interface Props {
 }
 
 const NAV: { id: string; label: string; segment: string; icon: string }[] = [
-  { id: 'house', label: 'House View', segment: 'house', icon: '🏠' },
-  { id: 'inventory', label: 'Inventory', segment: 'inventory', icon: '📦' },
-  { id: 'maintain', label: 'Maintenance', segment: 'maintain', icon: '🔧' },
+  { id: 'house', label: 'My Home', segment: 'house', icon: '🏠' },
+  { id: 'inventory', label: 'Stuff', segment: 'inventory', icon: '📦' },
+  { id: 'maintain', label: 'To-Dos', segment: 'maintain', icon: '✓' },
   { id: 'money', label: 'Money', segment: 'money', icon: '💵' },
-  { id: 'area', label: 'Neighborhood', segment: 'area', icon: '🗺️' },
-  { id: 'council', label: 'Council', segment: 'council', icon: '👑' },
-  { id: 'builders', label: 'Builders', segment: 'builders', icon: '🛠️' },
+  { id: 'area', label: 'Area', segment: 'area', icon: '📍' },
+  { id: 'council', label: 'Tips', segment: 'council', icon: '💡' },
+  { id: 'builders', label: 'Projects', segment: 'builders', icon: '🛠️' },
   { id: 'settings', label: 'Settings', segment: 'settings', icon: '⚙️' },
 ];
 
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const { property, loading } = useActiveCastle();
   const pid = property?.id;
-  const serenity = property ? computeSerenity(property) : 100;
   const taskDue =
     property?.tasks.filter((t) => t.status === 'pending').length ?? 0;
 
@@ -42,6 +40,12 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
 
   function isActive(segment: string): boolean {
     if (segment === 'settings') return path.includes('/settings');
+    if (segment === 'house') {
+      return (
+        path.includes('/house') ||
+        /\/property\/[^/]+\/?$/.test(path)
+      );
+    }
     return path.includes(`/${segment}`);
   }
 
@@ -57,11 +61,11 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           }}
         >
           <span class="brand-mark" aria-hidden="true">
-            🏰
+            🏠
           </span>
           <div>
-            <div class="brand-title">Castle Guide</div>
-            <div class="brand-sub">Your castle. Your data.</div>
+            <div class="brand-title">Home Guide</div>
+            <div class="brand-sub">Walk your house. Keep the records.</div>
           </div>
         </a>
 
@@ -69,8 +73,8 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           <div class="sidebar-castle">
             <div class="sidebar-castle-name">{property.name}</div>
             <div class="sidebar-castle-meta">
-              Serenity {serenity}
-              {taskDue > 0 ? ` · ${taskDue} tasks` : ''}
+              {property.items.filter((i) => i.active).length} items
+              {taskDue > 0 ? ` · ${taskDue} to-dos` : ''}
             </div>
           </div>
         )}
@@ -99,19 +103,15 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           <button type="button" class="theme-btn" onClick={onToggleTheme}>
             {theme === 'dark' ? '☀ Light' : '☾ Dark'}
           </button>
-          <button
-            type="button"
-            class="sidebar-link subtle"
-            onClick={() => go()}
-          >
-            All castles
+          <button type="button" class="sidebar-link subtle" onClick={() => go()}>
+            Switch home
           </button>
         </div>
       </aside>
 
       <div class="shell-main">
         {loading ? (
-          <div class="page loading-splash">Opening your castle…</div>
+          <div class="page loading-splash">Loading…</div>
         ) : (
           children
         )}

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-07-10
+
+### Changed — playable home, plain English
+
+- **Walk-around map** is the default house view (WASD + scroll zoom + grass)
+- Demo renamed **Sample Home** (no Serenity / in-joke branding in UI)
+- Demo packed with kitchen, living, bath, bedroom, utility, garage + many appliances
+- Sidebar: My Home / Stuff / To-Dos (not phase labels or serenity score)
+- Removed corner “Add item / Maintenance” chrome and random health score from house view
+- “Ops calendar” → **Home calendar**; friendlier task copy
+- Pool Room → Favorites
+
 ## [0.8.0] — 2026-07-09
 
 ### Changed — UX quality reboot (guided by refs/1–4)

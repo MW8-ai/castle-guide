@@ -6,7 +6,7 @@ interface SerenityMeterProps {
 
 export function SerenityMeter({
   score,
-  label = "How's the serenity?",
+  label = 'Home health',
 }: SerenityMeterProps) {
   const clamped = Math.max(0, Math.min(100, score));
   return (
@@ -18,10 +18,6 @@ export function SerenityMeter({
       <div class="serenity-track">
         <div class="serenity-fill" style={{ width: `${clamped}%` }} />
       </div>
-      <p class="serenity-hint muted">
-        Placeholder score for Phase 0. Later: overdue tasks, warranty risk, and
-        shutoff completeness.
-      </p>
     </div>
   );
 }

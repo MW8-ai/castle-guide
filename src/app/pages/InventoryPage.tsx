@@ -108,11 +108,7 @@ export function InventoryPage({ id }: Props) {
   async function togglePool(item: Item) {
     const s = await ensureStorageReady();
     await s.setPoolRoomWorthy(propertyId!, item.id, !item.poolRoomWorthy);
-    setMsg(
-      !item.poolRoomWorthy
-        ? "This is going straight to the pool room."
-        : 'Removed from Pool Room.'
-    );
+    setMsg(!item.poolRoomWorthy ? 'Starred as a favorite.' : 'Removed from favorites.');
     await load();
   }
 
@@ -152,9 +148,10 @@ export function InventoryPage({ id }: Props) {
     <section class="page inv-page">
       <header class="inv-head">
         <div>
-          <h1>Inventory</h1>
+          <h1>Your stuff</h1>
           <p class="muted">
-            {active.length} items · {property.rooms.length} rooms · short form, not a tax return
+            {active.length} items · {property.rooms.length} rooms · quick add,
+            details later
           </p>
         </div>
         <div class="btn-row">
@@ -166,14 +163,7 @@ export function InventoryPage({ id }: Props) {
             class="btn primary"
             onClick={() => setShowAdd((v) => !v)}
           >
-            {showAdd ? 'Cancel' : '+ Item'}
-          </button>
-          <button
-            type="button"
-            class="btn"
-            onClick={() => go('property', propertyId, 'house')}
-          >
-            House View
+            {showAdd ? 'Cancel' : '+ Add item'}
           </button>
         </div>
       </header>
@@ -281,7 +271,7 @@ export function InventoryPage({ id }: Props) {
                 Replace
               </button>
               <button type="button" class="btn" onClick={() => void togglePool(item)}>
-                {item.poolRoomWorthy ? 'Un-trophy' : 'Pool Room'}
+                {item.poolRoomWorthy ? 'Unstar' : '★ Favorite'}
               </button>
             </div>
           </li>
@@ -305,8 +295,8 @@ export function InventoryPage({ id }: Props) {
 
       {property.items.some((i) => i.poolRoomWorthy && !i.softDeleted) && (
         <div class="card pool-banner">
-          <h2>🏆 Pool Room</h2>
-          <p class="muted">Trophy shelf — items you marked as magnificent.</p>
+          <h2>★ Favorites</h2>
+          <p class="muted">Stuff you starred as keepers.</p>
           <ul class="plain-list">
             {property.items
               .filter((i) => i.poolRoomWorthy && !i.softDeleted)

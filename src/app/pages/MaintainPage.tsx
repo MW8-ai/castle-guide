@@ -69,7 +69,7 @@ export function MaintainPage({ id }: Props) {
       source: 'user',
       remind: true,
     });
-    setMessage('Trash day added to ops calendar.');
+    setMessage('Trash day added to your home calendar.');
     await refresh();
   }
 
@@ -115,21 +115,21 @@ export function MaintainPage({ id }: Props) {
           ← House
         </button>
       </p>
-      <h1>Maintenance & Ops</h1>
+      <h1>To-dos & calendar</h1>
       <p class="muted">
-        Climate zone: <strong>{zone}</strong>
-        {property.zip ? ` (from ZIP ${property.zip})` : ' — add a ZIP for regional cadence'}
+        Region tip level: <strong>{zone}</strong>
+        {property.zip ? ` (from ZIP ${property.zip})` : ' — add a ZIP for better seasonal tips'}
       </p>
 
       <div class="btn-row">
         <button type="button" class="btn primary" onClick={() => void runSchedule()}>
-          Auto-schedule from catalog
+          Build to-dos from my stuff
         </button>
         <button type="button" class="btn" onClick={() => void addTrashDay()}>
           Add trash day
         </button>
         <button type="button" class="btn" onClick={() => void downloadIcs()}>
-          Export ICS
+          Download calendar file
         </button>
       </div>
 
@@ -157,11 +157,11 @@ export function MaintainPage({ id }: Props) {
       )}
 
       <div class="card">
-        <h2>Task cards</h2>
+        <h2>Things to do</h2>
         {pending.length === 0 ? (
           <p class="muted">
-            No pending tasks. Add appliances, then run auto-schedule (furnace
-            filter uses your consumable size when present).
+            Nothing pending. Add appliances under Stuff, then hit “Build to-dos
+            from my stuff” (filter size comes from your saved filter size).
           </p>
         ) : (
           <ul class="item-list">
@@ -198,7 +198,11 @@ export function MaintainPage({ id }: Props) {
       </div>
 
       <div class="card">
-        <h2>Ops calendar (next 8 weeks)</h2>
+        <h2>Home calendar (next 8 weeks)</h2>
+        <p class="muted">
+          Trash day, bill reminders, and maintenance dates — not a corporate
+          “ops” tool.
+        </p>
         <div class="btn-row compact">
           {getOpsTemplates().map((tpl) => (
             <button
@@ -212,7 +216,7 @@ export function MaintainPage({ id }: Props) {
           ))}
         </div>
         {calendar.length === 0 ? (
-          <p class="muted">Empty — schedule tasks and add trash/recycling days.</p>
+          <p class="muted">Empty — add trash day or build to-dos from your stuff.</p>
         ) : (
           <ul class="plain-list cal-list">
             {calendar.map((c) => (

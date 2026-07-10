@@ -20,8 +20,9 @@ describe('demo starter castle', () => {
     await storage.init();
     const p = await ensureDemoCastle(storage);
     expect(p.name).toBe(DEMO_PROPERTY_NAME);
-    expect(p.rooms.length).toBeGreaterThanOrEqual(3);
-    expect(p.items.filter((i) => i.active).length).toBeGreaterThanOrEqual(4);
+    expect(p.name).not.toMatch(/serenity/i);
+    expect(p.rooms.length).toBeGreaterThanOrEqual(5);
+    expect(p.items.filter((i) => i.active).length).toBeGreaterThanOrEqual(10);
     expect(p.tasks.some((t) => /filter/i.test(t.title))).toBe(true);
     expect(p.consumables.some((c) => c.sizeOrModel === '16x25x1')).toBe(true);
 

@@ -12,7 +12,7 @@ import { go, href } from '../paths';
 const SAMPLE = `{
   "schemaVersion": 1,
   "property": {
-    "name": "The Serenity",
+    "name": "Sample Home",
     "zip": "46240",
     "rooms": [
       {

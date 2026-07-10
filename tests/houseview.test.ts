@@ -99,13 +99,14 @@ describe('Phase 4 house view + serenity', () => {
     expect(low).toBeLessThan(high);
   });
 
-  it('registers iso, pixel, and walk3d renderers', () => {
+  it('defaults to explore (walk-around) renderer', () => {
     const ids = listRenderers().map((r) => r.id);
+    expect(ids).toContain('explore');
     expect(ids).toContain('iso');
-    expect(ids).toContain('pixel');
-    expect(ids).toContain('walk3d');
+    expect(getRenderer().id).toBe('explore');
+    expect(getRenderer('default').id).toBe('explore');
     expect(getRenderer('iso').id).toBe('iso');
-    expect(getRenderer('missing').id).toBe('iso');
+    expect(getRenderer('pixel').id).toBe('pixel');
   });
 
   it('movePlacement persists coordinates via storage', async () => {

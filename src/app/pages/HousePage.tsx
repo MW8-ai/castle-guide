@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 import type { Item, Property } from '../../storage';
-import {
-  buildHouseViewModel,
-  computeSerenity,
-  serenityLabel,
-  getRenderer,
-} from '../../houseview';
+import { buildHouseViewModel, getRenderer, listRenderers } from '../../houseview';
 import type { HouseRendererHandle } from '../../houseview';
-import { SerenityMeter } from '../../ui/SerenityMeter';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
-import { surfaceNuggets } from '../../council';
 
 interface Props {
   id?: string;
@@ -23,13 +16,14 @@ export function HousePage({ id }: Props) {
   const handleRef = useRef<HouseRendererHandle | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
+  const [mode, setMode] = useState('explore');
   const [hint, setHint] = useState(
-    'Click an appliance for details · Drag to move · Use the left menu for Inventory'
+    'Walk with WASD · Scroll to zoom · Click anything to open its card'
   );
 
   const propertyId = id || active?.id;
 
-  async function load(selectItemId?: string | null) {
+  async function load() {
     if (!propertyId) return;
     const s = await ensureStorageReady();
     await s.setActiveProperty(propertyId);
@@ -44,48 +38,38 @@ export function HousePage({ id }: Props) {
     setProperty(p);
     await refreshActive();
 
-    if (selectItemId) {
-      setSelected(p.items.find((i) => i.id === selectItemId) ?? null);
-    }
-
-    const profile = await s.getProfile();
-    const surfaced = surfaceNuggets(p, profile?.settings.characterNameOverrides);
-    const gus = surfaced.find((x) => x.nugget.character === 'grandpa-gus');
-    if (gus) {
-      setHint(`${gus.characterDisplay}: ${gus.nugget.title}`);
-    }
-
     const model = buildHouseViewModel(p).model;
     const mount = () => {
       if (!hostRef.current) return;
       handleRef.current?.destroy();
-      const plugin = getRenderer('iso');
+      const plugin = getRenderer(mode);
       handleRef.current = plugin.mount(hostRef.current, model, {
         onSelectItem: (itemId) => {
           const item = p!.items.find((i) => i.id === itemId) ?? null;
           setSelected(item);
+          if (item) {
+            setHint(`${item.brand} ${item.model ?? ''} — details on the right`);
+          }
         },
         onSelectRoom: (roomId) => {
           const room = p!.rooms.find((r) => r.id === roomId);
-          if (room) setHint(`Room: ${room.name} · ${room.dims.L}'×${room.dims.W}'`);
+          if (room) {
+            setHint(`${room.name} · ${room.dims.L}' × ${room.dims.W}'`);
+          }
         },
         onMovePlacement: (placementId, next) => {
           void (async () => {
             const st = await ensureStorageReady();
             await st.movePlacement(propertyId!, placementId, next);
-            // Soft refresh without full remount thrash
             const updated = await st.getProperty(propertyId!);
             if (!updated) return;
             setProperty(updated);
-            const m = buildHouseViewModel(updated).model;
-            handleRef.current?.update(m);
+            handleRef.current?.update(buildHouseViewModel(updated).model);
             await refreshActive();
           })();
         },
       });
     };
-
-    // Double rAF so layout has size for centering
     requestAnimationFrame(() => requestAnimationFrame(mount));
   }
 
@@ -95,27 +79,26 @@ export function HousePage({ id }: Props) {
       handleRef.current?.destroy();
       handleRef.current = null;
     };
-  }, [propertyId]);
+  }, [propertyId, mode]);
 
   if (!propertyId) {
     return (
       <section class="page">
-        <p>No castle selected.</p>
+        <p>No home selected.</p>
         <button type="button" class="btn primary" onClick={() => go()}>
-          Go home
+          Home
         </button>
       </section>
     );
   }
 
   if (!property) {
-    return <div class="page loading-splash">Loading house…</div>;
+    return <div class="page loading-splash">Loading your home…</div>;
   }
 
-  const score = computeSerenity(property);
   const upcoming = property.tasks
     .filter((t) => t.status === 'pending')
-    .slice(0, 4);
+    .slice(0, 5);
 
   return (
     <section class="house-workspace">
@@ -124,44 +107,33 @@ export function HousePage({ id }: Props) {
           <h1>{property.name}</h1>
           <p class="muted house-hint">{hint}</p>
         </div>
-        <div class="house-top-actions">
-          <button
-            type="button"
-            class="btn"
-            onClick={() => go('property', propertyId, 'inventory')}
-          >
-            + Add item
-          </button>
-          <button
-            type="button"
-            class="btn primary"
-            onClick={() => go('property', propertyId, 'maintain')}
-          >
-            Maintenance
-          </button>
+        <div class="view-modes" role="group" aria-label="Map style">
+          {listRenderers().map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              class={mode === r.id ? 'btn primary' : 'btn'}
+              onClick={() => setMode(r.id)}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
       </header>
 
       <div class="house-grid">
         <div class="house-stage card">
-          <div class="house-stage-label">Castle View</div>
-          <div class="house-canvas-host" ref={hostRef} />
-          <div class="house-legend">
-            <span>
-              <i class="dot ok" /> Healthy
-            </span>
-            <span>
-              <i class="dot due" /> Due soon
-            </span>
-            <span>
-              <i class="dot overdue" /> Overdue
-            </span>
+          <div class="house-stage-label">
+            {mode === 'explore'
+              ? 'Walk around your home'
+              : mode === 'iso'
+                ? 'Bird’s-eye map'
+                : listRenderers().find((r) => r.id === mode)?.label}
           </div>
+          <div class="house-canvas-host" ref={hostRef} />
         </div>
 
         <aside class="house-side">
-          <SerenityMeter score={score} label={serenityLabel(score)} />
-
           {selected ? (
             <div class="card item-panel">
               <div class="item-panel-head">
@@ -177,7 +149,7 @@ export function HousePage({ id }: Props) {
                   ✕
                 </button>
               </div>
-              <p class="item-cat">{selected.category}</p>
+              <p class="item-cat">{selected.category.replace(/-/g, ' ')}</p>
               <dl class="fact-list">
                 <div>
                   <dt>Serial</dt>
@@ -188,11 +160,11 @@ export function HousePage({ id }: Props) {
                   <dd>{selected.purchaseDate ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt>Warranty</dt>
+                  <dt>Warranty until</dt>
                   <dd>{selected.warrantyEnd ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt>Price</dt>
+                  <dt>You paid</dt>
                   <dd>
                     {selected.price != null
                       ? `$${selected.price.toLocaleString()}`
@@ -200,9 +172,18 @@ export function HousePage({ id }: Props) {
                   </dd>
                 </div>
               </dl>
+              {selected.filterSpecs.length > 0 && (
+                <p>
+                  <strong>Parts:</strong>{' '}
+                  {selected.filterSpecs
+                    .map((f) => `${f.name} ${f.sizeOrModel}`)
+                    .join(', ')}
+                </p>
+              )}
+              {selected.notes && <p class="muted">{selected.notes}</p>}
               {selected.lineage.length > 0 && (
                 <div class="lineage-box">
-                  <strong>History</strong>
+                  <strong>Replaced over time</strong>
                   <ol>
                     {selected.lineage.map((L, i) => (
                       <li key={i}>
@@ -213,31 +194,33 @@ export function HousePage({ id }: Props) {
                   </ol>
                 </div>
               )}
-              {selected.notes && <p class="muted">{selected.notes}</p>}
-              <div class="btn-row">
-                <button
-                  type="button"
-                  class="btn primary"
-                  onClick={() => go('property', propertyId, 'inventory')}
-                >
-                  Open in Inventory
-                </button>
-              </div>
+              <button
+                type="button"
+                class="btn primary"
+                onClick={() => go('property', propertyId, 'inventory')}
+              >
+                Edit in Inventory
+              </button>
             </div>
           ) : (
             <div class="card item-panel empty-panel">
-              <h2>Nothing selected</h2>
+              <h2>Explore the house</h2>
               <p class="muted">
-                Click a colored block on the house (fridge, furnace, water
-                heater…). That's your data — not decoration.
+                You’re the little figure on the map. Walk into the kitchen and
+                living room, click the fridge or water heater — every block is
+                real data from your inventory.
+              </p>
+              <p class="muted">
+                Scroll the mouse wheel to zoom. Use the left menu for inventory
+                and to-dos.
               </p>
             </div>
           )}
 
           <div class="card">
-            <h3>Up next</h3>
+            <h3>Coming up</h3>
             {upcoming.length === 0 ? (
-              <p class="muted">No pending tasks.</p>
+              <p class="muted">Nothing due right now.</p>
             ) : (
               <ul class="plain-list tight">
                 {upcoming.map((t) => (
@@ -253,7 +236,7 @@ export function HousePage({ id }: Props) {
               class="btn"
               onClick={() => go('property', propertyId, 'maintain')}
             >
-              All maintenance
+              Open to-do list
             </button>
           </div>
         </aside>

@@ -173,7 +173,7 @@ export function SettingsPage() {
       </div>
 
       <div class="card">
-        <h2>Stretch sockets (Phase 6)</h2>
+        <h2>Coming later</h2>
         <ul class="plain-list">
           <li>
             <strong>Live valuation APIs</strong> — BLUEPRINT; manual comps +

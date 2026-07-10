@@ -465,11 +465,16 @@ h3 {
 }
 .house-canvas-host {
   flex: 1;
-  min-height: 460px;
+  min-height: min(62vh, 560px);
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--border);
-  background: #1a3a2a;
+  background: #3d7a4a;
+}
+.view-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 .house-legend {
   display: flex;
