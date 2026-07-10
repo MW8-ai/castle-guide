@@ -99,12 +99,11 @@ describe('Phase 4 house view + serenity', () => {
     expect(low).toBeLessThan(high);
   });
 
-  it('defaults to pixel-home game map', () => {
+  it('defaults to walk-iso house', () => {
     const ids = listRenderers().map((r) => r.id);
-    expect(ids).toContain('pixel-home');
-    expect(getRenderer().id).toBe('pixel-home');
-    expect(getRenderer('default').id).toBe('pixel-home');
-    expect(getRenderer('pixel-home').id).toBe('pixel-home');
+    expect(ids).toContain('walk-iso');
+    expect(getRenderer().id).toBe('walk-iso');
+    expect(getRenderer('default').id).toBe('walk-iso');
   });
 
   it('movePlacement persists coordinates via storage', async () => {

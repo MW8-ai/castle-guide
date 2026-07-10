@@ -21,7 +21,10 @@ export function HomePage() {
       setSummary(
         `${demo.rooms.length} rooms · ${demo.items.filter((i) => i.active).length} items`
       );
+      await setPropertyId(demo.id);
       await refresh();
+      // Land straight on the house — first impression is the map
+      go('property', demo.id, 'house');
     })();
   }, []);
 

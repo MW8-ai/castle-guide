@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-07-10
+
+### Changed — walk the house (look & feel)
+
+- **Walkable angled iso house** is the main screen (WASD, camera follow, zoom)
+- **Enter a room** → dock shows room dims, items, tasks, owner notes, council tip (REF-3 advisors)
+- **Click furniture** → ItemCard dock (real brand/model/warranty)
+- Map is full-bleed; thin icon rail only — no quest/score chrome, no welcome board
+- Opens **straight into the filled sample house** after load
+- Council strip along the bottom (quiet tips, not XP)
+
 ## [1.0.1] — 2026-07-10
 
 ### Changed — art & clarity

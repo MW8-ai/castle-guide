@@ -34,6 +34,8 @@ export interface HouseViewModel {
 export interface HouseRendererCallbacks {
   onSelectItem: (itemId: string) => void;
   onSelectRoom: (roomId: string) => void;
+  /** Fired when the avatar enters a room (walk mode). */
+  onEnterRoom?: (roomId: string | null) => void;
   onMovePlacement: (
     placementId: string,
     next: { x: number; y: number; rotation: number }

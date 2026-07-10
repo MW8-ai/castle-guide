@@ -557,7 +557,32 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   ];
 
   const ts = nowIso();
-  property.notes = [];
+  property.notes = [
+    {
+      id: newId(),
+      title: 'Kitchen traffic',
+      body: 'Keep the path from fridge to sink clear — kids snack station.',
+      someday: false,
+      roomId: kitchen,
+      itemId: null,
+      createdAt: ts,
+      updatedAt: ts,
+      links: [],
+      roughBudget: null,
+    },
+    {
+      id: newId(),
+      title: 'Utility reminder',
+      body: 'Filter size 16x25x1 written on furnace door.',
+      someday: false,
+      roomId: utility,
+      itemId: null,
+      createdAt: ts,
+      updatedAt: ts,
+      links: [],
+      roughBudget: null,
+    },
+  ];
   property.opsEvents = [
     {
       id: newId(),

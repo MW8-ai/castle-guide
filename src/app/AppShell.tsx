@@ -51,8 +51,50 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
       !path.includes('/settings') &&
       !path.includes('/import'));
 
+  // House view = full-bleed (map is the product); thin icon rail only
+  const onHouse =
+    path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
+
   if (bare) {
     return <div class="shell-title">{loading ? null : children}</div>;
+  }
+
+  if (onHouse) {
+    return (
+      <div class="shell house-bleed">
+        <nav class="icon-rail" aria-label="Main">
+          {NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              title={item.label}
+              class={
+                isActive(item.segment) ? 'icon-rail-btn active' : 'icon-rail-btn'
+              }
+              disabled={!pid && item.segment !== 'settings'}
+              onClick={() => navTo(item.segment)}
+            >
+              {item.label.slice(0, 1)}
+            </button>
+          ))}
+          <button
+            type="button"
+            class="icon-rail-btn"
+            title="Theme"
+            onClick={onToggleTheme}
+          >
+            ◐
+          </button>
+        </nav>
+        <div class="shell-main bleed">
+          {loading ? (
+            <div class="page loading-splash">Loading…</div>
+          ) : (
+            children
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -69,9 +111,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           <span class="brand-mark">⌂</span>
           <div>
             <div class="brand-title">Home Guide</div>
-            {property && (
-              <div class="brand-sub">{property.name}</div>
-            )}
+            {property && <div class="brand-sub">{property.name}</div>}
           </div>
         </a>
 
