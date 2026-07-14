@@ -10,17 +10,84 @@
   overflow: hidden;
 }
 
+.live-house-empty {
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+.empty-onboard {
+  text-align: center;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.empty-onboard h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+.empty-onboard p {
+  margin: 0;
+  color: #b8c4d8;
+}
+
 .live-stage {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
 
+/* ── Fixed identity bar (name / address / shutoffs) ──── */
+
+.live-identity {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.85rem;
+  background: rgba(10, 15, 25, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.live-id-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.live-id-text strong {
+  font-size: 0.95rem;
+}
+.live-id-text span {
+  font-size: 0.72rem;
+  color: #a8b4cc;
+}
+.live-id-shutoffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+.live-id-chip {
+  background: rgba(200, 60, 50, 0.22);
+  border: 1px solid rgba(230, 90, 80, 0.5);
+  color: #ffd9d0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
 /* ── Top HUD ───────────────────────────────────────── */
 
 .live-hud-top {
   position: absolute;
-  top: 0;
+  top: 2.75rem;
   left: 0;
   right: 0;
   z-index: 2;
@@ -493,4 +560,116 @@
   .map-nav-btn {
     min-width: 3.6rem;
   }
+}
+
+/* ── Art view — painted illustration + interactive pins ──── */
+
+.art-house {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #0e1420;
+}
+
+.art-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.art-viewport:active {
+  cursor: grabbing;
+}
+
+.art-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.art-image {
+  display: block;
+  max-width: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  z-index: 2;
+}
+.hotspot-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f0b441;
+  border: 2px solid #fff4de;
+  box-shadow: 0 0 0 4px rgba(240, 180, 65, 0.28);
+}
+.hotspot.health-due .hotspot-dot {
+  background: #f0b441;
+}
+.hotspot.health-overdue .hotspot-dot {
+  background: #e85a4f;
+}
+.hotspot-label {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(10, 14, 22, 0.92);
+  color: #e8f0f4;
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  pointer-events: none;
+}
+.hotspot-label strong {
+  font-size: 0.76rem;
+}
+.hotspot-label em {
+  font-style: normal;
+  color: #9aabc4;
+}
+.hotspot:hover .hotspot-label,
+.hotspot.active .hotspot-label {
+  display: flex;
+}
+.hotspot.active .hotspot-dot {
+  background: #6fd88a;
+  box-shadow: 0 0 0 5px rgba(111, 216, 138, 0.32);
+}
+
+.art-toolbar {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  background: rgba(10, 14, 18, 0.78);
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+}
+.art-help {
+  font-size: 0.75rem;
+  color: #b8c4d8;
 }

@@ -1,11 +1,14 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import {
   getBuilderTemplates,
   tierEstimate,
   type BuilderTemplate,
 } from '../../builders';
-
+import { buildListCost } from '../../houseview';
+import { ensureStorageReady } from '../storageContext';
+import type { Property } from '../../storage';
 import { go } from '../paths';
+import '../../ui/kit/kit.css';
 
 interface Props {
   id?: string;
@@ -15,16 +18,49 @@ export function BuildersPage({ id }: Props) {
   const templates = getBuilderTemplates();
   const [active, setActive] = useState<BuilderTemplate>(templates[0]);
   const [tierName, setTierName] = useState('Glory');
-  const [dreamItems, setDreamItems] = useState<
-    { name: string; cost: number }[]
-  >([]);
+  const [property, setProperty] = useState<Property | null>(null);
   const [dreamName, setDreamName] = useState('');
   const [dreamCost, setDreamCost] = useState('');
+
+  async function load() {
+    if (!id) return;
+    const s = await ensureStorageReady();
+    setProperty(await s.getProperty(id));
+  }
+
+  useEffect(() => {
+    void load();
+  }, [id]);
 
   const tier =
     active.tiers.find((t) => t.name === tierName) ?? active.tiers[0];
   const est = tierEstimate(tier);
-  const dreamTotal = dreamItems.reduce((s, i) => s + i.cost, 0);
+  const dreamItems = property?.notes.filter((n) => n.someday) ?? [];
+  const dreamTotal = property ? buildListCost(property) : 0;
+
+  async function addDreamItem(e: Event) {
+    e.preventDefault();
+    if (!id) return;
+    const s = await ensureStorageReady();
+    await s.addNote(id, dreamName, {
+      title: dreamName,
+      someday: true,
+      roughBudget: Number(dreamCost) || null,
+    });
+    setDreamName('');
+    setDreamCost('');
+    await load();
+  }
+
+  async function removeDreamItem(noteId: string) {
+    if (!id) return;
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(id);
+    if (!p) return;
+    p.notes = p.notes.filter((n) => n.id !== noteId);
+    await s.saveProperty(p);
+    await load();
+  }
 
   return (
     <section class="page">
@@ -105,19 +141,10 @@ export function BuildersPage({ id }: Props) {
 
       <div class="card">
         <h2>Dream Home planner</h2>
-        <p class="muted empty-vibe">it's the vibe of it</p>
-        <form
-          class="form-grid"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setDreamItems((prev) => [
-              ...prev,
-              { name: dreamName, cost: Number(dreamCost) || 0 },
-            ]);
-            setDreamName('');
-            setDreamCost('');
-          }}
-        >
+        <p class="muted empty-vibe">
+          Someday projects — feeds the "Build list" total on the house map.
+        </p>
+        <form class="form-grid" onSubmit={(e) => void addDreamItem(e)}>
           <label>
             Wishlist item
             <input
@@ -130,6 +157,7 @@ export function BuildersPage({ id }: Props) {
             Cost tag
             <input
               type="number"
+              min="0"
               value={dreamCost}
               onInput={(e) => setDreamCost((e.target as HTMLInputElement).value)}
               required
@@ -143,9 +171,18 @@ export function BuildersPage({ id }: Props) {
           Distance to dream: <strong>${dreamTotal.toLocaleString()}</strong>
         </p>
         <ul class="plain-list">
-          {dreamItems.map((d, i) => (
-            <li key={i}>
-              {d.name} — ${d.cost.toLocaleString()}
+          {dreamItems.map((d) => (
+            <li key={d.id}>
+              {d.title || d.body}
+              {d.roughBudget != null ? ` — $${d.roughBudget.toLocaleString()}` : ''}
+              <button
+                type="button"
+                class="kit-icon-btn"
+                aria-label="Remove"
+                onClick={() => void removeDreamItem(d.id)}
+              >
+                ✕
+              </button>
             </li>
           ))}
         </ul>

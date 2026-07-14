@@ -45,6 +45,10 @@ export interface HouseRendererCallbacks {
 export interface HouseRendererHandle {
   update: (model: HouseViewModel) => void;
   destroy: () => void;
+  /** Auto-walk avatar to room center (game mode). */
+  travelToRoom?: (roomId: string) => void;
+  /** Auto-walk to a placement / item in the house. */
+  travelToItem?: (itemId: string) => void;
 }
 
 export interface HouseRendererPlugin {

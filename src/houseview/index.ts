@@ -10,10 +10,14 @@ export {
   computeSerenity,
   serenityLabel,
   healthGrade,
+  healthTone,
   daysUntil,
   ageFromInstall,
   upcomingTasks,
   catalogStats,
+  repairCostEstimate,
+  buildListCost,
+  equityFromProperty,
 } from './serenity';
 export { listRenderers, getRenderer } from './registry';
 export { ImageHouseView } from './imageMap/ImageHouseView';

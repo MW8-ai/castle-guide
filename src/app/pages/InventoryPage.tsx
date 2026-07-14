@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { Item, Property } from '../../storage';
+import type { DocMeta, Item, Property, ShutoffType } from '../../storage';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 import { newId } from '../../storage';
@@ -23,6 +23,26 @@ const QUICK = [
   'other',
 ];
 
+const SHUTOFF_TYPES: ShutoffType[] = [
+  'water',
+  'gas',
+  'electric-main',
+  'breaker-panel',
+  'sump',
+  'septic',
+  'other',
+];
+
+const DOC_TYPES: DocMeta['type'][] = [
+  'manual',
+  'receipt',
+  'closing',
+  'inspection',
+  'warranty',
+  'blueprint',
+  'other',
+];
+
 export function InventoryPage({ id }: Props) {
   const { refresh: refreshActive } = useActiveCastle();
   const [property, setProperty] = useState<Property | null>(null);
@@ -33,6 +53,16 @@ export function InventoryPage({ id }: Props) {
   const [roomId, setRoomId] = useState('');
   const [filter, setFilter] = useState('');
   const [picked, setPicked] = useState<Item | null>(null);
+  const [showAddRoom, setShowAddRoom] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [showAddShutoff, setShowAddShutoff] = useState(false);
+  const [shutoffType, setShutoffType] = useState<ShutoffType>('water');
+  const [shutoffNote, setShutoffNote] = useState('');
+  const [docType, setDocType] = useState<DocMeta['type']>('manual');
+  const [showAddConsumable, setShowAddConsumable] = useState(false);
+  const [consumableKind, setConsumableKind] = useState('filter');
+  const [consumableLabel, setConsumableLabel] = useState('');
+  const [consumableSize, setConsumableSize] = useState('');
 
   const propertyId = id;
 
@@ -95,15 +125,100 @@ export function InventoryPage({ id }: Props) {
     await load();
   }
 
-  async function addRoom() {
-    const name = prompt('Room name', 'Bedroom');
-    if (!name?.trim()) return;
+  async function addRoom(e: Event) {
+    e.preventDefault();
+    const name = newRoomName.trim();
+    if (!name) return;
     const s = await ensureStorageReady();
     await s.addRoom(propertyId!, {
-      name: name.trim(),
+      name,
       type: 'other',
       dims: { L: 12, W: 11, H: 9 },
     });
+    setNewRoomName('');
+    setShowAddRoom(false);
+    await load();
+  }
+
+  async function addShutoff(e: Event) {
+    e.preventDefault();
+    const note = shutoffNote.trim();
+    if (!note) return;
+    const s = await ensureStorageReady();
+    await s.addShutoff(propertyId!, {
+      type: shutoffType,
+      locationNote: note,
+    });
+    setShutoffNote('');
+    setShowAddShutoff(false);
+    await load();
+  }
+
+  async function removeShutoff(shutoffId: string) {
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(propertyId!);
+    if (!p) return;
+    p.shutoffs = p.shutoffs.filter((sh) => sh.id !== shutoffId);
+    await s.saveProperty(p);
+    await load();
+  }
+
+  async function addDoc(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const s = await ensureStorageReady();
+    const { blobId } = await s.putBlob(file, file.type);
+    await s.attachDoc(propertyId!, {
+      type: docType,
+      blobId,
+      title: file.name,
+      tags: [],
+      date: new Date().toISOString().slice(0, 10),
+    });
+    (e.target as HTMLInputElement).value = '';
+    await load();
+  }
+
+  async function viewDoc(blobId: string) {
+    const s = await ensureStorageReady();
+    const blob = await s.getBlob(blobId);
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }
+
+  async function removeDoc(docId: string) {
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(propertyId!);
+    if (!p) return;
+    p.docs = p.docs.filter((d) => d.id !== docId);
+    await s.saveProperty(p);
+    await load();
+  }
+
+  async function addConsumable(e: Event) {
+    e.preventDefault();
+    const label = consumableLabel.trim();
+    if (!label) return;
+    const s = await ensureStorageReady();
+    await s.addConsumable(propertyId!, {
+      kind: consumableKind,
+      label,
+      sizeOrModel: consumableSize.trim(),
+    });
+    setConsumableLabel('');
+    setConsumableSize('');
+    setShowAddConsumable(false);
+    await load();
+  }
+
+  async function removeConsumable(consumableId: string) {
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(propertyId!);
+    if (!p) return;
+    p.consumables = p.consumables.filter((c) => c.id !== consumableId);
+    await s.saveProperty(p);
     await load();
   }
 
@@ -140,8 +255,12 @@ export function InventoryPage({ id }: Props) {
           </p>
         </div>
         <div class="btn-row">
-          <button type="button" class="btn" onClick={() => void addRoom()}>
-            Add room
+          <button
+            type="button"
+            class="btn"
+            onClick={() => setShowAddRoom((v) => !v)}
+          >
+            {showAddRoom ? 'Cancel' : 'Add room'}
           </button>
           <button
             type="button"
@@ -153,12 +272,225 @@ export function InventoryPage({ id }: Props) {
           <button
             type="button"
             class="btn"
+            onClick={() => setShowAddShutoff((v) => !v)}
+          >
+            {showAddShutoff ? 'Cancel' : '⛔ Add shutoff'}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            onClick={() => setShowAddConsumable((v) => !v)}
+          >
+            {showAddConsumable ? 'Cancel' : '🧻 Add consumable'}
+          </button>
+          <select
+            class="doc-type-select"
+            value={docType}
+            aria-label="Document type"
+            onChange={(e) =>
+              setDocType((e.target as HTMLSelectElement).value as DocMeta['type'])
+            }
+          >
+            {DOC_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <label class="btn doc-upload-btn">
+            📄 Add document
+            <input type="file" onChange={(e) => void addDoc(e)} hidden />
+          </label>
+          <button
+            type="button"
+            class="btn"
             onClick={() => go('property', propertyId, 'house')}
           >
             Back to map
           </button>
         </div>
       </header>
+
+      {showAddShutoff && (
+        <form class="card add-strip" onSubmit={(e) => void addShutoff(e)}>
+          <div class="add-row">
+            <label>
+              Type
+              <select
+                value={shutoffType}
+                onChange={(e) =>
+                  setShutoffType((e.target as HTMLSelectElement).value as ShutoffType)
+                }
+              >
+                {SHUTOFF_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t.replace(/-/g, ' ')}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Location
+              <input
+                autoFocus
+                placeholder="e.g. Basement, left of water heater"
+                value={shutoffNote}
+                onInput={(e) =>
+                  setShutoffNote((e.target as HTMLInputElement).value)
+                }
+                required
+              />
+            </label>
+            <button type="submit" class="btn primary">
+              Save
+            </button>
+          </div>
+        </form>
+      )}
+
+      {property.shutoffs.length > 0 && (
+        <div class="card">
+          <h2>Emergency shutoffs</h2>
+          <ul class="plain-list">
+            {property.shutoffs.map((sh) => (
+              <li key={sh.id}>
+                <strong>{sh.type.replace(/-/g, ' ')}</strong> —{' '}
+                {sh.locationNote}
+                <button
+                  type="button"
+                  class="kit-icon-btn"
+                  aria-label="Remove"
+                  onClick={() => void removeShutoff(sh.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {showAddConsumable && (
+        <form class="card add-strip" onSubmit={(e) => void addConsumable(e)}>
+          <div class="add-row">
+            <label>
+              Kind
+              <select
+                value={consumableKind}
+                onChange={(e) =>
+                  setConsumableKind((e.target as HTMLSelectElement).value)
+                }
+              >
+                {['filter', 'battery', 'bulb', 'cartridge', 'other'].map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Label
+              <input
+                autoFocus
+                placeholder="e.g. Furnace filter"
+                value={consumableLabel}
+                onInput={(e) =>
+                  setConsumableLabel((e.target as HTMLInputElement).value)
+                }
+                required
+              />
+            </label>
+            <label>
+              Size / model
+              <input
+                placeholder="e.g. 16x25x1"
+                value={consumableSize}
+                onInput={(e) =>
+                  setConsumableSize((e.target as HTMLInputElement).value)
+                }
+              />
+            </label>
+            <button type="submit" class="btn primary">
+              Save
+            </button>
+          </div>
+        </form>
+      )}
+
+      {property.consumables.length > 0 && (
+        <div class="card">
+          <h2>Consumables</h2>
+          <ul class="plain-list">
+            {property.consumables.map((c) => (
+              <li key={c.id}>
+                <strong>{c.label}</strong>
+                {c.sizeOrModel ? ` — ${c.sizeOrModel}` : ''}
+                {' · '}
+                <span class="muted tiny">{c.kind}</span>
+                <button
+                  type="button"
+                  class="kit-icon-btn"
+                  aria-label="Remove"
+                  onClick={() => void removeConsumable(c.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {property.docs.length > 0 && (
+        <div class="card">
+          <h2>Documents</h2>
+          <ul class="plain-list">
+            {property.docs.map((d) => (
+              <li key={d.id}>
+                <button
+                  type="button"
+                  class="link-btn"
+                  onClick={() => void viewDoc(d.blobId)}
+                >
+                  {d.title ?? d.type}
+                </button>
+                {' · '}
+                <span class="muted tiny">{d.type}</span>
+                <button
+                  type="button"
+                  class="kit-icon-btn"
+                  aria-label="Remove"
+                  onClick={() => void removeDoc(d.id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {showAddRoom && (
+        <form class="card add-strip" onSubmit={(e) => void addRoom(e)}>
+          <div class="add-row">
+            <label>
+              Room name
+              <input
+                autoFocus
+                placeholder="e.g. Kitchen, Primary Bedroom"
+                value={newRoomName}
+                onInput={(e) =>
+                  setNewRoomName((e.target as HTMLInputElement).value)
+                }
+                required
+              />
+            </label>
+            <button type="submit" class="btn primary">
+              Save
+            </button>
+          </div>
+        </form>
+      )}
 
       {showAdd && (
         <form class="card add-strip" onSubmit={(e) => void addItem(e)}>

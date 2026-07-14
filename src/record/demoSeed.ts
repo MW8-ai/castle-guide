@@ -95,7 +95,16 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   const property = await storage.createProperty(DEMO_PROPERTY_NAME, '43017');
   property.yearBuilt = 2008;
   property.style = 'Two-story · 5 bed / 3 bath / 3-car';
-  property.address = null;
+  property.address = '412 Maplewood Dr, Dublin, OH 43017';
+  property.mortgage = {
+    principal: 285000,
+    annualRatePercent: 6.25,
+    termMonths: 360,
+    startDate: '2019-06-01',
+    extraMonthly: 150,
+    pmiMonthly: null,
+    homeValue: 465000,
+  };
 
   // Room ids
   const kitchen = newId();

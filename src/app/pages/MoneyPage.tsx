@@ -50,6 +50,7 @@ export function MoneyPage({ id }: Props) {
   const [rate, setRate] = useState('6.5');
   const [term, setTerm] = useState('360');
   const [extra, setExtra] = useState('200');
+  const [homeValue, setHomeValue] = useState('');
 
   async function refresh() {
     if (!id) return;
@@ -60,6 +61,17 @@ export function MoneyPage({ id }: Props) {
   useEffect(() => {
     void refresh();
   }, [id]);
+
+  // Load saved mortgage terms into the payoff form once per property.
+  useEffect(() => {
+    const m = property?.mortgage;
+    if (!m) return;
+    setPrincipal(String(m.principal));
+    setRate(String(m.annualRatePercent));
+    setTerm(String(m.termMonths));
+    setExtra(String(m.extraMonthly ?? 0));
+    setHomeValue(m.homeValue != null ? String(m.homeValue) : '');
+  }, [property?.id]);
 
   if (!id) return <p class="error-text">Missing property id.</p>;
   if (!property) return <p class="muted">Loading…</p>;
@@ -113,6 +125,20 @@ export function MoneyPage({ id }: Props) {
     setImpDesc('');
     setImpCost('');
     setMessage('Improvement logged.');
+    await refresh();
+  }
+
+  async function saveMortgage(e: Event) {
+    e.preventDefault();
+    const s = await ensureStorageReady();
+    await s.setMortgage(property!.id, {
+      principal: Number(principal) || 0,
+      annualRatePercent: Number(rate) || 0,
+      termMonths: Number(term) || 360,
+      extraMonthly: Number(extra) || 0,
+      homeValue: homeValue.trim() ? Number(homeValue) : null,
+    });
+    setMessage('Mortgage terms saved.');
     await refresh();
   }
 
@@ -382,7 +408,7 @@ export function MoneyPage({ id }: Props) {
       {tab === 'payoff' && (
         <div class="card">
           <h2>Payoff & equity tools</h2>
-          <div class="form-grid">
+          <form class="form-grid" onSubmit={(e) => void saveMortgage(e)}>
             <label>
               Principal
               <input value={principal} onInput={(e) => setPrincipal((e.target as HTMLInputElement).value)} />
@@ -399,7 +425,20 @@ export function MoneyPage({ id }: Props) {
               Extra monthly principal
               <input value={extra} onInput={(e) => setExtra((e.target as HTMLInputElement).value)} />
             </label>
-          </div>
+            <label>
+              Home value (optional — powers the Equity stat on the house map)
+              <input
+                type="number"
+                min="0"
+                placeholder="e.g. 465000"
+                value={homeValue}
+                onInput={(e) => setHomeValue((e.target as HTMLInputElement).value)}
+              />
+            </label>
+            <button type="submit" class="btn primary">
+              Save mortgage terms
+            </button>
+          </form>
           <ul class="plain-list">
             <li>
               Monthly P&amp;I: <strong>${payoff.monthlyPi.toLocaleString()}</strong>

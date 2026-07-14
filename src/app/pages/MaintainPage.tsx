@@ -19,6 +19,8 @@ export function MaintainPage({ id }: Props) {
   const [calendar, setCalendar] = useState<
     { date: string; title: string; kind: string; whenNotToDiy?: boolean }[]
   >([]);
+  const [showTrashForm, setShowTrashForm] = useState(false);
+  const [trashWeekday, setTrashWeekday] = useState('2');
 
   async function refresh() {
     if (!id) return;
@@ -54,13 +56,9 @@ export function MaintainPage({ id }: Props) {
     await refresh();
   }
 
-  async function addTrashDay() {
-    const day = window.prompt(
-      'Trash weekday (0=Sun … 6=Sat). Default 2 = Tuesday:',
-      '2'
-    );
-    if (day === null) return;
-    const weekday = Math.min(6, Math.max(0, Number(day) || 2));
+  async function addTrashDay(e: Event) {
+    e.preventDefault();
+    const weekday = Math.min(6, Math.max(0, Number(trashWeekday) || 2));
     const s = await ensureStorageReady();
     await s.addOpsEvent(property!.id, {
       type: 'trash',
@@ -70,6 +68,7 @@ export function MaintainPage({ id }: Props) {
       remind: true,
     });
     setMessage('Trash day added to your home calendar.');
+    setShowTrashForm(false);
     await refresh();
   }
 
@@ -147,8 +146,12 @@ export function MaintainPage({ id }: Props) {
           >
             Schedule from inventory
           </button>
-          <button type="button" class="btn" onClick={() => void addTrashDay()}>
-            Add trash day
+          <button
+            type="button"
+            class="btn"
+            onClick={() => setShowTrashForm((v) => !v)}
+          >
+            {showTrashForm ? 'Cancel' : 'Add trash day'}
           </button>
           <button type="button" class="btn" onClick={() => void downloadIcs()}>
             Export calendar
@@ -157,6 +160,33 @@ export function MaintainPage({ id }: Props) {
       </header>
 
       {message && <p class="ok-text">{message}</p>}
+
+      {showTrashForm && (
+        <form class="card add-strip" onSubmit={(e) => void addTrashDay(e)}>
+          <div class="add-row">
+            <label>
+              Trash weekday
+              <select
+                value={trashWeekday}
+                onChange={(e) =>
+                  setTrashWeekday((e.target as HTMLSelectElement).value)
+                }
+              >
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(
+                  (name, i) => (
+                    <option key={name} value={i}>
+                      {name}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+            <button type="submit" class="btn primary">
+              Save
+            </button>
+          </div>
+        </form>
+      )}
 
       {notDiy.length > 0 && (
         <div class="card warning-card">

@@ -7,6 +7,8 @@ export interface ArtHotspot {
   /** Match inventory by category (and optional brand fragment) */
   category: string;
   brandHint?: string;
+  /** Regex on "brand model" text — disambiguates within a shared category (e.g. bed vs sofa, both "furniture"). */
+  titleHint?: RegExp;
   label: string;
   x: number;
   y: number;
@@ -61,6 +63,7 @@ export const SAMPLE_HOME_HOTSPOTS: ArtHotspot[] = [
     id: 'hs-bed',
     category: 'furniture',
     brandHint: 'ikea',
+    titleHint: /bed|malm|king|queen|twin|full|platform/i,
     label: 'Bed',
     x: 28,
     y: 28,
@@ -124,10 +127,22 @@ export function matchItemToHotspot(
 ): Item | undefined {
   const active = items.filter((i) => i.active && !i.softDeleted);
   const cat = hs.category.toLowerCase();
-  let pool = active.filter((i) => {
-    const c = i.category.toLowerCase().replace(/[\s_]+/g, '-');
-    return c === cat || c.includes(cat) || cat.includes(c);
-  });
+  const catOf = (i: Item) => i.category.toLowerCase().replace(/[\s_]+/g, '-');
+  // Exact category match first — a fuzzy substring fallback (e.g. "dishwasher"
+  // containing "washer") would otherwise steal matches from unrelated hotspots.
+  let pool = active.filter((i) => catOf(i) === cat);
+  if (pool.length === 0) {
+    pool = active.filter((i) => {
+      const c = catOf(i);
+      return c.includes(cat) || cat.includes(c);
+    });
+  }
+  if (hs.titleHint) {
+    const titled = pool.filter((i) =>
+      hs.titleHint!.test(`${i.brand ?? ''} ${i.model ?? ''}`)
+    );
+    if (titled.length) pool = titled;
+  }
   if (hs.brandHint) {
     const b = hs.brandHint.toLowerCase();
     const branded = pool.filter((i) => (i.brand ?? '').toLowerCase().includes(b));

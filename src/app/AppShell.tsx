@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useActiveCastle } from './ActiveCastle';
 import { href, go } from './paths';
+import { HouseGhostBackdrop } from './HouseGhostBackdrop';
 
 interface Props {
   children: ComponentChildren;
@@ -16,7 +17,7 @@ const NAV: { id: string; label: string; segment: string; icon: string }[] = [
   { id: 'money', label: 'Money', segment: 'money', icon: '💵' },
   { id: 'area', label: 'Area', segment: 'area', icon: '📍' },
   { id: 'council', label: 'Tips', segment: 'council', icon: '💬' },
-  { id: 'builders', label: 'Projects', segment: 'builders', icon: '🛠️' },
+  { id: 'builders', label: 'Build list', segment: 'builders', icon: '🛠️' },
   { id: 'settings', label: 'Settings', segment: 'settings', icon: '⚙️' },
 ];
 
@@ -53,15 +54,54 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const onHouse =
     path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
 
+  const inHomeApp =
+    Boolean(pid) &&
+    (path.includes('/property') ||
+      path.includes('/settings') ||
+      path.includes('/import'));
+
   if (bare) {
     return <div class="shell-title">{loading ? null : children}</div>;
   }
 
-  // House: full map + bottom label bar (does not cover playable center)
-  if (onHouse) {
+  // Unified home shell: bottom nav always; house ghost under non-home pages
+  if (inHomeApp || onHouse) {
     return (
       <div class="shell house-bleed-v2">
-        <div class="shell-main bleed">
+        {!onHouse && property && <HouseGhostBackdrop property={property} />}
+        {!onHouse && property && (
+          <div class="home-identity-bar">
+            <div class="home-id-main">
+              <strong>{property.name}</strong>
+              <span class="muted">
+                {[
+                  property.address,
+                  property.yearBuilt ? `Built ${property.yearBuilt}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'Your house'}
+              </span>
+            </div>
+            <div class="home-id-shutoffs" title="Emergency shutoffs">
+              {property.shutoffs.length === 0 ? (
+                <span class="muted">No shutoffs logged</span>
+              ) : (
+                property.shutoffs.slice(0, 4).map((sh) => (
+                  <span key={sh.id} class="home-id-chip">
+                    {sh.type.replace(/-/g, ' ')}
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+        <div
+          class={
+            onHouse
+              ? 'shell-main bleed'
+              : 'shell-main bleed glass-over-house'
+          }
+        >
           {loading ? (
             <div class="page loading-splash">Loading…</div>
           ) : (
@@ -74,9 +114,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
               key={item.id}
               type="button"
               class={
-                isActive(item.segment)
-                  ? 'map-nav-btn active'
-                  : 'map-nav-btn'
+                isActive(item.segment) ? 'map-nav-btn active' : 'map-nav-btn'
               }
               disabled={!pid && item.segment !== 'settings'}
               onClick={() => navTo(item.segment)}
@@ -104,6 +142,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
     );
   }
 
+  // Fallback (no active property)
   return (
     <div class="shell calm-shell">
       <aside class="sidebar calm-sidebar">
@@ -121,7 +160,6 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             {property && <div class="brand-sub">{property.name}</div>}
           </div>
         </a>
-
         <nav class="sidebar-nav">
           {NAV.map((item) => (
             <button
@@ -138,14 +176,12 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             </button>
           ))}
         </nav>
-
         <div class="sidebar-foot">
           <button type="button" class="theme-btn" onClick={onToggleTheme}>
             {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
         </div>
       </aside>
-
       <div class="shell-main">
         {loading ? (
           <div class="page loading-splash">Loading…</div>

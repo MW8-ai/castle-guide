@@ -1,21 +1,29 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { Item, Property, Room, Task } from '../../storage';
+import type { Item, Note, Property, Room, Task } from '../../storage';
+import { newId } from '../../storage';
 import {
   buildHouseViewModel,
   computeSerenity,
   serenityLabel,
   healthGrade,
+  healthTone,
   daysUntil,
   ageFromInstall,
   upcomingTasks,
   catalogStats,
+  repairCostEstimate,
+  buildListCost,
+  equityFromProperty,
 } from '../../houseview';
 import { walkIsoRenderer } from '../../houseview/walkIso/walkIsoRenderer';
+import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import type { HouseRendererHandle } from '../../houseview';
 import { useActiveCastle } from '../ActiveCastle';
 import { tipsForRoomType, homeCouncilTips } from '../../council/roomTips';
 import { ItemCard } from '../../ui/kit/ItemCard';
+import { downloadNotesMarkdown } from '../../record/notesMarkdown';
+import { DEMO_PROPERTY_NAME } from '../../record/demoSeed';
 import { go } from '../paths';
 import '../../ui/tokens/tokens.css';
 import '../../ui/kit/kit.css';
@@ -25,9 +33,21 @@ interface Props {
   id?: string;
 }
 
+function money(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 10_000) return `$${Math.round(n / 1000)}k`;
+  return `$${Math.round(n).toLocaleString()}`;
+}
+
+function dueBarPct(dueInDays: number | null): number {
+  if (dueInDays == null) return 40;
+  if (dueInDays < 0) return 100;
+  // 0 days = full bar urgency; 90+ days = thin
+  return Math.max(8, Math.min(100, 100 - dueInDays));
+}
+
 /**
- * House is the home screen: walk rooms, real homeowner context docks,
- * Up Next tasks, council tips. No score / XP chrome.
+ * House home screen: walk, docks, health colors, build list $, notes, council chat.
  */
 export function HousePage({ id }: Props) {
   const { property: active, refresh: refreshActive } = useActiveCastle();
@@ -35,31 +55,52 @@ export function HousePage({ id }: Props) {
   const handleRef = useRef<HouseRendererHandle | null>(null);
   const propRef = useRef<Property | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
+  const [viewMode, setViewMode] = useState<'walk' | 'art'>('walk');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [noteStatus, setNoteStatus] = useState<string | null>(null);
+  const [dockPos, setDockPos] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const dragRef = useRef<{
+    ox: number;
+    oy: number;
+    sx: number;
+    sy: number;
+  } | null>(null);
 
   const propertyId = id || active?.id;
+  const loadToken = useRef(0);
 
   async function load() {
     if (!propertyId) return;
+    const token = ++loadToken.current;
     const s = await ensureStorageReady();
     await s.setActiveProperty(propertyId);
     let p = await s.getProperty(propertyId);
-    if (!p) return;
+    if (!p || token !== loadToken.current) return;
     const built = buildHouseViewModel(p, { ensurePlacements: true });
     if (built.placementsChanged) {
       await s.saveProperty(p);
       p = (await s.getProperty(propertyId))!;
+      if (token !== loadToken.current) return;
     }
     propRef.current = p;
     setProperty(p);
     await refreshActive();
+    if (token !== loadToken.current) return;
 
+    if (viewMode !== 'walk') return;
     const model = buildHouseViewModel(p).model;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!hostRef.current) return;
-        handleRef.current?.destroy();
+        if (!hostRef.current || token !== loadToken.current) return;
+        const keep = handleRef.current;
+        if (keep) {
+          keep.update(model);
+          return;
+        }
         handleRef.current = walkIsoRenderer.mount(hostRef.current, model, {
           onSelectItem: (itemId) => {
             const item =
@@ -80,16 +121,62 @@ export function HousePage({ id }: Props) {
   useEffect(() => {
     void load();
     return () => {
+      loadToken.current++;
       handleRef.current?.destroy();
       handleRef.current = null;
     };
-  }, [propertyId]);
+  }, [propertyId, viewMode]);
+
+  function toggleViewMode() {
+    setViewMode((m) => (m === 'walk' ? 'art' : 'walk'));
+    setRoomId(null);
+  }
+
+  // Sync note draft when room changes
+  useEffect(() => {
+    if (!property || !roomId) {
+      setNoteDraft('');
+      return;
+    }
+    const existing = property.notes.find((n) => n.roomId === roomId && !n.someday);
+    setNoteDraft(existing?.body ?? '');
+    setNoteStatus(null);
+  }, [roomId, property?.id]);
 
   if (!propertyId) {
     return <div class="page loading-splash">No home selected.</div>;
   }
   if (!property) {
     return <div class="page loading-splash">Loading house…</div>;
+  }
+
+  // buildHouseViewModel silently synthesizes an "auto-room" so the walk
+  // view always has a floor — so a genuinely fresh house is "no items yet
+  // and no room the user actually created", not literally zero rooms.
+  const isFreshHouse =
+    property.items.length === 0 &&
+    !property.rooms.some((r) => r.id !== 'auto-room');
+  if (isFreshHouse) {
+    return (
+      <div class="live-house live-house-empty" data-theme="nightwatch">
+        <div class="empty-onboard">
+          <h1>{property.name}</h1>
+          <p>This house is empty — let's add your first room.</p>
+          <button
+            type="button"
+            class="btn primary big"
+            onClick={() => go('property', property.id, 'inventory')}
+          >
+            + Add a room or appliance
+          </button>
+          <p class="muted tiny">
+            Add rooms and appliances as you go — no need to fill everything
+            out up front. The walk view fills in as soon as your first room
+            exists.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const room: Room | null =
@@ -103,14 +190,17 @@ export function HousePage({ id }: Props) {
     ? property.tasks.filter(
         (t) =>
           t.status === 'pending' &&
-          (t.itemId
-            ? roomItems.some((i) => i.id === t.itemId)
-            : false)
+          t.itemId &&
+          roomItems.some((i) => i.id === t.itemId)
       )
     : [];
-  // also include room-scoped pending by title match is hard — show all soon if none
-  const roomNotes = room
-    ? property.notes.filter((n) => n.roomId === room.id)
+  const primaryRoomNote = room
+    ? property.notes.find((n) => n.roomId === room.id && !n.someday)
+    : null;
+  const otherRoomNotes = room
+    ? property.notes.filter(
+        (n) => n.roomId === room.id && n.id !== primaryRoomNote?.id
+      )
     : [];
   const tips = room
     ? tipsForRoomType(room.type || room.name)
@@ -118,13 +208,38 @@ export function HousePage({ id }: Props) {
 
   const score = computeSerenity(property);
   const grade = healthGrade(score);
+  const tone = healthTone(score);
   const stats = catalogStats(property);
-  const upNext = upcomingTasks(property, 5);
+  const upNext = upcomingTasks(property, 6);
+  const repairs = repairCostEstimate(property);
+  const buildList = buildListCost(property);
+  const { equity } = equityFromProperty(property);
   const dateLabel = new Date().toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
+
+  // Council chat messages from room + home + urgent tasks
+  const chat = [
+    ...tips.map((t) => ({
+      who: t.advisor,
+      face: t.portrait,
+      text: t.tip,
+      kind: 'tip' as const,
+    })),
+    ...upNext.slice(0, 2).map((t) => ({
+      who: t.whenNotToDiy ? 'Frank the Foreman' : 'Wrench Wanda',
+      face: t.whenNotToDiy ? '👷' : '🔧',
+      text:
+        t.dueInDays != null && t.dueInDays < 0
+          ? `"${t.title}" is overdue. Don't let it rot.`
+          : `On the board: ${t.title}${
+              t.dueInDays != null ? ` — ${t.dueInDays}d` : ''
+            }.`,
+      kind: 'task' as const,
+    })),
+  ];
 
   const warrantyState = (item: Item) => {
     if (!item.warrantyEnd) return 'none' as const;
@@ -136,6 +251,14 @@ export function HousePage({ id }: Props) {
     return 'active' as const;
   };
 
+  function partHint(task: Task): string | null {
+    if (!task.itemId || !property) return task.detail ?? null;
+    const item = property.items.find((i) => i.id === task.itemId);
+    const fs = item?.filterSpecs?.[0];
+    if (fs) return `${fs.name}: ${fs.sizeOrModel}`;
+    return task.detail ?? null;
+  }
+
   async function markDone(task: Task) {
     if (!property) return;
     const s = await ensureStorageReady();
@@ -143,55 +266,167 @@ export function HousePage({ id }: Props) {
     await load();
   }
 
-  function openItem(item: Item) {
-    setSelected(item);
+  async function saveRoomNote() {
+    if (!property || !room) return;
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(property.id);
+    if (!p) return;
+    const body = noteDraft.trim();
+    const idx = p.notes.findIndex((n) => n.roomId === room.id && !n.someday);
+    const ts = new Date().toISOString();
+    if (!body) {
+      if (idx >= 0) p.notes.splice(idx, 1);
+    } else if (idx >= 0) {
+      p.notes[idx] = {
+        ...p.notes[idx],
+        body,
+        title: p.notes[idx].title || `${room.name} notes`,
+        updatedAt: ts,
+      };
+    } else {
+      const note: Note = {
+        id: newId(),
+        title: `${room.name} notes`,
+        body,
+        someday: false,
+        roomId: room.id,
+        itemId: null,
+        createdAt: ts,
+        updatedAt: ts,
+        links: [],
+        roughBudget: null,
+      };
+      p.notes.push(note);
+    }
+    await s.saveProperty(p);
+    setNoteStatus('Saved');
+    propRef.current = p;
+    setProperty(p);
+    await refreshActive();
   }
+
+  function onDockPointerDown(e: PointerEvent) {
+    const el = e.currentTarget as HTMLElement;
+    if (!(e.target as HTMLElement).closest('.live-dock-drag')) return;
+    const rect = el.getBoundingClientRect();
+    dragRef.current = {
+      ox: e.clientX,
+      oy: e.clientY,
+      sx: dockPos?.x ?? rect.left,
+      sy: dockPos?.y ?? rect.top,
+    };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  }
+
+  function onDockPointerMove(e: PointerEvent) {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.ox;
+    const dy = e.clientY - dragRef.current.oy;
+    setDockPos({
+      x: Math.max(8, dragRef.current.sx + dx),
+      y: Math.max(56, dragRef.current.sy + dy),
+    });
+  }
+
+  function onDockPointerUp() {
+    dragRef.current = null;
+  }
+
+  const dockStyle = dockPos
+    ? {
+        left: `${dockPos.x}px`,
+        top: `${dockPos.y}px`,
+        right: 'auto',
+        bottom: 'auto',
+      }
+    : undefined;
+
+  const isDemoHome = property.name === DEMO_PROPERTY_NAME;
 
   return (
     <div class="live-house" data-theme="nightwatch">
-      <div class="live-stage" ref={hostRef} />
+      {viewMode === 'art' ? (
+        <ImageHouseView
+          items={property.items}
+          houseName={property.name}
+          onSelectItem={(item) => setSelected(item)}
+          selectedItemId={selected?.id}
+        />
+      ) : (
+        <div class="live-stage" ref={hostRef} />
+      )}
 
-      {/* Top HUD — real homeowner signals, not game scores */}
+      {/* Fixed identity — name, address, year, shutoffs */}
+      <div class="live-identity">
+        <div class="live-id-text">
+          <strong>{property.name}</strong>
+          <span>
+            {[
+              property.address,
+              property.yearBuilt ? `Built ${property.yearBuilt}` : null,
+              dateLabel,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+        </div>
+        <div class="live-id-shutoffs">
+          {property.shutoffs.map((sh) => (
+            <span key={sh.id} class="live-id-chip" title={sh.locationNote}>
+              ⛔ {sh.type.replace(/-/g, ' ')}
+            </span>
+          ))}
+        </div>
+      </div>
+
       <header class="live-hud-top">
         <div class="live-hud-left">
-          <div class="live-home-name">{property.name}</div>
-          <div class="live-hint">
-            WASD walk rooms · click furniture · data stays on your device
-          </div>
+          {viewMode === 'walk' && (
+            <div class="live-hint">
+              Click a room to walk there · WASD · yard is open · drag the
+              dock handle
+            </div>
+          )}
+          {isDemoHome && (
+            <button type="button" class="live-link-btn" onClick={toggleViewMode}>
+              {viewMode === 'walk' ? '🖼️ Art view' : '🚶 Walk view'}
+            </button>
+          )}
         </div>
         <div class="live-hud-stats">
-          <div class="live-stat-chip" title={serenityLabel(score)}>
+          <div
+            class={`live-stat-chip health-${tone}`}
+            title={serenityLabel(score)}
+          >
             <span class="live-stat-k">Home health</span>
             <strong>
               {grade} · {score}%
             </strong>
           </div>
+          {equity != null && (
+            <div class="live-stat-chip">
+              <span class="live-stat-k">Equity</span>
+              <strong>{money(equity)}</strong>
+            </div>
+          )}
           <div class="live-stat-chip">
-            <span class="live-stat-k">Due soon</span>
-            <strong>
-              {stats.overdue > 0 ? (
-                <span class="warn">{stats.overdue} overdue</span>
-              ) : (
-                `${stats.pending} tasks`
-              )}
-            </strong>
+            <span class="live-stat-k">Repairs</span>
+            <strong>{repairs > 0 ? money(repairs) : '—'}</strong>
           </div>
           <div class="live-stat-chip">
-            <span class="live-stat-k">Catalog</span>
-            <strong>
-              {stats.items} items · {stats.rooms} rooms
-            </strong>
+            <span class="live-stat-k">Build list</span>
+            <strong>{buildList > 0 ? money(buildList) : '—'}</strong>
           </div>
           <div class="live-stat-chip muted-chip">
-            <span class="live-stat-k">{dateLabel}</span>
+            <span class="live-stat-k">Catalog</span>
             <strong>
-              {property.yearBuilt ? `Built ${property.yearBuilt}` : 'Your house'}
+              {stats.items} items · {stats.rooms} rms
             </strong>
           </div>
         </div>
       </header>
 
-      {/* Up Next — left rail */}
+      {/* Up Next */}
       <aside class="live-up-next" aria-label="Upcoming maintenance">
         <header class="live-up-head">
           <h3>Up next</h3>
@@ -205,21 +440,21 @@ export function HousePage({ id }: Props) {
         </header>
         {upNext.length === 0 ? (
           <p class="muted tiny">
-            No scheduled tasks yet. Open Maintenance to generate from your
-            catalog.
+            No scheduled tasks — Maintenance → Schedule from inventory.
           </p>
         ) : (
           <ul class="live-up-list">
             {upNext.map((t) => {
               const due = t.dueInDays;
-              const tone =
+              const toneT =
                 due != null && due < 0
                   ? 'overdue'
                   : due != null && due <= 14
                     ? 'soon'
                     : 'ok';
+              const part = partHint(t);
               return (
-                <li key={t.id} class={`live-up-item ${tone}`}>
+                <li key={t.id} class={`live-up-item ${toneT}`}>
                   <div class="live-up-main">
                     <strong>{t.title}</strong>
                     <span class="muted">
@@ -230,8 +465,15 @@ export function HousePage({ id }: Props) {
                           : due === 0
                             ? 'Due today'
                             : `Due in ${due}d`}
-                      {t.whenNotToDiy ? ' · pro recommended' : ''}
+                      {t.whenNotToDiy ? ' · pro' : ''}
                     </span>
+                    <div class="live-due-track" aria-hidden="true">
+                      <div
+                        class={`live-due-fill ${toneT}`}
+                        style={{ width: `${dueBarPct(due)}%` }}
+                      />
+                    </div>
+                    {part && <span class="live-part-hint">Part · {part}</span>}
                   </div>
                   <button
                     type="button"
@@ -246,30 +488,49 @@ export function HousePage({ id }: Props) {
             })}
           </ul>
         )}
-
-        {property.shutoffs.length > 0 && (
-          <section class="live-shutoffs">
-            <h4>Shutoffs</h4>
-            <ul>
-              {property.shutoffs.slice(0, 3).map((sh) => (
-                <li key={sh.id}>
-                  <strong>{sh.type.replace(/-/g, ' ')}</strong>
-                  <span class="muted"> — {sh.locationNote}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
       </aside>
 
-      {/* Room dock */}
+      {/* Council chat */}
+      <aside class="live-council-chat" aria-label="Council chat">
+        <header class="live-up-head">
+          <h3>Council</h3>
+        </header>
+        <div class="live-chat-scroll">
+          {chat.map((m, i) => (
+            <div key={i} class="live-chat-line">
+              <span class="live-council-face sm">{m.face}</span>
+              <div>
+                <strong>{m.who}</strong>
+                <p>{m.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </aside>
+
+      {/* Room dock — draggable */}
       {room && !selected && (
-        <aside class="live-dock room-dock">
+        <aside
+          class="live-dock room-dock fade-in"
+          style={dockStyle}
+          onPointerDown={onDockPointerDown as unknown as (e: Event) => void}
+          onPointerMove={onDockPointerMove as unknown as (e: Event) => void}
+          onPointerUp={onDockPointerUp}
+        >
           <header class="live-dock-head">
             <div>
-              <p class="live-kicker">You are in</p>
+              <p class="live-kicker live-dock-drag" title="Drag panel">
+                ⠿ You are in
+              </p>
               <h2>{room.name}</h2>
             </div>
+            <button
+              type="button"
+              class="live-link-btn"
+              onClick={() => handleRef.current?.travelToRoom?.(room.id)}
+            >
+              Go here
+            </button>
           </header>
           <p class="mono live-dims">
             {room.dims.L}' × {room.dims.W}'
@@ -286,9 +547,7 @@ export function HousePage({ id }: Props) {
                 {room.paintCards?.[0] && (
                   <li>
                     Paint: {room.paintCards[0].brand}
-                    {room.paintCards[0].line
-                      ? ` ${room.paintCards[0].line}`
-                      : ''}{' '}
+                    {room.paintCards[0].line ? ` ${room.paintCards[0].line}` : ''}{' '}
                     #{room.paintCards[0].number}
                     {room.paintCards[0].sheen
                       ? ` · ${room.paintCards[0].sheen}`
@@ -325,10 +584,7 @@ export function HousePage({ id }: Props) {
           <section class="live-block">
             <h3>In this room ({roomItems.length})</h3>
             {roomItems.length === 0 ? (
-              <p class="muted">
-                Nothing cataloged yet — open Inventory to add the fridge, bed,
-                or water heater.
-              </p>
+              <p class="muted">Nothing cataloged yet.</p>
             ) : (
               <ul class="live-item-list">
                 {roomItems.map((i) => {
@@ -338,7 +594,10 @@ export function HousePage({ id }: Props) {
                       <button
                         type="button"
                         class="live-item-btn"
-                        onClick={() => openItem(i)}
+                        onClick={() => {
+                          setSelected(i);
+                          handleRef.current?.travelToItem?.(i.id);
+                        }}
                       >
                         <span>
                           {i.brand ? `${i.brand} ` : ''}
@@ -361,40 +620,62 @@ export function HousePage({ id }: Props) {
             )}
           </section>
 
-          {roomNotes.length > 0 && (
+          {otherRoomNotes.length > 0 && (
             <section class="live-block">
-              <h3>Your notes</h3>
-              {roomNotes.map((n) => (
-                <p key={n.id} class="live-note">
-                  {n.body}
-                </p>
-              ))}
+              <h3>Other notes</h3>
+              <ul class="live-facts">
+                {otherRoomNotes.map((n) => (
+                  <li key={n.id}>
+                    {n.someday && <span class="badge">Someday</span>} {n.body}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
-          {tips[0] && (
-            <section class="live-council">
-              <div class="live-council-face" aria-hidden="true">
-                {tips[0].portrait}
-              </div>
-              <div>
-                <strong>{tips[0].advisor}</strong>
-                <p>{tips[0].tip}</p>
-              </div>
-            </section>
-          )}
+          <section class="live-block">
+            <h3>Homeowner notes</h3>
+            <textarea
+              class="live-note-input"
+              rows={3}
+              placeholder={`Notes for ${room.name}…`}
+              value={noteDraft}
+              onInput={(e) =>
+                setNoteDraft((e.target as HTMLTextAreaElement).value)
+              }
+            />
+            <div class="live-note-actions">
+              <button
+                type="button"
+                class="btn primary sm"
+                onClick={() => void saveRoomNote()}
+              >
+                Save note
+              </button>
+              <button
+                type="button"
+                class="btn sm"
+                onClick={() => downloadNotesMarkdown(property)}
+              >
+                All rooms .md
+              </button>
+              {noteStatus && <span class="ok-text tiny">{noteStatus}</span>}
+            </div>
+          </section>
         </aside>
       )}
 
-      {/* Item dock — REF-3 style card */}
       {selected && (
-        <aside class="live-dock item-dock">
+        <aside
+          class="live-dock item-dock fade-in"
+          style={dockStyle}
+          onPointerDown={onDockPointerDown as unknown as (e: Event) => void}
+          onPointerMove={onDockPointerMove as unknown as (e: Event) => void}
+          onPointerUp={onDockPointerUp}
+        >
           <header class="live-dock-head">
             <div>
-              <p class="live-kicker">
-                {property.rooms.find((r) => r.id === selected.roomId)?.name ??
-                  'Item'}
-              </p>
+              <p class="live-kicker live-dock-drag">⠿ Item</p>
               <h2>
                 {selected.brand ?? selected.category}
                 {selected.model ? ` ${selected.model}` : ''}
@@ -461,18 +742,21 @@ export function HousePage({ id }: Props) {
         </aside>
       )}
 
-      {/* Council strip */}
-      <footer class="live-council-strip">
-        {(room ? tips : homeCouncilTips()).slice(0, 4).map((t) => (
-          <div key={t.advisor + t.tip.slice(0, 12)} class="live-council-chip">
-            <span class="live-council-face sm">{t.portrait}</span>
-            <div>
-              <strong>{t.advisor}</strong>
-              <p>{t.tip}</p>
-            </div>
-          </div>
-        ))}
-      </footer>
+      {/* Mini room jump list */}
+      {viewMode === 'walk' && (
+        <div class="live-room-jump">
+          {property.rooms.slice(0, 12).map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              class={r.id === roomId ? 'active' : ''}
+              onClick={() => handleRef.current?.travelToRoom?.(r.id)}
+            >
+              {r.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

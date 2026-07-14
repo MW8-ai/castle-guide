@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Art view** (angled painted house illustration + clickable hotspots) is now a real, selectable view on the House page for the Sample Home demo — previously a fully built component (`ImageHouseView`) sat unused, never imported anywhere
+- **Sprite-asset sockets** on the default walk renderer: furniture, floor tiles, and the avatar all check an image manifest before falling back to today's flat-shape drawing — real art drops in later under `assets/iso/` with no renderer code changes (see HUMAN_DIRECTIONS §9)
+- **Real first-run onboarding**: the landing page now shows an actual "Start my house" vs "Explore sample home" choice instead of auto-redirecting into the demo; creating a house is a single-field form
+- **Empty-state House view** for a freshly created home — one clear "add your first room or appliance" CTA instead of a populated-looking HUD with nothing behind it
+- **Emergency shutoffs UI** — previously had zero creation path anywhere in the app despite being shown on every House HUD; now addable/removable from Inventory
+- **Consumables UI** and **Documents vault UI** (upload/view/remove, backed by real blob storage) — both had working storage methods but no UI anywhere; fully wired now
+
+### Fixed
+
+- Room notes: "someday" notes and a second note for the same room no longer silently disappear
+- Item dock: freeform notes and last-service-date were dropped from the UI in the walkable-house rewrite; restored
+- Paint line/collection name and sheen dropped from the room dock's paint display; restored
+- Avatar no longer stayed facing one direction while walking (`ctx.rotate` had been dropped)
+- Equity/Home value stats: a `homeValue` of exactly `0` was treated as "not set" (falsy check instead of `!= null`)
+- "Build list" HUD stat was permanently stuck at "—" — the only UI that could set a someday-note budget (`PropertyPage.tsx`) was dead code, never routed; Dream Home planner on the Builders page now persists real notes instead of ephemeral local state
+- Mortgage/payoff form silently reset to hardcoded placeholder numbers on every visit instead of loading/saving `property.mortgage`; Equity now actually reflects saved home value
+- Dead "Home value" HUD chip removed (its render condition was logically unreachable)
+- `travelToRoom` no longer swaps the room dock to the destination before the avatar arrives
+- Fixed a stale-load race and removed a no-op `keepRoom` flag on the House page's property loader
+- New "glass" pages (Settings/Inventory/Import) no longer render an unstyled, fully-interactive background canvas that hijacked scroll/keyboard input
+- Replaced two blocking `window.prompt()` calls (add room, add trash day) with real inline forms
+
 ## [1.2.0] — 2026-07-10
 
 ### Added — homeowner command center

@@ -12,6 +12,7 @@ export {
   type Note,
   type DocMeta,
   type Shutoff,
+  type ShutoffType,
   type Consumable,
   type LineageEntry,
   type PaintCard,

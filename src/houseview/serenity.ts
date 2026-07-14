@@ -56,6 +56,51 @@ export function healthGrade(score: number): string {
   return 'F';
 }
 
+/**
+ * Visual tone for health chip / glow.
+ * 100 → glowing green · mid warm · <60 red · <40 toxic
+ */
+export function healthTone(
+  score: number
+): 'glow' | 'good' | 'warm' | 'alert' | 'toxic' {
+  if (score >= 92) return 'glow';
+  if (score >= 75) return 'good';
+  if (score >= 60) return 'warm';
+  if (score >= 40) return 'alert';
+  return 'toxic';
+}
+
+/** Open maintenance $ (prefer pro when whenNotToDiy, else DIY). */
+export function repairCostEstimate(property: Property): number {
+  return property.tasks
+    .filter((t) => t.status === 'pending')
+    .reduce((sum, t) => {
+      if (t.whenNotToDiy && t.proCost != null) return sum + t.proCost;
+      if (t.diyCost != null) return sum + t.diyCost;
+      if (t.proCost != null) return sum + t.proCost;
+      return sum;
+    }, 0);
+}
+
+/** Build list / add-ons: someday notes with budget + improvements planned. */
+export function buildListCost(property: Property): number {
+  const fromNotes = property.notes
+    .filter((n) => n.someday && n.roughBudget != null)
+    .reduce((s, n) => s + (n.roughBudget ?? 0), 0);
+  // improvements already done aren't "build list" — only notes
+  return fromNotes;
+}
+
+export function equityFromProperty(property: Property): {
+  equity: number | null;
+  homeValue: number | null;
+} {
+  const m = property.mortgage;
+  if (m?.homeValue == null) return { equity: null, homeValue: null };
+  const principal = m.principal ?? 0;
+  return { equity: m.homeValue - principal, homeValue: m.homeValue };
+}
+
 export function daysUntil(iso: string | null | undefined, asOf = todayUtc()): number | null {
   if (!iso) return null;
   const a = new Date(asOf + 'T00:00:00Z').getTime();

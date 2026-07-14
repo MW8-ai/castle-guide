@@ -1,6 +1,6 @@
 import type {
+  HouseRendererCallbacks,
   HouseRendererHandle,
-  HouseRendererPlugin,
   HouseViewModel,
   PlacementView,
   RoomView,
@@ -76,16 +76,61 @@ const ICON: Record<Kind, string> = {
   generic: '📦',
 };
 
-function floorColor(name: string): string {
+type RoomKind =
+  | 'bath'
+  | 'kitchen'
+  | 'garage'
+  | 'utility'
+  | 'bed'
+  | 'living'
+  | 'office'
+  | 'generic';
+
+function roomKind(name: string): RoomKind {
   const s = name.toLowerCase();
-  if (/bath|toilet/.test(s)) return '#b8c8c4';
-  if (/kitchen/.test(s)) return '#d4c4a0';
-  if (/garage/.test(s)) return '#8a9098';
-  if (/utility|laundry|mech/.test(s)) return '#9aa0a8';
-  if (/bed|primary/.test(s)) return '#c9b8a0';
-  if (/living|family|dining/.test(s)) return '#c4a574';
-  if (/office/.test(s)) return '#b8a888';
-  return '#c2a878';
+  if (/bath|toilet/.test(s)) return 'bath';
+  if (/kitchen/.test(s)) return 'kitchen';
+  if (/garage/.test(s)) return 'garage';
+  if (/utility|laundry|mech/.test(s)) return 'utility';
+  if (/bed|primary/.test(s)) return 'bed';
+  if (/living|family|dining/.test(s)) return 'living';
+  if (/office/.test(s)) return 'office';
+  return 'generic';
+}
+
+const FLOOR_COLOR: Record<RoomKind, string> = {
+  bath: '#b8c8c4',
+  kitchen: '#d4c4a0',
+  garage: '#8a9098',
+  utility: '#9aa0a8',
+  bed: '#c9b8a0',
+  living: '#c4a574',
+  office: '#b8a888',
+  generic: '#c2a878',
+};
+
+/**
+ * Real art sockets — drop matching PNGs under assets/iso/ (see
+ * HUMAN_DIRECTIONS.md §9) and these start rendering with zero code changes.
+ * Until then, missing/404 images fail silently and the flat-shape fallback
+ * below keeps drawing exactly as it does today.
+ */
+const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {};
+const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {};
+const AVATAR_SPRITE_SRC: string | null = null;
+
+const spriteCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
+function getSprite(src: string | null | undefined): HTMLImageElement | null {
+  if (!src) return null;
+  const cached = spriteCache.get(src);
+  if (cached === 'error' || cached === 'loading') return null;
+  if (cached) return cached;
+  const img = new Image();
+  spriteCache.set(src, 'loading');
+  img.onload = () => spriteCache.set(src, img);
+  img.onerror = () => spriteCache.set(src, 'error');
+  img.src = src;
+  return null;
 }
 
 function shade(hex: string, amt: number): string {
@@ -100,14 +145,21 @@ function shade(hex: string, amt: number): string {
  * Angled iso house you walk through.
  * WASD move · scroll zoom · click furniture · enter room notifies host.
  */
-export const walkIsoRenderer: HouseRendererPlugin = {
+export const walkIsoRenderer = {
   id: 'walk-iso',
   label: 'Walk house',
-  mount(el, model, cb) {
+  mount(
+    el: HTMLElement,
+    model: HouseViewModel,
+    cb: HouseRendererCallbacks,
+    opts?: { interactive?: boolean }
+  ): HouseRendererHandle {
+    const interactive = opts?.interactive ?? true;
     const canvas = document.createElement('canvas');
-    canvas.tabIndex = 0;
-    canvas.style.cssText =
-      'display:block;width:100%;height:100%;outline:none;image-rendering:pixelated;cursor:crosshair';
+    canvas.tabIndex = interactive ? 0 : -1;
+    canvas.style.cssText = interactive
+      ? 'display:block;width:100%;height:100%;outline:none;image-rendering:pixelated;cursor:crosshair'
+      : 'display:block;width:100%;height:100%;outline:none;image-rendering:pixelated;pointer-events:none';
     el.innerHTML = '';
     el.appendChild(canvas);
 
@@ -118,10 +170,14 @@ export const walkIsoRenderer: HouseRendererPlugin = {
     let py = 6;
     let facing = 0;
     let lastRoom: string | null = null;
+    let walkPhase = 0;
+    let moving = false;
+    let travel: { x: number; y: number } | null = null;
     /** World origin of each room cell (grid-packed, no gaps). */
     let roomOff = new Map<string, { x: number; y: number }>();
     /** Floor size of each cell — fills the grid so rooms share edges. */
     let roomFloor = new Map<string, { L: number; W: number }>();
+    const YARD = 14;
 
     /**
      * Pack rooms into a tight grid with ZERO gaps. Each room fills its full
@@ -213,9 +269,18 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       return { minX, minY, maxX, maxY };
     }
 
-    function inHouse(wx: number, wy: number): boolean {
+    function worldBounds() {
       const b = houseBounds();
-      // tiny edge pad so you don't snag on float boundaries
+      return {
+        minX: b.minX - YARD,
+        minY: b.minY - YARD,
+        maxX: b.maxX + YARD,
+        maxY: b.maxY + YARD,
+      };
+    }
+
+    function inWorld(wx: number, wy: number): boolean {
+      const b = worldBounds();
       return (
         wx >= b.minX - 0.05 &&
         wx <= b.maxX + 0.05 &&
@@ -252,6 +317,62 @@ export const walkIsoRenderer: HouseRendererPlugin = {
         }
       }
       return best?.id ?? null;
+    }
+
+    function drawYard(
+      ctx: CanvasRenderingContext2D,
+      panX: number,
+      panY: number
+    ) {
+      const w = worldBounds();
+      const y0 = iso(w.minX, w.minY, 0, panX, panY);
+      const y1 = iso(w.maxX, w.minY, 0, panX, panY);
+      const y2 = iso(w.maxX, w.maxY, 0, panX, panY);
+      const y3 = iso(w.minX, w.maxY, 0, panX, panY);
+      ctx.beginPath();
+      ctx.moveTo(y0.sx, y0.sy);
+      ctx.lineTo(y1.sx, y1.sy);
+      ctx.lineTo(y2.sx, y2.sy);
+      ctx.lineTo(y3.sx, y3.sy);
+      ctx.closePath();
+      ctx.fillStyle = '#3d8f4a';
+      ctx.fill();
+      // grass flecks
+      ctx.fillStyle = 'rgba(30, 100, 40, 0.35)';
+      for (let i = 0; i < 40; i++) {
+        const gx = w.minX + ((i * 7) % (w.maxX - w.minX));
+        const gy = w.minY + ((i * 11) % (w.maxY - w.minY));
+        const g = iso(gx, gy, 0, panX, panY);
+        ctx.fillRect(g.sx, g.sy, 3, 2);
+      }
+
+      // driveway strip on garage side (max X)
+      const hb = houseBounds();
+      const d0 = iso(hb.maxX + 0.5, hb.minY + 2, 0, panX, panY);
+      const d1 = iso(hb.maxX + 8, hb.minY + 2, 0, panX, panY);
+      const d2 = iso(hb.maxX + 8, hb.maxY - 2, 0, panX, panY);
+      const d3 = iso(hb.maxX + 0.5, hb.maxY - 2, 0, panX, panY);
+      ctx.beginPath();
+      ctx.moveTo(d0.sx, d0.sy);
+      ctx.lineTo(d1.sx, d1.sy);
+      ctx.lineTo(d2.sx, d2.sy);
+      ctx.lineTo(d3.sx, d3.sy);
+      ctx.closePath();
+      ctx.fillStyle = '#5a5e66';
+      ctx.fill();
+      ctx.strokeStyle = '#3a3e46';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // lane lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.setLineDash([6, 8]);
+      const m0 = iso(hb.maxX + 4, hb.minY + 3, 0, panX, panY);
+      const m1 = iso(hb.maxX + 4, hb.maxY - 3, 0, panX, panY);
+      ctx.beginPath();
+      ctx.moveTo(m0.sx, m0.sy);
+      ctx.lineTo(m1.sx, m1.sy);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     function drawFoundation(
@@ -296,7 +417,9 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       panY: number,
       highlight: boolean
     ) {
-      const floor = floorColor(room.name);
+      const kind = roomKind(room.name);
+      const floor = FLOOR_COLOR[kind];
+      const floorImg = getSprite(FLOOR_SPRITE_SRC[kind]);
       const f = floorOf(room);
       const L = f.L;
       const W = f.W;
@@ -316,8 +439,25 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       ctx.lineTo(c2.sx, c2.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      ctx.fillStyle = floor;
-      ctx.fill();
+      if (floorImg) {
+        ctx.save();
+        ctx.clip();
+        const xs = [c0.sx, c1.sx, c2.sx, c3.sx];
+        const ys = [c0.sy, c1.sy, c2.sy, c3.sy];
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        ctx.drawImage(
+          floorImg,
+          minX,
+          minY,
+          Math.max(...xs) - minX,
+          Math.max(...ys) - minY
+        );
+        ctx.restore();
+      } else {
+        ctx.fillStyle = floor;
+        ctx.fill();
+      }
       if (highlight) {
         ctx.fillStyle = 'rgba(240, 180, 65, 0.18)';
         ctx.fill();
@@ -413,61 +553,101 @@ export const walkIsoRenderer: HouseRendererPlugin = {
           : health === 'due'
             ? '#e8a838'
             : '#3d9a5f';
+      const sprite = getSprite(ITEM_SPRITE_SRC[kind]);
 
-      const b00 = iso(fx, fy, 0, panX, panY);
-      const b10 = iso(fx + L, fy, 0, panX, panY);
-      const b01 = iso(fx, fy + W, 0, panX, panY);
-      const t00 = iso(fx, fy, H, panX, panY);
-      const t10 = iso(fx + L, fy, H, panX, panY);
-      const t11 = iso(fx + L, fy + W, H, panX, panY);
-      const t01 = iso(fx, fy + W, H, panX, panY);
-
-      ctx.beginPath();
-      ctx.moveTo(t00.sx, t00.sy);
-      ctx.lineTo(t10.sx, t10.sy);
-      ctx.lineTo(t11.sx, t11.sy);
-      ctx.lineTo(t01.sx, t01.sy);
-      ctx.closePath();
-      ctx.fillStyle = body;
-      ctx.fill();
-      ctx.strokeStyle = rim;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(b00.sx, b00.sy);
-      ctx.lineTo(t00.sx, t00.sy);
-      ctx.lineTo(t01.sx, t01.sy);
-      ctx.lineTo(b01.sx, b01.sy);
-      ctx.closePath();
-      ctx.fillStyle = shade(body, -28);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(b00.sx, b00.sy);
-      ctx.lineTo(t00.sx, t00.sy);
-      ctx.lineTo(t10.sx, t10.sy);
-      ctx.lineTo(b10.sx, b10.sy);
-      ctx.closePath();
-      ctx.fillStyle = shade(body, -48);
-      ctx.fill();
-      ctx.stroke();
-
-      if (kind === 'fridge') {
-        const m = iso(fx + L * 0.55, fy + W * 0.5, H * 0.5, panX, panY);
-        ctx.strokeStyle = '#6a7a88';
+      if (sprite) {
+        const base = iso(fx + L / 2, fy + W / 2, 0, panX, panY);
+        const spriteH =
+          70 * zoom * Math.max(0.75, Math.min(1.6, (L + W) / 4));
+        const spriteW = spriteH * (sprite.naturalWidth / sprite.naturalHeight || 1);
+        ctx.drawImage(
+          sprite,
+          base.sx - spriteW / 2,
+          base.sy - spriteH,
+          spriteW,
+          spriteH
+        );
+        ctx.strokeStyle = rim;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(m.sx, t00.sy + 4);
-        ctx.lineTo(m.sx, b00.sy - 2);
+        ctx.ellipse(base.sx, base.sy, spriteW * 0.26, spriteW * 0.11, 0, 0, Math.PI * 2);
         ctx.stroke();
-      }
-      if (kind === 'sofa') {
-        const arm = iso(fx + 0.3, fy + W * 0.5, H * 0.7, panX, panY);
-        ctx.fillStyle = shade(body, 20);
+      } else {
+        const b00 = iso(fx, fy, 0, panX, panY);
+        const b10 = iso(fx + L, fy, 0, panX, panY);
+        const b01 = iso(fx, fy + W, 0, panX, panY);
+        const t00 = iso(fx, fy, H, panX, panY);
+        const t10 = iso(fx + L, fy, H, panX, panY);
+        const t11 = iso(fx + L, fy + W, H, panX, panY);
+        const t01 = iso(fx, fy + W, H, panX, panY);
+
         ctx.beginPath();
-        ctx.arc(arm.sx, arm.sy, 4 * zoom, 0, Math.PI * 2);
+        ctx.moveTo(t00.sx, t00.sy);
+        ctx.lineTo(t10.sx, t10.sy);
+        ctx.lineTo(t11.sx, t11.sy);
+        ctx.lineTo(t01.sx, t01.sy);
+        ctx.closePath();
+        ctx.fillStyle = body;
         ctx.fill();
+        ctx.strokeStyle = rim;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(b00.sx, b00.sy);
+        ctx.lineTo(t00.sx, t00.sy);
+        ctx.lineTo(t01.sx, t01.sy);
+        ctx.lineTo(b01.sx, b01.sy);
+        ctx.closePath();
+        ctx.fillStyle = shade(body, -28);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(b00.sx, b00.sy);
+        ctx.lineTo(t00.sx, t00.sy);
+        ctx.lineTo(t10.sx, t10.sy);
+        ctx.lineTo(b10.sx, b10.sy);
+        ctx.closePath();
+        ctx.fillStyle = shade(body, -48);
+        ctx.fill();
+        ctx.stroke();
+
+        if (kind === 'fridge') {
+          const m = iso(fx + L * 0.55, fy + W * 0.5, H * 0.5, panX, panY);
+          ctx.strokeStyle = '#6a7a88';
+          ctx.beginPath();
+          ctx.moveTo(m.sx, t00.sy + 4);
+          ctx.lineTo(m.sx, b00.sy - 2);
+          ctx.stroke();
+        }
+        if (kind === 'sofa') {
+          const arm = iso(fx + 0.3, fy + W * 0.5, H * 0.7, panX, panY);
+          ctx.fillStyle = shade(body, 20);
+          ctx.beginPath();
+          ctx.arc(arm.sx, arm.sy, 4 * zoom, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (kind === 'car') {
+          // windshield + wheels so it reads as a vehicle, not a blue brick
+          const win = iso(fx + L * 0.55, fy + W * 0.5, H * 0.85, panX, panY);
+          ctx.fillStyle = 'rgba(160,200,230,0.85)';
+          ctx.beginPath();
+          ctx.ellipse(win.sx, win.sy, 10 * zoom, 5 * zoom, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (const [ox, oy] of [
+            [0.2, 0.15],
+            [0.2, 0.85],
+            [0.8, 0.15],
+            [0.8, 0.85],
+          ] as const) {
+            const wh = iso(fx + L * ox, fy + W * oy, 0.15, panX, panY);
+            ctx.fillStyle = '#1a1a1e';
+            ctx.beginPath();
+            ctx.arc(wh.sx, wh.sy, 4.5 * zoom, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
 
       // health pulse ring for due/overdue
@@ -484,10 +664,12 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       }
 
       const mid = iso(fx + L / 2, fy + W / 2, H + 0.15, panX, panY);
-      // glyph so furniture is scannable at a glance
-      ctx.font = `${Math.round(14 * zoom)}px system-ui,sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(ICON[kind], mid.sx, mid.sy - 2);
+      if (!sprite) {
+        // glyph so furniture is scannable at a glance (skipped once a real sprite draws it)
+        ctx.font = `${Math.round(14 * zoom)}px system-ui,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(ICON[kind], mid.sx, mid.sy - 2);
+      }
       const short = p.label.length > 16 ? p.label.slice(0, 15) + '…' : p.label;
       ctx.fillStyle = 'rgba(10,8,6,0.88)';
       ctx.font = 'bold 10px system-ui,sans-serif';
@@ -498,14 +680,23 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       return mid;
     }
 
-    function tryMove(dx: number, dy: number) {
-      const speed = 0.38;
-      // Axis-separate so you can slide along walls into the next room
+    function tryMove(dx: number, dy: number, speed = 0.38) {
       const nx = px + dx * speed;
       const ny = py + dy * speed;
-      if (inHouse(nx, py)) px = nx;
-      if (inHouse(px, ny)) py = ny;
+      let moved = false;
+      if (inWorld(nx, py)) {
+        px = nx;
+        moved = true;
+      }
+      if (inWorld(px, ny)) {
+        py = ny;
+        moved = true;
+      }
       if (dx || dy) facing = Math.atan2(dy, dx);
+      if (moved) {
+        moving = true;
+        walkPhase += 0.35;
+      }
       const rid = roomAt(px, py);
       if (rid !== lastRoom) {
         lastRoom = rid;
@@ -514,7 +705,33 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       }
     }
 
+    function setTravel(tx: number, ty: number) {
+      travel = { x: tx, y: ty };
+    }
+
+    function travelToRoom(roomId: string) {
+      const r = current.rooms.find((x) => x.id === roomId);
+      if (!r) return;
+      layout(current);
+      const o = roomOff.get(roomId);
+      const f = roomFloor.get(roomId) ?? { L: r.dims.L, W: r.dims.W };
+      if (!o) return;
+      // Don't call onSelectRoom here — tryMove() fires it once the avatar
+      // actually arrives (roomAt() crosses into the destination room).
+      setTravel(o.x + f.L / 2, o.y + f.W / 2);
+    }
+
+    function travelToItem(itemId: string) {
+      layout(current);
+      const p = current.placements.find((pl) => pl.itemId === itemId);
+      if (!p) return;
+      const o = roomOff.get(p.roomId);
+      if (!o) return;
+      setTravel(o.x + p.x + p.footprint.L / 2, o.y + p.y + p.footprint.W / 2);
+    }
+
     let hitList: { itemId: string; sx: number; sy: number; r: number }[] = [];
+    let roomHits: { roomId: string; sx: number; sy: number; r: number }[] = [];
 
     function paint() {
       layout(current);
@@ -540,6 +757,7 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       const panX = w / 2 - cam.sx;
       const panY = h / 2 - cam.sy + 28;
 
+      drawYard(ctx, panX, panY);
       drawFoundation(ctx, panX, panY);
 
       const roomsSorted = [...current.rooms].sort((a, b) => {
@@ -548,16 +766,37 @@ export const walkIsoRenderer: HouseRendererPlugin = {
         return oa.x + oa.y - (ob.x + ob.y);
       });
       hitList = [];
+      roomHits = [];
       const active = roomAt(px, py, 0);
       for (const room of roomsSorted) {
         const o = roomOff.get(room.id)!;
+        const f = floorOf(room);
         drawRoom(ctx, room, o, panX, panY, room.id === active);
+        const midR = iso(o.x + f.L / 2, o.y + f.W / 2, 0, panX, panY);
+        roomHits.push({
+          roomId: room.id,
+          sx: midR.sx,
+          sy: midR.sy,
+          r: Math.max(36, Math.min(f.L, f.W) * BASE * zoom * 0.35),
+        });
         for (const p of current.placements
           .filter((pl) => pl.roomId === room.id)
           .sort((a, b) => a.x + a.y - (b.x + b.y))) {
+          // cars get a bigger footprint read
+          const kind = kindOf(p.label);
+          const fp =
+            kind === 'car'
+              ? {
+                  ...p,
+                  footprint: {
+                    L: Math.max(p.footprint.L, 4.5),
+                    W: Math.max(p.footprint.W, 2.4),
+                  },
+                }
+              : p;
           const mid = drawItem(
             ctx,
-            p,
+            fp,
             o,
             panX,
             panY,
@@ -567,37 +806,83 @@ export const walkIsoRenderer: HouseRendererPlugin = {
             itemId: p.itemId,
             sx: mid.sx,
             sy: mid.sy,
-            r: 30 * zoom,
+            r: kind === 'car' ? 42 * zoom : 30 * zoom,
           });
         }
       }
 
+      // avatar — slight walk bob / leg swing
       const ap = iso(px, py, 0.3, panX, panY);
+      const bob = moving ? Math.sin(walkPhase) * 2.2 : 0;
+      const leg = moving ? Math.sin(walkPhase) * 5 : 0;
+      const avatarSprite = getSprite(AVATAR_SPRITE_SRC);
       ctx.save();
-      ctx.translate(ap.sx, ap.sy);
+      ctx.translate(ap.sx, ap.sy + bob);
       ctx.rotate(facing);
-      ctx.fillStyle = '#2d8a4e';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 10, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#0a2010';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.fillStyle = '#f0c8a0';
-      ctx.beginPath();
-      ctx.arc(0, -13, 6.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#1a5030';
-      ctx.fillRect(8, -2, 6, 3);
+      if (avatarSprite) {
+        // Keep the character upright rather than spinning the bitmap;
+        // real art should swap directional frames here instead.
+        ctx.rotate(-facing);
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 11, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const h = 44;
+        const w =
+          h * (avatarSprite.naturalWidth / avatarSprite.naturalHeight || 0.6);
+        ctx.drawImage(avatarSprite, -w / 2, -h + 4, w, h);
+      } else {
+        // shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 11, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // legs
+        ctx.strokeStyle = '#1a3a28';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-3, 2);
+        ctx.lineTo(-3 + leg * 0.3, 11);
+        ctx.moveTo(3, 2);
+        ctx.lineTo(3 - leg * 0.3, 11);
+        ctx.stroke();
+        // body
+        ctx.fillStyle = '#2f9a55';
+        ctx.fillRect(-8, -14, 16, 18);
+        ctx.strokeStyle = '#0a2010';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(-8, -14, 16, 18);
+        // head
+        ctx.fillStyle = '#f0c8a0';
+        ctx.beginPath();
+        ctx.arc(0, -18, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#3a2818';
+        ctx.stroke();
+        // hair
+        ctx.fillStyle = '#2a1a10';
+        ctx.beginPath();
+        ctx.arc(0, -21, 6.5, Math.PI, 0);
+        ctx.fill();
+        // arm (rotates with the body via ctx.rotate(facing) above)
+        ctx.strokeStyle = '#f0c8a0';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(8, -8);
+        ctx.lineTo(13, -4);
+        ctx.stroke();
+      }
       ctx.restore();
+      moving = false;
 
       ctx.fillStyle = 'rgba(10,14,18,0.78)';
-      ctx.fillRect(12, h - 42, Math.min(520, w - 24), 30);
+      ctx.fillRect(12, h - 42, Math.min(560, w - 24), 30);
       ctx.fillStyle = '#e8f0f4';
       ctx.font = '13px system-ui,sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(
-        'WASD / arrows — walk room to room  ·  scroll zoom  ·  click furniture',
+        'WASD walk · click a room to go there · click furniture · yard is open',
         20,
         h - 22
       );
@@ -612,8 +897,18 @@ export const walkIsoRenderer: HouseRendererPlugin = {
       if (keys.has('a') || keys.has('arrowleft')) dx -= 1;
       if (keys.has('d') || keys.has('arrowright')) dx += 1;
       if (dx || dy) {
+        travel = null; // manual control cancels auto-walk
         const len = Math.hypot(dx, dy) || 1;
         tryMove(dx / len, dy / len);
+      } else if (travel) {
+        const tdx = travel.x - px;
+        const tdy = travel.y - py;
+        const dist = Math.hypot(tdx, tdy);
+        if (dist < 0.35) {
+          travel = null;
+        } else {
+          tryMove(tdx / dist, tdy / dist, 0.55);
+        }
       }
       paint();
       raf = requestAnimationFrame(loop);
@@ -677,15 +972,30 @@ export const walkIsoRenderer: HouseRendererPlugin = {
         const d = Math.hypot(hit.sx - mx, hit.sy - my);
         if (d < hit.r && (!best || d < best.d)) best = { id: hit.itemId, d };
       }
-      if (best) cb.onSelectItem(best.id);
+      if (best) {
+        travelToItem(best.id);
+        cb.onSelectItem(best.id);
+        return;
+      }
+      // click room floor / label → auto-walk there
+      let bestRoom: { id: string; d: number } | null = null;
+      for (const hit of roomHits) {
+        const d = Math.hypot(hit.sx - mx, hit.sy - my);
+        if (d < hit.r && (!bestRoom || d < bestRoom.d)) {
+          bestRoom = { id: hit.roomId, d };
+        }
+      }
+      if (bestRoom) travelToRoom(bestRoom.id);
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    canvas.addEventListener('wheel', onWheel, { passive: false });
-    canvas.addEventListener('click', onClick);
+    if (interactive) {
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
+      canvas.addEventListener('click', onClick);
+      setTimeout(() => canvas.focus(), 50);
+    }
     raf = requestAnimationFrame(loop);
-    setTimeout(() => canvas.focus(), 50);
 
     return {
       update(next) {
@@ -700,6 +1010,8 @@ export const walkIsoRenderer: HouseRendererPlugin = {
         canvas.removeEventListener('click', onClick);
         canvas.remove();
       },
+      travelToRoom,
+      travelToItem,
     } satisfies HouseRendererHandle;
   },
 };
