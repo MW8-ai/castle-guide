@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { DocMeta, Item, Property, ShutoffType } from '../../storage';
+import type { DocMeta, Item, Property, RoomFloor, ShutoffType } from '../../storage';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 import { newId } from '../../storage';
-import { ageFromInstall, daysUntil } from '../../houseview';
+import { ageFromInstall, daysUntil, FLOORS, FLOOR_LABELS } from '../../houseview';
 import { ItemCard } from '../../ui/kit/ItemCard';
 import '../../ui/kit/kit.css';
 
@@ -43,6 +43,7 @@ const DOC_TYPES: DocMeta['type'][] = [
   'other',
 ];
 
+
 export function InventoryPage({ id }: Props) {
   const { refresh: refreshActive } = useActiveCastle();
   const [property, setProperty] = useState<Property | null>(null);
@@ -55,6 +56,7 @@ export function InventoryPage({ id }: Props) {
   const [picked, setPicked] = useState<Item | null>(null);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomFloor, setNewRoomFloor] = useState<RoomFloor>('ground');
   const [showAddShutoff, setShowAddShutoff] = useState(false);
   const [shutoffType, setShutoffType] = useState<ShutoffType>('water');
   const [shutoffNote, setShutoffNote] = useState('');
@@ -132,7 +134,8 @@ export function InventoryPage({ id }: Props) {
     const s = await ensureStorageReady();
     await s.addRoom(propertyId!, {
       name,
-      type: 'other',
+      type: newRoomFloor === 'yard' ? 'yard' : 'other',
+      floor: newRoomFloor,
       dims: { L: 12, W: 11, H: 9 },
     });
     setNewRoomName('');
@@ -484,6 +487,21 @@ export function InventoryPage({ id }: Props) {
                 }
                 required
               />
+            </label>
+            <label>
+              Floor
+              <select
+                value={newRoomFloor}
+                onChange={(e) =>
+                  setNewRoomFloor((e.target as HTMLSelectElement).value as RoomFloor)
+                }
+              >
+                {FLOORS.map((f) => (
+                  <option key={f} value={f}>
+                    {FLOOR_LABELS[f]}
+                  </option>
+                ))}
+              </select>
             </label>
             <button type="submit" class="btn primary">
               Save

@@ -255,6 +255,18 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
     };
   });
 
+  // Floors: bedrooms + full baths upstairs, everything else on the ground
+  // floor, plus a yard room so the outdoor tab has real content.
+  const backyard = newId();
+  property.rooms.push(
+    room(backyard, 'Backyard', 'yard', 24, 18, [], { floor: 'grass' })
+  );
+  const upperFloorRoomIds = new Set([bed1, bed2, bed3, bed4, bed5, bath2, bath3]);
+  property.rooms = property.rooms.map((r) => ({
+    ...r,
+    floor: r.id === backyard ? 'yard' : upperFloorRoomIds.has(r.id) ? 'upper' : 'ground',
+  }));
+
   property.items = [
     item({
       id: fridge,

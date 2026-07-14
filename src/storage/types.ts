@@ -112,10 +112,14 @@ export interface Placement {
   footprint: { L: number; W: number };
 }
 
+/** Which story a room belongs to. Missing/undefined is treated as 'ground'. */
+export type RoomFloor = 'basement' | 'ground' | 'upper' | 'yard';
+
 export interface Room {
   id: string;
   name: string;
   type: string;
+  floor?: RoomFloor;
   dims: Dims3;
   materials?: { floor?: string; wall?: string; trim?: string };
   paintCards: PaintCard[];

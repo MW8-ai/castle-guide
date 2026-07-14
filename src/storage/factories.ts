@@ -64,6 +64,7 @@ export function createRoom(
     id: partial.id ?? newId(),
     name: partial.name,
     type: partial.type ?? 'other',
+    floor: partial.floor,
     dims: partial.dims ?? { L: 10, W: 10, H: 8 },
     materials: partial.materials,
     paintCards: partial.paintCards ?? [],

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { Item, Note, Property, Room, Task } from '../../storage';
+import type { Item, Note, Property, Room, RoomFloor, Task } from '../../storage';
 import { newId } from '../../storage';
 import {
   buildHouseViewModel,
@@ -15,6 +15,9 @@ import {
   repairCostEstimate,
   buildListCost,
   equityFromProperty,
+  FLOORS,
+  FLOOR_LABELS,
+  roomFloorOf,
 } from '../../houseview';
 import { walkIsoRenderer } from '../../houseview/walkIso/walkIsoRenderer';
 import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
@@ -56,6 +59,7 @@ export function HousePage({ id }: Props) {
   const propRef = useRef<Property | null>(null);
   const [property, setProperty] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'walk' | 'art'>('walk');
+  const [activeFloor, setActiveFloor] = useState<RoomFloor>('ground');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
@@ -92,7 +96,17 @@ export function HousePage({ id }: Props) {
     if (token !== loadToken.current) return;
 
     if (viewMode !== 'walk') return;
-    const model = buildHouseViewModel(p).model;
+    const fullModel = buildHouseViewModel(p).model;
+    const floorRoomIds = new Set(
+      p.rooms.filter((r) => roomFloorOf(r) === activeFloor).map((r) => r.id)
+    );
+    const model = {
+      ...fullModel,
+      rooms: fullModel.rooms.filter((r) => floorRoomIds.has(r.id)),
+      placements: fullModel.placements.filter((pl) =>
+        floorRoomIds.has(pl.roomId)
+      ),
+    };
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (!hostRef.current || token !== loadToken.current) return;
@@ -125,11 +139,17 @@ export function HousePage({ id }: Props) {
       handleRef.current?.destroy();
       handleRef.current = null;
     };
-  }, [propertyId, viewMode]);
+  }, [propertyId, viewMode, activeFloor]);
 
   function toggleViewMode() {
     setViewMode((m) => (m === 'walk' ? 'art' : 'walk'));
     setRoomId(null);
+  }
+
+  function switchFloor(floor: RoomFloor) {
+    setActiveFloor(floor);
+    setRoomId(null);
+    setSelected(null);
   }
 
   // Sync note draft when room changes
@@ -178,6 +198,11 @@ export function HousePage({ id }: Props) {
       </div>
     );
   }
+
+  const floorsWithRooms = new Set(property.rooms.map((r) => roomFloorOf(r)));
+  const currentFloorRooms = property.rooms.filter(
+    (r) => roomFloorOf(r) === activeFloor
+  );
 
   const room: Room | null =
     (roomId && property.rooms.find((r) => r.id === roomId)) || null;
@@ -378,6 +403,36 @@ export function HousePage({ id }: Props) {
           ))}
         </div>
       </div>
+
+      {viewMode === 'walk' && (
+        <div class="live-floor-tabs">
+          {FLOORS.map((f) => (
+            <button
+              key={f}
+              type="button"
+              class={f === activeFloor ? 'active' : ''}
+              disabled={f === activeFloor}
+              onClick={() => switchFloor(f)}
+            >
+              {FLOOR_LABELS[f]}
+              {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {viewMode === 'walk' && currentFloorRooms.length === 0 && (
+        <div class="live-floor-empty">
+          <p>No rooms on {FLOOR_LABELS[activeFloor].toLowerCase()} yet.</p>
+          <button
+            type="button"
+            class="btn primary"
+            onClick={() => go('property', property.id, 'inventory')}
+          >
+            + Add a room here
+          </button>
+        </div>
+      )}
 
       <header class="live-hud-top">
         <div class="live-hud-left">
@@ -745,7 +800,7 @@ export function HousePage({ id }: Props) {
       {/* Mini room jump list */}
       {viewMode === 'walk' && (
         <div class="live-room-jump">
-          {property.rooms.slice(0, 12).map((r) => (
+          {currentFloorRooms.slice(0, 12).map((r) => (
             <button
               key={r.id}
               type="button"

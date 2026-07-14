@@ -9,6 +9,7 @@ export {
   type Property,
   type Item,
   type Room,
+  type RoomFloor,
   type Note,
   type DocMeta,
   type Shutoff,
