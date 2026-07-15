@@ -1,0 +1,36 @@
+.floorplan-canvas-wrap {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.floorplan-svg {
+  width: 100%;
+  height: 60vh;
+  min-height: 320px;
+  touch-action: none;
+}
+
+.fp-room rect {
+  fill: rgba(196, 165, 116, 0.35);
+  stroke: rgba(120, 90, 50, 0.85);
+  stroke-width: 0.08;
+  cursor: grab;
+}
+.fp-room:active rect {
+  cursor: grabbing;
+}
+.fp-room.selected rect {
+  fill: rgba(240, 180, 65, 0.35);
+  stroke: #f0b441;
+  stroke-width: 0.12;
+}
+.fp-room text {
+  fill: var(--text);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  user-select: none;
+  pointer-events: none;
+}

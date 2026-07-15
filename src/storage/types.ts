@@ -120,6 +120,8 @@ export interface Room {
   name: string;
   type: string;
   floor?: RoomFloor;
+  /** User-placed position (feet) within the floor, from the floor-plan editor. Auto-packed when absent. */
+  pos?: { x: number; y: number };
   dims: Dims3;
   materials?: { floor?: string; wall?: string; trim?: string };
   paintCards: PaintCard[];

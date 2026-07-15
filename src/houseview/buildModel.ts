@@ -134,6 +134,7 @@ export function buildHouseViewModel(
         name: r.name,
         dims: r.dims,
         materials: r.materials,
+        pos: r.pos,
       })),
       placements,
       healthByItemId,
