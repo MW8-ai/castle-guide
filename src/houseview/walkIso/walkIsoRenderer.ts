@@ -165,6 +165,7 @@ export const walkIsoRenderer = {
 
     let current = model;
     let zoom = 1.05;
+    let wallsTranslucent = false;
     const keys = new Set<string>();
     let px = 6;
     let py = 6;
@@ -186,6 +187,19 @@ export const walkIsoRenderer = {
     function layout(m: HouseViewModel) {
       roomOff.clear();
       roomFloor.clear();
+
+      // Rooms placed via the floor-plan editor keep their saved position.
+      const positioned = m.rooms.filter((r) => r.pos);
+      let autoOriginX = 0;
+      for (const r of positioned) {
+        roomOff.set(r.id, { x: r.pos!.x, y: r.pos!.y });
+        roomFloor.set(r.id, { L: r.dims.L, W: r.dims.W });
+        autoOriginX = Math.max(autoOriginX, r.pos!.x + r.dims.L);
+      }
+
+      // Everything else auto-packs into a grid, offset past any positioned
+      // rooms so the two layouts never overlap.
+      const unpositioned = m.rooms.filter((r) => !r.pos);
       // Prefer a house-like order if names match sample seed
       const preferred = [
         'Primary Bedroom',
@@ -206,7 +220,7 @@ export const walkIsoRenderer = {
         'Garage 2',
         'Garage 3',
       ];
-      const rooms = [...m.rooms].sort((a, b) => {
+      const rooms = [...unpositioned].sort((a, b) => {
         const ia = preferred.indexOf(a.name);
         const ib = preferred.indexOf(b.name);
         if (ia === -1 && ib === -1) return a.name.localeCompare(b.name);
@@ -233,7 +247,7 @@ export const walkIsoRenderer = {
       }
       // gap = 0 → shared walls; each room occupies its full cell
       for (const c of cells) {
-        let ox = 0;
+        let ox = autoOriginX;
         for (let k = 0; k < c.col; k++) ox += colWidths[k];
         let oy = 0;
         for (let k = 0; k < c.row; k++) oy += rowHeights[k] ?? 0;
@@ -423,7 +437,9 @@ export const walkIsoRenderer = {
       const f = floorOf(room);
       const L = f.L;
       const W = f.W;
-      const hWall = 1.15;
+      // Scaled from the room's real ceiling height, baseline 9ft ↔ 1.15
+      // iso units, clamped so extreme values don't break the cutaway look.
+      const hWall = Math.max(0.6, Math.min(2.4, (room.dims.H / 9) * 1.15));
       const c0 = iso(o.x, o.y, 0, panX, panY);
       const c1 = iso(o.x + L, o.y, 0, panX, panY);
       const c2 = iso(o.x + L, o.y + W, 0, panX, panY);
@@ -483,7 +499,9 @@ export const walkIsoRenderer = {
       ctx.closePath();
       ctx.stroke();
 
-      // low walls (cutaway)
+      // low walls (cutaway) — translucent when "see through walls" is on
+      ctx.save();
+      if (wallsTranslucent) ctx.globalAlpha = 0.22;
       ctx.beginPath();
       ctx.moveTo(c0.sx, c0.sy);
       ctx.lineTo(t0.sx, t0.sy);
@@ -505,6 +523,7 @@ export const walkIsoRenderer = {
       ctx.fillStyle = highlight ? '#b09068' : '#947858';
       ctx.fill();
       ctx.stroke();
+      ctx.restore();
 
       // door notch on right edge (passage cue)
       const doorY = o.y + W * 0.35;
@@ -1012,6 +1031,9 @@ export const walkIsoRenderer = {
       },
       travelToRoom,
       travelToItem,
+      setWallsTranslucent(v: boolean) {
+        wallsTranslucent = v;
+      },
     } satisfies HouseRendererHandle;
   },
 };

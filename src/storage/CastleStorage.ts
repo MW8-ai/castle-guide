@@ -183,6 +183,19 @@ export class CastleStorage {
     return room;
   }
 
+  async updateRoom(
+    propertyId: string,
+    roomId: string,
+    patch: Partial<Pick<Room, 'pos' | 'dims' | 'floor' | 'name'>>
+  ): Promise<Room> {
+    const property = await this.requireProperty(propertyId);
+    const room = property.rooms.find((r) => r.id === roomId);
+    if (!room) throw new Error('Room not found');
+    Object.assign(room, patch);
+    await this.saveProperty(property);
+    return room;
+  }
+
   // ── Items ────────────────────────────────────────────────
 
   async addItem(

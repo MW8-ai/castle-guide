@@ -60,6 +60,7 @@ export function HousePage({ id }: Props) {
   const [property, setProperty] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'walk' | 'art'>('walk');
   const [activeFloor, setActiveFloor] = useState<RoomFloor>('ground');
+  const [wallsTranslucent, setWallsTranslucent] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
@@ -128,6 +129,7 @@ export function HousePage({ id }: Props) {
           },
           onMovePlacement: () => {},
         });
+        handleRef.current.setWallsTranslucent?.(wallsTranslucent);
       });
     });
   }
@@ -150,6 +152,13 @@ export function HousePage({ id }: Props) {
     setActiveFloor(floor);
     setRoomId(null);
     setSelected(null);
+  }
+
+  function toggleWallsTranslucent() {
+    setWallsTranslucent((v) => {
+      handleRef.current?.setWallsTranslucent?.(!v);
+      return !v;
+    });
   }
 
   // Sync note draft when room changes
@@ -340,7 +349,11 @@ export function HousePage({ id }: Props) {
       sx: dockPos?.x ?? rect.left,
       sy: dockPos?.y ?? rect.top,
     };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    try {
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* ignore — capture is a nicety, not a requirement */
+    }
   }
 
   function onDockPointerMove(e: PointerEvent) {
@@ -445,6 +458,24 @@ export function HousePage({ id }: Props) {
           {isDemoHome && (
             <button type="button" class="live-link-btn" onClick={toggleViewMode}>
               {viewMode === 'walk' ? '🖼️ Art view' : '🚶 Walk view'}
+            </button>
+          )}
+          {viewMode === 'walk' && (
+            <button
+              type="button"
+              class="live-link-btn"
+              onClick={toggleWallsTranslucent}
+            >
+              {wallsTranslucent ? '🧱 Show walls' : '👁 See through walls'}
+            </button>
+          )}
+          {viewMode === 'walk' && (
+            <button
+              type="button"
+              class="live-link-btn"
+              onClick={() => go('property', property.id, 'floorplan?floor=' + activeFloor)}
+            >
+              ✏️ Edit floor plan
             </button>
           )}
         </div>

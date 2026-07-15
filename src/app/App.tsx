@@ -6,6 +6,7 @@ import { routePath } from './paths';
 import { HomePage } from './pages/HomePage';
 import { HousePage } from './pages/HousePage';
 import { InventoryPage } from './pages/InventoryPage';
+import { FloorPlanPage } from './pages/FloorPlanPage';
 import { MaintainPage } from './pages/MaintainPage';
 import { MoneyPage } from './pages/MoneyPage';
 import { CouncilPage } from './pages/CouncilPage';
@@ -51,6 +52,10 @@ export function App() {
             <Route
               path={routePath('/property/:id/inventory')}
               component={InventoryPage}
+            />
+            <Route
+              path={routePath('/property/:id/floorplan')}
+              component={FloorPlanPage}
             />
             <Route
               path={routePath('/property/:id')}

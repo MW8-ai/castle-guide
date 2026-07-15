@@ -10,6 +10,8 @@ export interface RoomView {
   name: string;
   dims: { L: number; W: number; H: number };
   materials?: { floor?: string; wall?: string; trim?: string };
+  /** User-placed position (feet) within the floor, from the floor-plan editor. Auto-packed when absent. */
+  pos?: { x: number; y: number };
 }
 
 export interface PlacementView {
@@ -49,6 +51,8 @@ export interface HouseRendererHandle {
   travelToRoom?: (roomId: string) => void;
   /** Auto-walk to a placement / item in the house. */
   travelToItem?: (itemId: string) => void;
+  /** Render walls at reduced opacity so interiors are visible from outside. */
+  setWallsTranslucent?: (on: boolean) => void;
 }
 
 export interface HouseRendererPlugin {
