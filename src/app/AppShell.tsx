@@ -67,7 +67,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   // Unified home shell: bottom nav always; house ghost under non-home pages
   if (inHomeApp || onHouse) {
     return (
-      <div class="shell house-bleed-v2">
+      <div class="shell house-bleed-v2" data-theme="nightwatch">
         {!onHouse && property && <HouseGhostBackdrop property={property} />}
         {!onHouse && property && (
           <div class="home-identity-bar">
