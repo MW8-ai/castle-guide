@@ -397,8 +397,25 @@ a {
 .glass-over-house {
   position: relative;
   z-index: 1;
-  background: rgba(15, 20, 32, 0.76);
-  backdrop-filter: blur(8px);
+}
+/* Tint/blur lives on the content column itself (not the full-bleed
+   wrapper) so the margins on wide screens show more of the house
+   behind, not a uniform tint edge-to-edge. */
+.glass-over-house .page {
+  background: rgba(15, 20, 32, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+.glass-over-house .card,
+.glass-over-house .game-card {
+  background: rgba(35, 47, 71, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+}
+.glass-over-house .btn:not(.primary) {
+  background: rgba(255, 255, 255, 0.06);
 }
 .map-bottom-nav {
   display: flex;
@@ -540,6 +557,7 @@ a {
 .page {
   padding: 1.15rem 1.35rem 2rem;
   max-width: 1100px;
+  overflow-x: hidden;
 }
 
 .loading-splash {
@@ -555,6 +573,18 @@ a {
 }
 .error-text {
   color: var(--danger);
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.85rem;
 }
 
 h1,
@@ -837,18 +867,24 @@ h3 {
   color: var(--text-muted);
   font-weight: 700;
 }
-.add-row input,
-.add-row select,
-.search,
-.form-grid input,
-.form-grid select,
-.form-grid textarea {
+/* Baseline for every native form control app-wide, so a bare <select> or
+   <input> dropped anywhere always matches the current theme. */
+input,
+select,
+textarea {
   font: inherit;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.45rem 0.55rem;
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+select {
+  cursor: pointer;
 }
 
 .search {
