@@ -57,6 +57,8 @@ export function HousePage({ id }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HouseRendererHandle | null>(null);
   const propRef = useRef<Property | null>(null);
+  const topBarsRef = useRef<HTMLDivElement>(null);
+  const [topBarsHeight, setTopBarsHeight] = useState(230);
   const [property, setProperty] = useState<Property | null>(null);
   const [viewMode, setViewMode] = useState<'walk' | 'art'>('walk');
   const [activeFloor, setActiveFloor] = useState<RoomFloor>('ground');
@@ -160,6 +162,20 @@ export function HousePage({ id }: Props) {
       return !v;
     });
   }
+
+  // Keep the overlay panels (Up Next, room/item dock) below the stacked
+  // top bars regardless of how tall that stack ends up being — its height
+  // varies with shutoff count, floor-tab labels, and viewport wrapping.
+  useEffect(() => {
+    const el = topBarsRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setTopBarsHeight(Math.ceil(h));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [viewMode]);
 
   // Sync note draft when room changes
   useEffect(() => {
@@ -382,7 +398,11 @@ export function HousePage({ id }: Props) {
   const isDemoHome = property.name === DEMO_PROPERTY_NAME;
 
   return (
-    <div class="live-house" data-theme="nightwatch">
+    <div
+      class="live-house"
+      data-theme="nightwatch"
+      style={{ '--top-bars-h': `${topBarsHeight}px` } as Record<string, string>}
+    >
       {viewMode === 'art' ? (
         <ImageHouseView
           items={property.items}
@@ -394,45 +414,114 @@ export function HousePage({ id }: Props) {
         <div class="live-stage" ref={hostRef} />
       )}
 
-      {/* Fixed identity — name, address, year, shutoffs */}
-      <div class="live-identity">
-        <div class="live-id-text">
-          <strong>{property.name}</strong>
-          <span>
-            {[
-              property.address,
-              property.yearBuilt ? `Built ${property.yearBuilt}` : null,
-              dateLabel,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </span>
-        </div>
-        <div class="live-id-shutoffs">
-          {property.shutoffs.map((sh) => (
-            <span key={sh.id} class="live-id-chip" title={sh.locationNote}>
-              ⛔ {sh.type.replace(/-/g, ' ')}
+      {/* Identity, floor tabs, and HUD stack in normal flow inside one
+          measured container so they can never overlap each other or the
+          panels below, regardless of content length. */}
+      <div class="live-top-bars" ref={topBarsRef}>
+        <div class="live-identity">
+          <div class="live-id-text">
+            <strong>{property.name}</strong>
+            <span>
+              {[
+                property.address,
+                property.yearBuilt ? `Built ${property.yearBuilt}` : null,
+                dateLabel,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
-          ))}
+          </div>
+          <div class="live-id-shutoffs">
+            {property.shutoffs.map((sh) => (
+              <span key={sh.id} class="live-id-chip" title={sh.locationNote}>
+                ⛔ {sh.type.replace(/-/g, ' ')}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {viewMode === 'walk' && (
-        <div class="live-floor-tabs">
-          {FLOORS.map((f) => (
-            <button
-              key={f}
-              type="button"
-              class={f === activeFloor ? 'active' : ''}
-              disabled={f === activeFloor}
-              onClick={() => switchFloor(f)}
+        {viewMode === 'walk' && (
+          <div class="live-floor-tabs">
+            {FLOORS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                class={f === activeFloor ? 'active' : ''}
+                disabled={f === activeFloor}
+                onClick={() => switchFloor(f)}
+              >
+                {FLOOR_LABELS[f]}
+                {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <header class="live-hud-top">
+          <div class="live-hud-left">
+            {viewMode === 'walk' && (
+              <div class="live-hint">
+                Click a room to walk there · WASD · yard is open · drag the
+                dock handle
+              </div>
+            )}
+            {isDemoHome && (
+              <button type="button" class="live-link-btn" onClick={toggleViewMode}>
+                {viewMode === 'walk' ? '🖼️ Art view' : '🚶 Walk view'}
+              </button>
+            )}
+            {viewMode === 'walk' && (
+              <button
+                type="button"
+                class="live-link-btn"
+                onClick={toggleWallsTranslucent}
+              >
+                {wallsTranslucent ? '🧱 Show walls' : '👁 See through walls'}
+              </button>
+            )}
+            {viewMode === 'walk' && (
+              <button
+                type="button"
+                class="live-link-btn"
+                onClick={() => go('property', property.id, 'floorplan?floor=' + activeFloor)}
+              >
+                ✏️ Edit floor plan
+              </button>
+            )}
+          </div>
+          <div class="live-hud-stats">
+            <div
+              class={`live-stat-chip health-${tone}`}
+              title={serenityLabel(score)}
             >
-              {FLOOR_LABELS[f]}
-              {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
-            </button>
-          ))}
-        </div>
-      )}
+              <span class="live-stat-k">Home health</span>
+              <strong>
+                {grade} · {score}%
+              </strong>
+            </div>
+            {equity != null && (
+              <div class="live-stat-chip">
+                <span class="live-stat-k">Equity</span>
+                <strong>{money(equity)}</strong>
+              </div>
+            )}
+            <div class="live-stat-chip">
+              <span class="live-stat-k">Repairs</span>
+              <strong>{repairs > 0 ? money(repairs) : '—'}</strong>
+            </div>
+            <div class="live-stat-chip">
+              <span class="live-stat-k">Build list</span>
+              <strong>{buildList > 0 ? money(buildList) : '—'}</strong>
+            </div>
+            <div class="live-stat-chip muted-chip">
+              <span class="live-stat-k">Catalog</span>
+              <strong>
+                {stats.items} items · {stats.rooms} rms
+              </strong>
+            </div>
+          </div>
+        </header>
+      </div>
 
       {viewMode === 'walk' && currentFloorRooms.length === 0 && (
         <div class="live-floor-empty">
@@ -446,71 +535,6 @@ export function HousePage({ id }: Props) {
           </button>
         </div>
       )}
-
-      <header class="live-hud-top">
-        <div class="live-hud-left">
-          {viewMode === 'walk' && (
-            <div class="live-hint">
-              Click a room to walk there · WASD · yard is open · drag the
-              dock handle
-            </div>
-          )}
-          {isDemoHome && (
-            <button type="button" class="live-link-btn" onClick={toggleViewMode}>
-              {viewMode === 'walk' ? '🖼️ Art view' : '🚶 Walk view'}
-            </button>
-          )}
-          {viewMode === 'walk' && (
-            <button
-              type="button"
-              class="live-link-btn"
-              onClick={toggleWallsTranslucent}
-            >
-              {wallsTranslucent ? '🧱 Show walls' : '👁 See through walls'}
-            </button>
-          )}
-          {viewMode === 'walk' && (
-            <button
-              type="button"
-              class="live-link-btn"
-              onClick={() => go('property', property.id, 'floorplan?floor=' + activeFloor)}
-            >
-              ✏️ Edit floor plan
-            </button>
-          )}
-        </div>
-        <div class="live-hud-stats">
-          <div
-            class={`live-stat-chip health-${tone}`}
-            title={serenityLabel(score)}
-          >
-            <span class="live-stat-k">Home health</span>
-            <strong>
-              {grade} · {score}%
-            </strong>
-          </div>
-          {equity != null && (
-            <div class="live-stat-chip">
-              <span class="live-stat-k">Equity</span>
-              <strong>{money(equity)}</strong>
-            </div>
-          )}
-          <div class="live-stat-chip">
-            <span class="live-stat-k">Repairs</span>
-            <strong>{repairs > 0 ? money(repairs) : '—'}</strong>
-          </div>
-          <div class="live-stat-chip">
-            <span class="live-stat-k">Build list</span>
-            <strong>{buildList > 0 ? money(buildList) : '—'}</strong>
-          </div>
-          <div class="live-stat-chip muted-chip">
-            <span class="live-stat-k">Catalog</span>
-            <strong>
-              {stats.items} items · {stats.rooms} rms
-            </strong>
-          </div>
-        </div>
-      </header>
 
       {/* Up Next */}
       <aside class="live-up-next" aria-label="Upcoming maintenance">

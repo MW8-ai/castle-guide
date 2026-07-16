@@ -23,6 +23,25 @@ const QUICK = [
   'other',
 ];
 
+const COMMON_ROOMS = [
+  'Kitchen',
+  'Living Room',
+  'Dining Room',
+  'Family Room',
+  'Primary Bedroom',
+  'Bedroom',
+  'Bathroom',
+  'Half Bath',
+  'Garage',
+  'Laundry / Utility',
+  'Office',
+  'Basement',
+  'Attic',
+  'Mudroom',
+  'Hallway',
+  'Patio / Deck',
+];
+
 const SHUTOFF_TYPES: ShutoffType[] = [
   'water',
   'gas',
@@ -59,10 +78,12 @@ export function InventoryPage({ id }: Props) {
   const [newRoomFloor, setNewRoomFloor] = useState<RoomFloor>('ground');
   const [showAddShutoff, setShowAddShutoff] = useState(false);
   const [shutoffType, setShutoffType] = useState<ShutoffType>('water');
+  const [shutoffTypeOther, setShutoffTypeOther] = useState('');
   const [shutoffNote, setShutoffNote] = useState('');
   const [docType, setDocType] = useState<DocMeta['type']>('manual');
   const [showAddConsumable, setShowAddConsumable] = useState(false);
   const [consumableKind, setConsumableKind] = useState('filter');
+  const [consumableKindOther, setConsumableKindOther] = useState('');
   const [consumableLabel, setConsumableLabel] = useState('');
   const [consumableSize, setConsumableSize] = useState('');
 
@@ -147,12 +168,14 @@ export function InventoryPage({ id }: Props) {
     e.preventDefault();
     const note = shutoffNote.trim();
     if (!note) return;
+    const custom = shutoffType === 'other' ? shutoffTypeOther.trim() : '';
     const s = await ensureStorageReady();
     await s.addShutoff(propertyId!, {
       type: shutoffType,
-      locationNote: note,
+      locationNote: custom ? `${custom} — ${note}` : note,
     });
     setShutoffNote('');
+    setShutoffTypeOther('');
     setShowAddShutoff(false);
     await load();
   }
@@ -204,14 +227,19 @@ export function InventoryPage({ id }: Props) {
     e.preventDefault();
     const label = consumableLabel.trim();
     if (!label) return;
+    const kind =
+      consumableKind === 'other'
+        ? consumableKindOther.trim() || 'other'
+        : consumableKind;
     const s = await ensureStorageReady();
     await s.addConsumable(propertyId!, {
-      kind: consumableKind,
+      kind,
       label,
       sizeOrModel: consumableSize.trim(),
     });
     setConsumableLabel('');
     setConsumableSize('');
+    setConsumableKindOther('');
     setShowAddConsumable(false);
     await load();
   }
@@ -264,6 +292,13 @@ export function InventoryPage({ id }: Props) {
             onClick={() => setShowAddRoom((v) => !v)}
           >
             {showAddRoom ? 'Cancel' : 'Add room'}
+          </button>
+          <button
+            type="button"
+            class="btn"
+            onClick={() => go('property', propertyId, 'floorplan')}
+          >
+            ✏️ Edit floor plan
           </button>
           <button
             type="button"
@@ -332,6 +367,18 @@ export function InventoryPage({ id }: Props) {
                 ))}
               </select>
             </label>
+            {shutoffType === 'other' && (
+              <label>
+                What is it?
+                <input
+                  placeholder="e.g. Propane tank valve"
+                  value={shutoffTypeOther}
+                  onInput={(e) =>
+                    setShutoffTypeOther((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+            )}
             <label>
               Location
               <input
@@ -391,6 +438,18 @@ export function InventoryPage({ id }: Props) {
                 ))}
               </select>
             </label>
+            {consumableKind === 'other' && (
+              <label>
+                What kind?
+                <input
+                  placeholder="e.g. water softener salt"
+                  value={consumableKindOther}
+                  onInput={(e) =>
+                    setConsumableKindOther((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+            )}
             <label>
               Label
               <input
@@ -475,6 +534,19 @@ export function InventoryPage({ id }: Props) {
 
       {showAddRoom && (
         <form class="card add-strip" onSubmit={(e) => void addRoom(e)}>
+          <p class="muted tiny">Common rooms — tap to fill the name, or type your own:</p>
+          <div class="chip-row">
+            {COMMON_ROOMS.map((name) => (
+              <button
+                key={name}
+                type="button"
+                class={newRoomName === name ? 'chip active' : 'chip'}
+                onClick={() => setNewRoomName(name)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
           <div class="add-row">
             <label>
               Room name

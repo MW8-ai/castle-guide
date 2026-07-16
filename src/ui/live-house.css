@@ -38,14 +38,22 @@
   z-index: 0;
 }
 
-/* ── Fixed identity bar (name / address / shutoffs) ──── */
+/* ── Top bars stack (identity + floor tabs + HUD) ────
+   Normal document flow inside this one container so the bars can never
+   overlap each other; its rendered height is measured in HousePage.tsx
+   and exposed as --top-bars-h so panels below know where it ends. */
 
-.live-identity {
+.live-top-bars {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 6;
+  display: flex;
+  flex-direction: column;
+}
+
+.live-identity {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -86,12 +94,9 @@
 /* ── Floor tabs ────────────────────────────────────── */
 
 .live-floor-tabs {
-  position: absolute;
-  top: 2.75rem;
-  left: 0;
-  right: 0;
-  z-index: 5;
   display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 0.35rem;
   padding: 0.35rem 0.85rem;
   background: rgba(10, 15, 25, 0.78);
@@ -137,10 +142,6 @@
 /* ── Top HUD ───────────────────────────────────────── */
 
 .live-hud-top {
-  position: absolute;
-  top: 4.65rem;
-  left: 0;
-  right: 0;
   z-index: 2;
   display: flex;
   flex-wrap: wrap;
@@ -217,10 +218,10 @@
 
 .live-up-next {
   position: absolute;
-  top: 78px;
+  top: calc(var(--top-bars-h, 230px) + 10px);
   left: 12px;
   width: min(248px, 32vw);
-  max-height: calc(100% - 150px);
+  max-height: calc(100% - var(--top-bars-h, 230px) - 90px);
   z-index: 3;
   background: rgba(35, 47, 71, 0.93);
   border: 2px solid #35466a;
@@ -350,7 +351,7 @@
 
 .live-dock {
   position: absolute;
-  top: 78px;
+  top: calc(var(--top-bars-h, 230px) + 10px);
   right: 12px;
   bottom: 88px;
   width: min(340px, 38vw);

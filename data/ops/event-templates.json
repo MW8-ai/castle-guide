@@ -27,6 +27,20 @@
       "title": "Property tax installment",
       "defaultSchedule": "yearly:05-10",
       "notes": "Varies by county — set your real dates."
+    },
+    {
+      "id": "ops-hoa-monthly",
+      "type": "hoa",
+      "title": "HOA payment",
+      "defaultSchedule": "monthly:day:1",
+      "notes": "Adjust to your HOA's due day."
+    },
+    {
+      "id": "ops-utility-bill",
+      "type": "bill",
+      "title": "Utility bill due",
+      "defaultSchedule": "monthly:day:15",
+      "notes": "Electric, gas, water, etc. — adjust per provider."
     }
   ]
 }

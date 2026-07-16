@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
-import type { Property, Task } from '../../storage';
+import type { OpsEvent, OpsEventType, Property, Task } from '../../storage';
 import {
   pickSeasonalChecklists,
   getOpsTemplates,
@@ -8,9 +8,50 @@ import {
 } from '../../maintain';
 
 import { go } from '../paths';
+import '../../ui/kit/kit.css';
 
 interface Props {
   id?: string;
+}
+
+const EVENT_TYPES: OpsEventType[] = [
+  'trash',
+  'recycling',
+  'bill',
+  'tax',
+  'hoa',
+  'insurance',
+  'community',
+  'other',
+];
+const EVENT_TYPE_LABELS: Record<OpsEventType, string> = {
+  trash: 'Trash',
+  recycling: 'Recycling',
+  bill: 'Utility bill',
+  tax: 'Property tax',
+  hoa: 'HOA payment',
+  insurance: 'Insurance',
+  community: 'Community',
+  other: 'Other',
+};
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+type Frequency = 'weekly' | 'monthly' | 'yearly' | 'once';
+
+function describeSchedule(schedule: string): string {
+  const [mode, ...rest] = schedule.split(':');
+  if (mode === 'weekly' && rest[1] != null) {
+    return `Weekly on ${WEEKDAYS[Number(rest[1])] ?? rest[1]}`;
+  }
+  if (mode === 'monthly' && rest[1] != null) {
+    return `Monthly on day ${rest[1]}`;
+  }
+  if (mode === 'yearly' && rest[0]) {
+    return `Yearly on ${rest[0]}`;
+  }
+  if (mode === 'once' && rest[0]) {
+    return `Once on ${rest[0]}`;
+  }
+  return schedule;
 }
 
 export function MaintainPage({ id }: Props) {
@@ -19,8 +60,16 @@ export function MaintainPage({ id }: Props) {
   const [calendar, setCalendar] = useState<
     { date: string; title: string; kind: string; whenNotToDiy?: boolean }[]
   >([]);
-  const [showTrashForm, setShowTrashForm] = useState(false);
-  const [trashWeekday, setTrashWeekday] = useState('2');
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [eventType, setEventType] = useState<OpsEventType>('bill');
+  const [eventTypeOther, setEventTypeOther] = useState('');
+  const [eventTitle, setEventTitle] = useState('');
+  const [frequency, setFrequency] = useState<Frequency>('monthly');
+  const [weekday, setWeekday] = useState('2');
+  const [monthDay, setMonthDay] = useState('1');
+  const [yearMonth, setYearMonth] = useState('01');
+  const [yearDay, setYearDay] = useState('01');
+  const [onceDate, setOnceDate] = useState(new Date().toISOString().slice(0, 10));
 
   async function refresh() {
     if (!id) return;
@@ -56,28 +105,49 @@ export function MaintainPage({ id }: Props) {
     await refresh();
   }
 
-  async function addTrashDay(e: Event) {
+  function buildSchedule(): string {
+    if (frequency === 'weekly') return `weekly:weekday:${weekday}`;
+    if (frequency === 'monthly') return `monthly:day:${monthDay}`;
+    if (frequency === 'yearly') return `yearly:${yearMonth}-${yearDay}`;
+    return `once:${onceDate}`;
+  }
+
+  async function addEvent(e: Event) {
     e.preventDefault();
-    const weekday = Math.min(6, Math.max(0, Number(trashWeekday) || 2));
+    const title = eventTitle.trim() || (eventType === 'other' ? eventTypeOther.trim() : EVENT_TYPE_LABELS[eventType]);
+    if (!title) return;
     const s = await ensureStorageReady();
     await s.addOpsEvent(property!.id, {
-      type: 'trash',
-      title: 'Trash day',
-      schedule: `weekly:weekday:${weekday}`,
+      type: eventType,
+      title,
+      schedule: buildSchedule(),
       source: 'user',
       remind: true,
     });
-    setMessage('Trash day added to your home calendar.');
-    setShowTrashForm(false);
+    setMessage(`${title} added to your home calendar.`);
+    setEventTitle('');
+    setEventTypeOther('');
+    setShowAddEvent(false);
+    await refresh();
+  }
+
+  async function removeEvent(ev: OpsEvent) {
+    const s = await ensureStorageReady();
+    await s.removeOpsEvent(property!.id, ev.id);
+    setMessage(`Removed "${ev.title}" from your home calendar.`);
     await refresh();
   }
 
   async function addFromTemplate(tplId: string) {
     const tpl = getOpsTemplates().find((t) => t.id === tplId);
     if (!tpl) return;
+    if (property!.opsEvents.some((e) => e.source === tpl.id)) {
+      setMessage(`${tpl.title} is already on your calendar.`);
+      return;
+    }
     const s = await ensureStorageReady();
     await s.addOpsEvent(property!.id, {
-      type: tpl.type as 'trash',
+      type: tpl.type as OpsEventType,
       title: tpl.title,
       schedule: tpl.defaultSchedule,
       source: tpl.id,
@@ -149,9 +219,9 @@ export function MaintainPage({ id }: Props) {
           <button
             type="button"
             class="btn"
-            onClick={() => setShowTrashForm((v) => !v)}
+            onClick={() => setShowAddEvent((v) => !v)}
           >
-            {showTrashForm ? 'Cancel' : 'Add trash day'}
+            {showAddEvent ? 'Cancel' : '+ Add calendar event'}
           </button>
           <button type="button" class="btn" onClick={() => void downloadIcs()}>
             Export calendar
@@ -161,26 +231,126 @@ export function MaintainPage({ id }: Props) {
 
       {message && <p class="ok-text">{message}</p>}
 
-      {showTrashForm && (
-        <form class="card add-strip" onSubmit={(e) => void addTrashDay(e)}>
+      {showAddEvent && (
+        <form class="card add-strip" onSubmit={(e) => void addEvent(e)}>
           <div class="add-row">
             <label>
-              Trash weekday
+              Type
               <select
-                value={trashWeekday}
+                value={eventType}
                 onChange={(e) =>
-                  setTrashWeekday((e.target as HTMLSelectElement).value)
+                  setEventType((e.target as HTMLSelectElement).value as OpsEventType)
                 }
               >
-                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(
-                  (name, i) => (
+                {EVENT_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {EVENT_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {eventType === 'other' && (
+              <label>
+                What kind of event?
+                <input
+                  autoFocus
+                  placeholder="e.g. Lawn care service"
+                  value={eventTypeOther}
+                  onInput={(e) =>
+                    setEventTypeOther((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+            )}
+            <label>
+              Title
+              <input
+                placeholder={eventType === 'other' ? eventTypeOther || 'e.g. Lawn care' : EVENT_TYPE_LABELS[eventType]}
+                value={eventTitle}
+                onInput={(e) => setEventTitle((e.target as HTMLInputElement).value)}
+              />
+            </label>
+            <label>
+              Repeats
+              <select
+                value={frequency}
+                onChange={(e) =>
+                  setFrequency((e.target as HTMLSelectElement).value as Frequency)
+                }
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="once">One time</option>
+              </select>
+            </label>
+            {frequency === 'weekly' && (
+              <label>
+                Weekday
+                <select
+                  value={weekday}
+                  onChange={(e) => setWeekday((e.target as HTMLSelectElement).value)}
+                >
+                  {WEEKDAYS.map((name, i) => (
                     <option key={name} value={i}>
                       {name}
                     </option>
-                  )
-                )}
-              </select>
-            </label>
+                  ))}
+                </select>
+              </label>
+            )}
+            {frequency === 'monthly' && (
+              <label>
+                Day of month
+                <input
+                  type="number"
+                  min="1"
+                  max="28"
+                  value={monthDay}
+                  onInput={(e) => setMonthDay((e.target as HTMLInputElement).value)}
+                />
+              </label>
+            )}
+            {frequency === 'yearly' && (
+              <>
+                <label>
+                  Month
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    placeholder="MM"
+                    value={yearMonth}
+                    onInput={(e) =>
+                      setYearMonth((e.target as HTMLInputElement).value.padStart(2, '0'))
+                    }
+                  />
+                </label>
+                <label>
+                  Day
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="DD"
+                    value={yearDay}
+                    onInput={(e) =>
+                      setYearDay((e.target as HTMLInputElement).value.padStart(2, '0'))
+                    }
+                  />
+                </label>
+              </>
+            )}
+            {frequency === 'once' && (
+              <label>
+                Date
+                <input
+                  type="date"
+                  value={onceDate}
+                  onInput={(e) => setOnceDate((e.target as HTMLInputElement).value)}
+                />
+              </label>
+            )}
             <button type="submit" class="btn primary">
               Save
             </button>
@@ -251,8 +421,11 @@ export function MaintainPage({ id }: Props) {
       </div>
 
       <div class="card">
-        <h2>Calendar</h2>
-        <p class="muted">Trash, bills, and maintenance dates for the next 8 weeks.</p>
+        <h2>Recurring events</h2>
+        <p class="muted">
+          Trash, bills, taxes, HOA, insurance — anything on a repeating home
+          calendar. Remove one and every future occurrence goes with it.
+        </p>
         <div class="btn-row compact">
           {getOpsTemplates().map((tpl) => (
             <button
@@ -265,8 +438,39 @@ export function MaintainPage({ id }: Props) {
             </button>
           ))}
         </div>
+        {property.opsEvents.length === 0 ? (
+          <p class="muted">
+            No recurring events yet — add trash day, HOA, insurance, or a
+            custom one above.
+          </p>
+        ) : (
+          <ul class="plain-list">
+            {property.opsEvents.map((ev) => (
+              <li key={ev.id}>
+                <strong>{ev.title}</strong>{' '}
+                <span class="muted">
+                  · {EVENT_TYPE_LABELS[ev.type] ?? ev.type} ·{' '}
+                  {describeSchedule(ev.schedule)}
+                </span>
+                <button
+                  type="button"
+                  class="kit-icon-btn"
+                  aria-label="Remove"
+                  onClick={() => void removeEvent(ev)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div class="card">
+        <h2>Upcoming</h2>
+        <p class="muted">Next 8 weeks, from the recurring events above plus your maintenance tasks.</p>
         {calendar.length === 0 ? (
-          <p class="muted">Empty — add trash day or build to-dos from your stuff.</p>
+          <p class="muted">Nothing scheduled yet.</p>
         ) : (
           <ul class="plain-list cal-list">
             {calendar.map((c) => (

@@ -405,6 +405,12 @@ export class CastleStorage {
     return row;
   }
 
+  async removeOpsEvent(propertyId: string, opsEventId: string): Promise<void> {
+    const property = await this.requireProperty(propertyId);
+    property.opsEvents = property.opsEvents.filter((e) => e.id !== opsEventId);
+    await this.saveProperty(property);
+  }
+
   async completeTask(
     propertyId: string,
     taskId: string,

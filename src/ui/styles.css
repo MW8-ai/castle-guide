@@ -407,6 +407,8 @@ a {
   border-radius: var(--radius);
   margin-top: 1rem;
   margin-bottom: 1rem;
+  /* Clearance for the fixed bottom nav so it never covers the last card. */
+  padding-bottom: calc(2rem + 68px + env(safe-area-inset-bottom, 0));
 }
 .glass-over-house .card,
 .glass-over-house .game-card {
@@ -418,6 +420,10 @@ a {
   background: rgba(255, 255, 255, 0.06);
 }
 .map-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -425,7 +431,7 @@ a {
   padding: 0.5rem 0.65rem calc(0.5rem + env(safe-area-inset-bottom, 0));
   background: rgba(14, 20, 34, 0.96);
   border-top: 1px solid #35466a;
-  z-index: 6;
+  z-index: 30;
 }
 .map-nav-btn {
   display: flex;
@@ -641,6 +647,33 @@ h3 {
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.75rem;
+}
+.chip {
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #062014;
 }
 
 .doc-type-select {
