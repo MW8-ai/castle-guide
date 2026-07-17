@@ -13,6 +13,7 @@ import floorGrassUrl from '../../../assets/iso/floors/grass.png';
 import sofaUrl from '../../../assets/iso/items/sofa.png';
 import bedUrl from '../../../assets/iso/items/bed.png';
 import deskUrl from '../../../assets/iso/items/desk.png';
+import avatarWalkUrl from '../../../assets/iso/avatar/walk.png';
 
 const BASE = 22;
 
@@ -143,7 +144,7 @@ const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
   bed: bedUrl,
   desk: deskUrl,
 };
-const AVATAR_SPRITE_SRC: string | null = null;
+const AVATAR_SPRITE_SRC: string | null = avatarWalkUrl;
 
 const spriteCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
 function getSprite(src: string | null | undefined): HTMLImageElement | null {

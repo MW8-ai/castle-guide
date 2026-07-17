@@ -1,0 +1,17 @@
+Avatar sprite in this directory is baked (rendered to flat PNG at a fixed
+isometric camera angle, mid-stride of a walk animation) from 3D assets in
+"KayKit: Adventurers Character Pack (2.0)" by Kay Lousberg
+(www.kaylousberg.com), released under CC0 1.0 Universal (Public Domain).
+https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution required by the license, but noted here for provenance.
+
+Source: tools/sprite-bake/models/rogue/Rogue.glb (character mesh +
+skeleton) posed using the "Walking_A" clip from
+tools/sprite-bake/models/anim/Rig_Medium_MovementBasic.glb (separately
+authored animation sharing the same "Rig_Medium" bone names — Three.js
+resolves the clip onto the character's skeleton by name, the standard
+glTF retargeting technique). Baked via tools/sprite-bake — see that tool
+to re-render at a different pose or with a different clip/character.
+
+walk.png <- Rogue.glb posed at Walking_A, 25% through the cycle
