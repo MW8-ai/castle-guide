@@ -1,16 +1,21 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 import type { Property, Room, RoomFloor } from '../../storage';
-import { FLOORS, FLOOR_LABELS, roomFloorOf } from '../../houseview';
+import {
+  FLOORS,
+  FLOOR_LABELS,
+  roomFloorOf,
+  resolveRoomPosition,
+  resolveRoomResize,
+  MIN_ROOM_FT,
+  type PositionedRect,
+} from '../../houseview';
 import { go } from '../paths';
 import '../../ui/floorplan.css';
 
 interface Props {
   id?: string;
 }
-
-const SNAP_FT = 1.5;
-const MIN_ROOM_FT = 4;
 
 function initialFloor(): RoomFloor {
   const requested = new URLSearchParams(window.location.search).get('floor');
@@ -151,81 +156,15 @@ export function FloorPlanPage({ id }: Props) {
       return;
     }
 
-    let x = dragPos.x;
-    let y = dragPos.y;
-
-    // Snap to the nearest edge on each axis — but only against rooms the
-    // dragged room actually runs alongside on the other axis, so it snaps
-    // to form a shared wall rather than aligning with an unrelated room.
-    let bestDX: number | null = null;
-    let bestDY: number | null = null;
-    for (const other of floorRooms) {
-      if (other.id === room.id || !other.pos) continue;
-      const oL = other.pos.x;
-      const oR = other.pos.x + other.dims.L;
-      const oT = other.pos.y;
-      const oB = other.pos.y + other.dims.W;
-      const left = x;
-      const right = x + room.dims.L;
-      const top = y;
-      const bottom = y + room.dims.W;
-      const yOverlaps = top < oB + SNAP_FT && bottom > oT - SNAP_FT;
-      const xOverlaps = left < oR + SNAP_FT && right > oL - SNAP_FT;
-
-      if (yOverlaps) {
-        if (Math.abs(left - oR) < SNAP_FT && (bestDX == null || Math.abs(oR - x) < Math.abs(bestDX - x))) {
-          bestDX = oR;
-        }
-        if (Math.abs(right - oL) < SNAP_FT && (bestDX == null || Math.abs(oL - room.dims.L - x) < Math.abs(bestDX - x))) {
-          bestDX = oL - room.dims.L;
-        }
-      }
-      if (xOverlaps) {
-        if (Math.abs(top - oB) < SNAP_FT && (bestDY == null || Math.abs(oB - y) < Math.abs(bestDY - y))) {
-          bestDY = oB;
-        }
-        if (Math.abs(bottom - oT) < SNAP_FT && (bestDY == null || Math.abs(oT - room.dims.W - y) < Math.abs(bestDY - y))) {
-          bestDY = oT - room.dims.W;
-        }
-      }
-    }
-    if (bestDX != null) x = bestDX;
-    if (bestDY != null) y = bestDY;
-    x = Math.max(0, x);
-    y = Math.max(0, y);
-
-    // Snapping onto a shared wall can still leave the room overlapping a
-    // third room — push it out along whichever axis has the least overlap.
-    for (let pass = 0; pass < 6; pass++) {
-      const hit = floorRooms.find((other) => {
-        if (other.id === room.id || !other.pos) return false;
-        const oL = other.pos.x;
-        const oR = other.pos.x + other.dims.L;
-        const oT = other.pos.y;
-        const oB = other.pos.y + other.dims.W;
-        return x < oR && x + room.dims.L > oL && y < oB && y + room.dims.W > oT;
-      });
-      if (!hit) break;
-      const oL = hit.pos!.x;
-      const oR = hit.pos!.x + hit.dims.L;
-      const oT = hit.pos!.y;
-      const oB = hit.pos!.y + hit.dims.W;
-      const overlapX = Math.min(x + room.dims.L, oR) - Math.max(x, oL);
-      const overlapY = Math.min(y + room.dims.W, oB) - Math.max(y, oT);
-      if (overlapX < overlapY) {
-        // "Push left" can go negative (room dragged near x=0) — fall back
-        // to "push right" rather than let the later clamp re-collide it.
-        const pushLeft = oL - room.dims.L;
-        const preferLeft = x + room.dims.L / 2 < oL + hit.dims.L / 2;
-        x = preferLeft && pushLeft >= 0 ? pushLeft : oR;
-      } else {
-        const pushUp = oT - room.dims.W;
-        const preferUp = y + room.dims.W / 2 < oT + hit.dims.W / 2;
-        y = preferUp && pushUp >= 0 ? pushUp : oB;
-      }
-    }
-    x = Math.max(0, x);
-    y = Math.max(0, y);
+    const others: PositionedRect[] = floorRooms
+      .filter((r) => r.id !== room.id && r.pos)
+      .map((r) => ({ id: r.id, x: r.pos!.x, y: r.pos!.y, L: r.dims.L, W: r.dims.W }));
+    const { x, y } = resolveRoomPosition(
+      { id: room.id, L: room.dims.L, W: room.dims.W },
+      others,
+      dragPos.x,
+      dragPos.y
+    );
 
     setDragPos(null);
     const s = await ensureStorageReady();
@@ -245,37 +184,15 @@ export function FloorPlanPage({ id }: Props) {
       setResizeDims(null);
       return;
     }
-    const x = room.pos.x;
-    const y = room.pos.y;
-    let L = Math.max(MIN_ROOM_FT, resizeDims.L);
-    let W = Math.max(MIN_ROOM_FT, resizeDims.W);
-
-    // Shrink growth back to just before any neighbor it would otherwise
-    // overlap, checked on each axis independently (L against neighbors to
-    // the right, W against neighbors below).
-    for (const other of floorRooms) {
-      if (other.id === room.id || !other.pos) continue;
-      const oL = other.pos.x;
-      const oT = other.pos.y;
-      const oB = oT + other.dims.W;
-      if (oL >= x && oL < x + L && y < oB && y + W > oT) {
-        L = Math.max(MIN_ROOM_FT, Math.min(L, oL - x));
-      }
-    }
-    for (const other of floorRooms) {
-      if (other.id === room.id || !other.pos) continue;
-      const oT = other.pos.y;
-      const oL = other.pos.x;
-      const oR = oL + other.dims.L;
-      if (oT >= y && oT < y + W && x < oR && x + L > oL) {
-        W = Math.max(MIN_ROOM_FT, Math.min(W, oT - y));
-      }
-    }
-
-    // Round down to the nearest half-foot — rounding up could re-introduce
-    // the overlap the clamps above just resolved.
-    L = Math.max(MIN_ROOM_FT, Math.floor(L * 2) / 2);
-    W = Math.max(MIN_ROOM_FT, Math.floor(W * 2) / 2);
+    const others: PositionedRect[] = floorRooms
+      .filter((r) => r.id !== room.id && r.pos)
+      .map((r) => ({ id: r.id, x: r.pos!.x, y: r.pos!.y, L: r.dims.L, W: r.dims.W }));
+    const { L, W } = resolveRoomResize(
+      { id: room.id, x: room.pos.x, y: room.pos.y },
+      others,
+      resizeDims.L,
+      resizeDims.W
+    );
 
     setResizeDims(null);
     const s = await ensureStorageReady();
