@@ -256,6 +256,10 @@
   font-weight: 700;
   cursor: pointer;
   padding: 0.15rem 0.3rem;
+  /* .live-hud-left (this button's ancestor) sets pointer-events: none so
+     the hint text underneath doesn't block canvas dragging — re-enable it
+     here or these buttons silently swallow every click. */
+  pointer-events: auto;
 }
 
 .live-link-btn:hover {
