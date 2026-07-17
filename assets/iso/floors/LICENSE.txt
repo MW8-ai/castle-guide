@@ -1,0 +1,10 @@
+Floor textures in this directory are derived from "Isometric Floor Tiles"
+by Screaming Brain Studios, released under CC0 1.0 Universal (Public Domain).
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Each PNG here is a small cropped/re-exported texture swatch taken from the
+center of one tile in the original composite tilesheet (magenta chroma-key
+corners removed by cropping), intended to be used as a repeating
+ctx.createPattern() fill rather than the original diamond-tile sprite.
+
+No attribution required by the license, but noted here for provenance.

@@ -5,6 +5,11 @@ import type {
   PlacementView,
   RoomView,
 } from '../types';
+import floorWoodUrl from '../../../assets/iso/floors/wood.png';
+import floorTileUrl from '../../../assets/iso/floors/tile.png';
+import floorStoneUrl from '../../../assets/iso/floors/stone.png';
+import floorMetalUrl from '../../../assets/iso/floors/metal.png';
+import floorGrassUrl from '../../../assets/iso/floors/grass.png';
 
 const BASE = 22;
 
@@ -114,8 +119,22 @@ const FLOOR_COLOR: Record<RoomKind, string> = {
  * HUMAN_DIRECTIONS.md §9) and these start rendering with zero code changes.
  * Until then, missing/404 images fail silently and the flat-shape fallback
  * below keeps drawing exactly as it does today.
+ *
+ * Floor textures are CC0 (Screaming Brain Studios, see assets/iso/floors/LICENSE.txt).
+ * Furniture/item sprites and the avatar are still unset — no CC0 furniture
+ * pack was found yet, so those keep using the flat-shape fallback.
  */
-const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {};
+const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {
+  bath: floorTileUrl,
+  kitchen: floorTileUrl,
+  garage: floorStoneUrl,
+  utility: floorMetalUrl,
+  bed: floorWoodUrl,
+  living: floorWoodUrl,
+  office: floorWoodUrl,
+  generic: floorWoodUrl,
+};
+const YARD_SPRITE_SRC: string = floorGrassUrl;
 const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {};
 const AVATAR_SPRITE_SRC: string | null = null;
 
@@ -349,7 +368,9 @@ export const walkIsoRenderer = {
       ctx.lineTo(y2.sx, y2.sy);
       ctx.lineTo(y3.sx, y3.sy);
       ctx.closePath();
-      ctx.fillStyle = '#3d8f4a';
+      const yardImg = getSprite(YARD_SPRITE_SRC);
+      const yardPattern = yardImg ? ctx.createPattern(yardImg, 'repeat') : null;
+      ctx.fillStyle = yardPattern ?? '#3d8f4a';
       ctx.fill();
       // grass flecks
       ctx.fillStyle = 'rgba(30, 100, 40, 0.35)';
@@ -455,20 +476,12 @@ export const walkIsoRenderer = {
       ctx.lineTo(c2.sx, c2.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      if (floorImg) {
+      const floorPattern = floorImg ? ctx.createPattern(floorImg, 'repeat') : null;
+      if (floorPattern) {
         ctx.save();
         ctx.clip();
-        const xs = [c0.sx, c1.sx, c2.sx, c3.sx];
-        const ys = [c0.sy, c1.sy, c2.sy, c3.sy];
-        const minX = Math.min(...xs);
-        const minY = Math.min(...ys);
-        ctx.drawImage(
-          floorImg,
-          minX,
-          minY,
-          Math.max(...xs) - minX,
-          Math.max(...ys) - minY
-        );
+        ctx.fillStyle = floorPattern;
+        ctx.fill();
         ctx.restore();
       } else {
         ctx.fillStyle = floor;
