@@ -6,7 +6,7 @@ import {
   resetDemoCastle,
   DEMO_PROPERTY_NAME,
 } from '../src/record/demoSeed';
-import { buildHouseViewModel } from '../src/houseview';
+import { buildHouseViewModel, roomFloorOf, FLOORS } from '../src/houseview';
 
 const DB = 'castle-test-demo';
 
@@ -34,6 +34,43 @@ describe('demo starter castle', () => {
     const { model } = buildHouseViewModel(p);
     expect(model.placements.length).toBeGreaterThan(0);
     expect(model.rooms.length).toBeGreaterThan(0);
+  });
+
+  it('assigns bedrooms and upstairs baths to the upper floor, a yard room to yard, and the rest to ground', async () => {
+    const storage = new CastleStorage({ dbName: DB, blobMode: 'idb' });
+    await storage.init();
+    const p = await ensureDemoCastle(storage);
+
+    // Every room has an explicit floor recognized by the FLOORS enum.
+    expect(p.rooms.every((r) => FLOORS.includes(roomFloorOf(r)))).toBe(true);
+
+    const byFloor = (floor: (typeof FLOORS)[number]) =>
+      p.rooms.filter((r) => roomFloorOf(r) === floor).map((r) => r.name);
+
+    const upper = byFloor('upper');
+    expect(upper).toEqual(
+      expect.arrayContaining([
+        'Primary Bedroom',
+        'Bedroom 2',
+        'Bedroom 3',
+        'Bedroom 4',
+        'Bedroom 5',
+        'Bath 2',
+        'Bath 3',
+      ])
+    );
+    expect(upper).toHaveLength(7);
+
+    const yard = byFloor('yard');
+    expect(yard).toEqual(['Backyard']);
+
+    const ground = byFloor('ground');
+    expect(ground).toEqual(
+      expect.arrayContaining(['Kitchen', 'Living Room', 'Bath 1', 'Utility'])
+    );
+    expect(ground).not.toEqual(expect.arrayContaining(['Primary Bedroom']));
+
+    expect(p.rooms).toHaveLength(upper.length + yard.length + ground.length);
   });
 
   it('is idempotent — second ensure returns same demo', async () => {

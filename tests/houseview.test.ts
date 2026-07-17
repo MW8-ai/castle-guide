@@ -135,4 +135,35 @@ describe('Phase 4 house view + serenity', () => {
     expect(placed[0].x).toBe(4.5);
     expect(placed[0].itemId).toBe(item.id);
   });
+
+  it('updateRoom patches pos/dims/floor and persists them', async () => {
+    const storage = new CastleStorage({ dbName: DB, blobMode: 'idb' });
+    await storage.init();
+    const property = await storage.createProperty('Update Room House');
+    const room = await storage.addRoom(property.id, {
+      name: 'Den',
+      dims: { L: 10, W: 10, H: 8 },
+    });
+
+    await storage.updateRoom(property.id, room.id, {
+      pos: { x: 4, y: 2 },
+      dims: { L: 12, W: 11, H: 9 },
+      floor: 'upper',
+    });
+
+    const after = await storage.getProperty(property.id);
+    const updated = after!.rooms.find((r) => r.id === room.id);
+    expect(updated?.pos).toEqual({ x: 4, y: 2 });
+    expect(updated?.dims).toEqual({ L: 12, W: 11, H: 9 });
+    expect(updated?.floor).toBe('upper');
+  });
+
+  it('updateRoom throws for an unknown room id', async () => {
+    const storage = new CastleStorage({ dbName: DB, blobMode: 'idb' });
+    await storage.init();
+    const property = await storage.createProperty('No Such Room House');
+    await expect(
+      storage.updateRoom(property.id, 'nonexistent', { pos: { x: 0, y: 0 } })
+    ).rejects.toThrow('Room not found');
+  });
 });

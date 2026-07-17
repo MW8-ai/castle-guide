@@ -22,4 +22,11 @@ export {
 export { listRenderers, getRenderer } from './registry';
 export { ImageHouseView } from './imageMap/ImageHouseView';
 export { FLOORS, FLOOR_LABELS, roomFloorOf } from './floors';
+export {
+  resolveRoomPosition,
+  resolveRoomResize,
+  SNAP_FT,
+  MIN_ROOM_FT,
+} from './floorplanGeometry';
+export type { PositionedRect } from './floorplanGeometry';
 

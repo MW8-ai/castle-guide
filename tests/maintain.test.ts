@@ -85,6 +85,103 @@ describe('Phase 2 maintenance engine', () => {
     );
   });
 
+  it('removeOpsEvent drops it from the property and the calendar', async () => {
+    const storage = new CastleStorage({ dbName: DB, blobMode: 'idb' });
+    await storage.init();
+    const property = await storage.createProperty('Remove Ops', '46240');
+    const trash = await storage.addOpsEvent(property.id, {
+      type: 'trash',
+      title: 'Trash day',
+      schedule: 'weekly:weekday:2',
+      remind: true,
+    });
+    const hoa = await storage.addOpsEvent(property.id, {
+      type: 'hoa',
+      title: 'HOA dues',
+      schedule: 'monthly:day:1',
+      remind: true,
+    });
+
+    await storage.removeOpsEvent(property.id, trash.id);
+
+    const loaded = await storage.getProperty(property.id);
+    expect(loaded!.opsEvents.map((e) => e.id)).toEqual([hoa.id]);
+    const cal = await storage.getCalendar(property.id, 8);
+    expect(cal.some((c) => c.sourceId === trash.id)).toBe(false);
+    expect(cal.some((c) => c.sourceId === hoa.id)).toBe(true);
+  });
+
+  it('expands monthly, yearly, and once schedule modes', () => {
+    const occurrences = expandOpsOccurrences(
+      [
+        {
+          id: 'monthly1',
+          type: 'hoa',
+          title: 'HOA dues',
+          schedule: 'monthly:day:15',
+          remind: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'yearly1',
+          type: 'tax',
+          title: 'Property tax',
+          schedule: 'yearly:04-15',
+          remind: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'once1',
+          type: 'other',
+          title: 'Roof inspection',
+          schedule: 'once:2026-08-01',
+          remind: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      45, // wide enough window to catch the next yearly occurrence too
+      '2026-07-01'
+    );
+
+    const monthly = occurrences.filter((o) => o.sourceId === 'monthly1');
+    expect(monthly.length).toBeGreaterThanOrEqual(2);
+    expect(monthly.every((o) => o.date.endsWith('-15'))).toBe(true);
+
+    const yearly = occurrences.filter((o) => o.sourceId === 'yearly1');
+    expect(yearly).toEqual([
+      expect.objectContaining({ date: '2027-04-15' }),
+    ]);
+
+    const once = occurrences.filter((o) => o.sourceId === 'once1');
+    expect(once).toEqual([expect.objectContaining({ date: '2026-08-01' })]);
+  });
+
+  it('once events outside the requested window are excluded', () => {
+    const occurrences = expandOpsOccurrences(
+      [
+        {
+          id: 'past',
+          type: 'other',
+          title: 'Already happened',
+          schedule: 'once:2026-01-01',
+          remind: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'far-future',
+          type: 'other',
+          title: 'Way out',
+          schedule: 'once:2030-01-01',
+          remind: true,
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+      8,
+      '2026-07-01'
+    );
+    expect(occurrences).toEqual([]);
+  });
+
   it('ICS contains furnace-filter task and trash day', async () => {
     const storage = new CastleStorage({ dbName: DB, blobMode: 'idb' });
     await storage.init();
