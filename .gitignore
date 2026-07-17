@@ -13,3 +13,8 @@ coverage/
 .env.*
 !.env.example
 .vite/
+
+# Raw downloaded asset-pack sources (huge, unlicensed-for-redistribution
+# bulk downloads) — only the small cropped/processed swatches under
+# assets/iso/ that we've verified as CC0 get committed.
+art_packs/
