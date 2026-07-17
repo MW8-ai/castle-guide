@@ -10,6 +10,7 @@ interface Props {
 }
 
 const SNAP_FT = 1.5;
+const MIN_ROOM_FT = 4;
 
 function initialFloor(): RoomFloor {
   const requested = new URLSearchParams(window.location.search).get('floor');
@@ -25,8 +26,14 @@ export function FloorPlanPage({ id }: Props) {
   const [dragPos, setDragPos] = useState<{ id: string; x: number; y: number } | null>(
     null
   );
+  const [resizeDims, setResizeDims] = useState<{ id: string; L: number; W: number } | null>(
+    null
+  );
   const svgRef = useRef<SVGSVGElement>(null);
   const dragRef = useRef<{ id: string; ox: number; oy: number } | null>(null);
+  const resizeRef = useRef<{ id: string; startL: number; startW: number; startPx: number; startPy: number } | null>(
+    null
+  );
 
   async function load() {
     if (!id) return;
@@ -89,7 +96,35 @@ export function FloorPlanPage({ id }: Props) {
     setSelectedId(room.id);
   }
 
+  function onHandlePointerDown(e: PointerEvent, room: Room) {
+    e.stopPropagation();
+    try {
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    } catch {
+      /* ignore — capture is a nicety, not a requirement */
+    }
+    const p = svgPoint(e.clientX, e.clientY);
+    resizeRef.current = {
+      id: room.id,
+      startL: room.dims.L,
+      startW: room.dims.W,
+      startPx: p.x,
+      startPy: p.y,
+    };
+    setSelectedId(room.id);
+  }
+
   function onPointerMove(e: PointerEvent) {
+    if (resizeRef.current) {
+      const p = svgPoint(e.clientX, e.clientY);
+      const r = resizeRef.current;
+      setResizeDims({
+        id: r.id,
+        L: Math.max(MIN_ROOM_FT, r.startL + (p.x - r.startPx)),
+        W: Math.max(MIN_ROOM_FT, r.startW + (p.y - r.startPy)),
+      });
+      return;
+    }
     if (!dragRef.current) return;
     const p = svgPoint(e.clientX, e.clientY);
     setDragPos({
@@ -100,6 +135,10 @@ export function FloorPlanPage({ id }: Props) {
   }
 
   async function onPointerUp() {
+    if (resizeRef.current) {
+      await commitResize();
+      return;
+    }
     const drag = dragRef.current;
     dragRef.current = null;
     if (!drag || !dragPos) {
@@ -194,6 +233,56 @@ export function FloorPlanPage({ id }: Props) {
     await load();
   }
 
+  async function commitResize() {
+    const resize = resizeRef.current;
+    resizeRef.current = null;
+    if (!resize || !resizeDims) {
+      setResizeDims(null);
+      return;
+    }
+    const room = floorRooms.find((r) => r.id === resize.id);
+    if (!room || !room.pos) {
+      setResizeDims(null);
+      return;
+    }
+    const x = room.pos.x;
+    const y = room.pos.y;
+    let L = Math.max(MIN_ROOM_FT, resizeDims.L);
+    let W = Math.max(MIN_ROOM_FT, resizeDims.W);
+
+    // Shrink growth back to just before any neighbor it would otherwise
+    // overlap, checked on each axis independently (L against neighbors to
+    // the right, W against neighbors below).
+    for (const other of floorRooms) {
+      if (other.id === room.id || !other.pos) continue;
+      const oL = other.pos.x;
+      const oT = other.pos.y;
+      const oB = oT + other.dims.W;
+      if (oL >= x && oL < x + L && y < oB && y + W > oT) {
+        L = Math.max(MIN_ROOM_FT, Math.min(L, oL - x));
+      }
+    }
+    for (const other of floorRooms) {
+      if (other.id === room.id || !other.pos) continue;
+      const oT = other.pos.y;
+      const oL = other.pos.x;
+      const oR = oL + other.dims.L;
+      if (oT >= y && oT < y + W && x < oR && x + L > oL) {
+        W = Math.max(MIN_ROOM_FT, Math.min(W, oT - y));
+      }
+    }
+
+    // Round down to the nearest half-foot — rounding up could re-introduce
+    // the overlap the clamps above just resolved.
+    L = Math.max(MIN_ROOM_FT, Math.floor(L * 2) / 2);
+    W = Math.max(MIN_ROOM_FT, Math.floor(W * 2) / 2);
+
+    setResizeDims(null);
+    const s = await ensureStorageReady();
+    await s.updateRoom(property!.id, room.id, { dims: { ...room.dims, L, W } });
+    await load();
+  }
+
   async function saveWallHeight(h: number) {
     if (!selected || !Number.isFinite(h) || h <= 0) return;
     const s = await ensureStorageReady();
@@ -206,8 +295,8 @@ export function FloorPlanPage({ id }: Props) {
   const positions = floorRooms.map((r) => ({
     x: dragPos && dragPos.id === r.id ? dragPos.x : (r.pos?.x ?? 0),
     y: dragPos && dragPos.id === r.id ? dragPos.y : (r.pos?.y ?? 0),
-    L: r.dims.L,
-    W: r.dims.W,
+    L: resizeDims && resizeDims.id === r.id ? resizeDims.L : r.dims.L,
+    W: resizeDims && resizeDims.id === r.id ? resizeDims.W : r.dims.W,
     room: r,
   }));
   const maxX = Math.max(10, ...positions.map((p) => p.x + p.L));
@@ -227,7 +316,8 @@ export function FloorPlanPage({ id }: Props) {
       </p>
       <h1>Edit floor plan</h1>
       <p class="muted">
-        Drag rooms to reposition — edges snap into place near neighbors.
+        Drag rooms to reposition — edges snap into place near neighbors. Drag
+        the corner handle on a selected room to resize it.
       </p>
 
       <nav class="tabs">
@@ -266,6 +356,18 @@ export function FloorPlanPage({ id }: Props) {
               <text x={x + L / 2} y={y + W / 2} font-size={Math.min(1, W / 4)}>
                 {room.name}
               </text>
+              {room.id === selectedId && (
+                <rect
+                  class="fp-resize-handle"
+                  x={x + L - 0.6}
+                  y={y + W - 0.6}
+                  width={1.2}
+                  height={1.2}
+                  onPointerDown={(e) =>
+                    onHandlePointerDown(e as unknown as PointerEvent, room)
+                  }
+                />
+              )}
             </g>
           ))}
         </svg>

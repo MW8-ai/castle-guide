@@ -34,3 +34,13 @@
   user-select: none;
   pointer-events: none;
 }
+
+.fp-room rect.fp-resize-handle {
+  fill: #f0b441;
+  stroke: rgba(120, 90, 50, 0.9);
+  stroke-width: 0.06;
+  cursor: nwse-resize;
+}
+.fp-room rect.fp-resize-handle:hover {
+  fill: #ffcf6b;
+}
