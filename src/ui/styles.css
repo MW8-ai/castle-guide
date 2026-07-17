@@ -1051,6 +1051,21 @@ select {
   padding: 0;
   margin: 0.4rem 0;
 }
+.plain-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.15rem;
+  border-bottom: 1px solid var(--border);
+}
+.plain-list li:last-child {
+  border-bottom: none;
+}
+.plain-list li .kit-icon-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
 .item-list {
   list-style: none;
   padding: 0;

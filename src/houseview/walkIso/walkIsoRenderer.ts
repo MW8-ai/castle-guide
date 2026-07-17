@@ -330,6 +330,24 @@ export const walkIsoRenderer = {
       };
     }
 
+    /**
+     * Anchors a repeating floor pattern to world space (via the same
+     * linear transform iso() uses) instead of canvas-pixel space, so the
+     * texture pans/zooms in lockstep with the room instead of sliding
+     * independently underneath it as the camera moves.
+     */
+    function anchorPatternToWorld(
+      pattern: CanvasPattern,
+      img: HTMLImageElement,
+      panX: number,
+      panY: number,
+      tileFeet = 2
+    ) {
+      const s = BASE * zoom;
+      const k = tileFeet / (img.naturalWidth || 1);
+      pattern.setTransform(new DOMMatrix([s * k, s * 0.5 * k, -s * k, s * 0.5 * k, panX, panY]));
+    }
+
     function roomAt(wx: number, wy: number, pad = 0.05): string | null {
       let best: { id: string; d: number } | null = null;
       for (const r of current.rooms) {
@@ -370,6 +388,9 @@ export const walkIsoRenderer = {
       ctx.closePath();
       const yardImg = getSprite(YARD_SPRITE_SRC);
       const yardPattern = yardImg ? ctx.createPattern(yardImg, 'repeat') : null;
+      if (yardPattern && yardImg) {
+        anchorPatternToWorld(yardPattern, yardImg, panX, panY, 4);
+      }
       ctx.fillStyle = yardPattern ?? '#3d8f4a';
       ctx.fill();
       // grass flecks
@@ -477,7 +498,8 @@ export const walkIsoRenderer = {
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
       const floorPattern = floorImg ? ctx.createPattern(floorImg, 'repeat') : null;
-      if (floorPattern) {
+      if (floorPattern && floorImg) {
+        anchorPatternToWorld(floorPattern, floorImg, panX, panY);
         ctx.save();
         ctx.clip();
         ctx.fillStyle = floorPattern;
