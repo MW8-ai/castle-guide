@@ -16,6 +16,9 @@ const MODELS: Record<string, string> = {
   table_medium: './models/table_medium/table_medium.gltf',
 };
 
+const CHARACTER_URL = './models/rogue/Rogue.glb';
+const ANIM_URL = './models/anim/Rig_Medium_MovementBasic.glb';
+
 const CANVAS_SIZE = 512;
 const PADDING_PX = 6;
 
@@ -46,10 +49,19 @@ camera.up.set(0, 1, 0);
 
 const loader = new GLTFLoader();
 
-function loadModel(url: string): Promise<THREE.Group> {
+function loadGltf(url: string): Promise<{ scene: THREE.Group; animations: THREE.AnimationClip[] }> {
   return new Promise((resolve, reject) => {
-    loader.load(url, (gltf) => resolve(gltf.scene), undefined, reject);
+    loader.load(
+      url,
+      (gltf) => resolve({ scene: gltf.scene, animations: gltf.animations }),
+      undefined,
+      reject
+    );
   });
+}
+
+function loadModel(url: string): Promise<THREE.Group> {
+  return loadGltf(url).then((g) => g.scene);
 }
 
 function fitCameraToObject(object: THREE.Object3D) {
@@ -142,30 +154,76 @@ function trim(source: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
-async function bakeModel(name: string): Promise<string> {
-  const url = MODELS[name];
-  if (!url) throw new Error(`Unknown model: ${name}`);
-  const object = await loadModel(url);
+function appendCard(name: string, dataUrl: string, w: number, h: number) {
+  const card = document.createElement('div');
+  card.className = 'render-card';
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  const label = document.createElement('div');
+  label.textContent = `${name} (${w}x${h})`;
+  card.append(img, label);
+  document.getElementById('renders')!.appendChild(card);
+}
+
+function renderAndTrim(object: THREE.Object3D): { dataUrl: string; w: number; h: number } {
   scene.add(object);
   fitCameraToObject(object);
   renderer.render(scene, camera);
   const trimmed = trim(renderer.domElement);
   const dataUrl = trimmed.toDataURL('image/png');
   scene.remove(object);
+  return { dataUrl, w: trimmed.width, h: trimmed.height };
+}
 
-  const card = document.createElement('div');
-  card.className = 'render-card';
-  const img = document.createElement('img');
-  img.src = dataUrl;
-  const label = document.createElement('div');
-  label.textContent = `${name} (${trimmed.width}x${trimmed.height})`;
-  card.append(img, label);
-  document.getElementById('renders')!.appendChild(card);
-
+async function bakeModel(name: string): Promise<string> {
+  const url = MODELS[name];
+  if (!url) throw new Error(`Unknown model: ${name}`);
+  const object = await loadModel(url);
+  const { dataUrl, w, h } = renderAndTrim(object);
+  appendCard(name, dataUrl, w, h);
   return dataUrl;
 }
 
-(window as unknown as { bakeModel: typeof bakeModel }).bakeModel = bakeModel;
+/** List the animation clip names bundled in the movement animation file — for picking a pose. */
+async function listClips(): Promise<string[]> {
+  const { animations } = await loadGltf(ANIM_URL);
+  return animations.map((a) => a.name);
+}
+
+/**
+ * Bakes the character mid-stride: loads the character mesh+skeleton and a
+ * separately-authored animation clip (same "Rig_Medium" bone names, so
+ * Three.js resolves the clip's tracks onto the character's own skeleton —
+ * the standard glTF retargeting-by-name technique), advances the mixer to
+ * `poseFraction` through the clip's duration once, then bakes that single
+ * frame the same way a static prop is baked.
+ */
+async function bakeCharacter(clipNameMatch: RegExp, poseFraction: number): Promise<string> {
+  const [{ scene: character }, { animations }] = await Promise.all([
+    loadGltf(CHARACTER_URL),
+    loadGltf(ANIM_URL),
+  ]);
+  const clip = animations.find((a) => clipNameMatch.test(a.name));
+  if (!clip) {
+    throw new Error(
+      `No clip matching ${clipNameMatch} — available: ${animations.map((a) => a.name).join(', ')}`
+    );
+  }
+  const mixer = new THREE.AnimationMixer(character);
+  const action = mixer.clipAction(clip, character);
+  action.play();
+  mixer.update(poseFraction * clip.duration);
+
+  const { dataUrl, w, h } = renderAndTrim(character);
+  appendCard(`avatar (${clip.name} @ ${poseFraction})`, dataUrl, w, h);
+  return dataUrl;
+}
+
+Object.assign(window as unknown as Record<string, unknown>, {
+  bakeModel,
+  bakeCharacter,
+  listClips,
+});
 
 const controls = document.getElementById('controls')!;
 for (const name of Object.keys(MODELS)) {

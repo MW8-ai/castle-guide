@@ -1,9 +1,13 @@
-Source models in this directory are from "KayKit: Furniture Bits (1.0)"
-by Kay Lousberg (www.kaylousberg.com), released under CC0 1.0 Universal
-(Public Domain).
+Source models in this directory are CC0 1.0 Universal (Public Domain):
 https://creativecommons.org/publicdomain/zero/1.0/
+
+- couch/, bed_double_A/, table_medium/ — from "KayKit: Furniture Bits (1.0)"
+  by Kay Lousberg (www.kaylousberg.com)
+- rogue/, anim/ — from "KayKit: Adventurers Character Pack (2.0)"
+  by Kay Lousberg (www.kaylousberg.com)
 
 No attribution required by the license, but noted here for provenance.
 
 These raw 3D models are baked into flat isometric PNG sprites by
-tools/sprite-bake — see assets/iso/items/LICENSE.txt for the output.
+tools/sprite-bake — see assets/iso/items/LICENSE.txt and
+assets/iso/avatar/LICENSE.txt for the output.
