@@ -10,6 +10,9 @@ import floorTileUrl from '../../../assets/iso/floors/tile.png';
 import floorStoneUrl from '../../../assets/iso/floors/stone.png';
 import floorMetalUrl from '../../../assets/iso/floors/metal.png';
 import floorGrassUrl from '../../../assets/iso/floors/grass.png';
+import sofaUrl from '../../../assets/iso/items/sofa.png';
+import bedUrl from '../../../assets/iso/items/bed.png';
+import deskUrl from '../../../assets/iso/items/desk.png';
 
 const BASE = 22;
 
@@ -135,7 +138,11 @@ const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {
   generic: floorWoodUrl,
 };
 const YARD_SPRITE_SRC: string = floorGrassUrl;
-const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {};
+const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
+  sofa: sofaUrl,
+  bed: bedUrl,
+  desk: deskUrl,
+};
 const AVATAR_SPRITE_SRC: string | null = null;
 
 const spriteCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();

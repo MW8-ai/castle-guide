@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sprite bake — dev tool</title>
+    <style>
+      body {
+        background: #2a2a2a;
+        color: #eee;
+        font-family: system-ui, sans-serif;
+        padding: 1rem;
+      }
+      #renders {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .render-card {
+        background: #1a1a1a;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 0.5rem;
+      }
+      .render-card img {
+        display: block;
+        background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 20px 20px;
+        max-width: 220px;
+      }
+      button {
+        margin: 0.15rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sprite bake — offline dev tool</h1>
+    <p>
+      Renders 3D models from <code>models/</code> at the app's isometric
+      camera angle into flat transparent PNGs. Not part of the shipped app —
+      run manually, extract results, save into <code>assets/iso/items/</code>.
+    </p>
+    <div id="controls"></div>
+    <div id="renders"></div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
