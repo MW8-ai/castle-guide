@@ -1,0 +1,9 @@
+Source models in this directory are from "KayKit: Furniture Bits (1.0)"
+by Kay Lousberg (www.kaylousberg.com), released under CC0 1.0 Universal
+(Public Domain).
+https://creativecommons.org/publicdomain/zero/1.0/
+
+No attribution required by the license, but noted here for provenance.
+
+These raw 3D models are baked into flat isometric PNG sprites by
+tools/sprite-bake — see assets/iso/items/LICENSE.txt for the output.
