@@ -408,7 +408,7 @@ a {
   margin-top: 1rem;
   margin-bottom: 1rem;
   /* Clearance for the fixed bottom nav so it never covers the last card. */
-  padding-bottom: calc(2rem + 68px + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(2rem + var(--bottom-nav-h, 68px) + env(safe-area-inset-bottom, 0));
 }
 .glass-over-house .card,
 .glass-over-house .game-card {
