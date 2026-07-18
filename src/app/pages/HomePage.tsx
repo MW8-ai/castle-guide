@@ -13,6 +13,7 @@ export function HomePage() {
   const [busy, setBusy] = useState(false);
   const [summary, setSummary] = useState('');
   const [showNewHome, setShowNewHome] = useState(false);
+  const [startMode, setStartMode] = useState<'choose' | 'manual'>('choose');
   const [newHomeName, setNewHomeName] = useState('');
 
   useEffect(() => {
@@ -93,7 +94,42 @@ export function HomePage() {
           </p>
         )}
 
-        {showNewHome ? (
+        {showNewHome && startMode === 'choose' && (
+          <div class="form-grid title-new-home">
+            <p class="muted tiny">
+              However you start, you can add or fix anything by hand
+              afterward — nothing here is final.
+            </p>
+            <div class="title-actions">
+              <button
+                type="button"
+                class="btn primary big"
+                disabled={busy}
+                onClick={() => go('import')}
+              >
+                Paste from AI (Prompt Pack)
+              </button>
+              <button
+                type="button"
+                class="btn"
+                disabled={busy}
+                onClick={() => setStartMode('manual')}
+              >
+                Type it in myself
+              </button>
+              <button
+                type="button"
+                class="btn ghost"
+                disabled={busy}
+                onClick={() => setShowNewHome(false)}
+              >
+                Back
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showNewHome && startMode === 'manual' && (
           <form class="form-grid title-new-home" onSubmit={(e) => void createHome(e)}>
             <label>
               What's your house called?
@@ -122,19 +158,24 @@ export function HomePage() {
                 type="button"
                 class="btn ghost"
                 disabled={busy}
-                onClick={() => setShowNewHome(false)}
+                onClick={() => setStartMode('choose')}
               >
                 Back
               </button>
             </div>
           </form>
-        ) : (
+        )}
+
+        {!showNewHome && (
           <div class="title-actions">
             <button
               type="button"
               class="btn primary big"
               disabled={busy}
-              onClick={() => setShowNewHome(true)}
+              onClick={() => {
+                setStartMode('choose');
+                setShowNewHome(true);
+              }}
             >
               Start my house
             </button>

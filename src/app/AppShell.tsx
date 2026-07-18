@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { useCallback, useRef, useState } from 'preact/hooks';
 import { useActiveCastle } from './ActiveCastle';
 import { href, go } from './paths';
 import { HouseGhostBackdrop } from './HouseGhostBackdrop';
@@ -24,6 +25,23 @@ const NAV: { id: string; label: string; segment: string; icon: string }[] = [
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const { property, loading } = useActiveCastle();
   const pid = property?.id;
+
+  // The bottom nav's real height varies with label wrapping at narrow/short
+  // viewports — pages compensate for it via --bottom-nav-h instead of a
+  // hardcoded guess, so content never ends up clipped underneath it.
+  const [navHeight, setNavHeight] = useState(68);
+  const roRef = useRef<ResizeObserver | null>(null);
+  const navRef = useCallback((el: HTMLElement | null) => {
+    roRef.current?.disconnect();
+    roRef.current = null;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setNavHeight(Math.ceil(h));
+    });
+    ro.observe(el);
+    roRef.current = ro;
+  }, []);
 
   function navTo(segment: string) {
     if (!pid) {
@@ -67,7 +85,11 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   // Unified home shell: bottom nav always; house ghost under non-home pages
   if (inHomeApp || onHouse) {
     return (
-      <div class="shell house-bleed-v2" data-theme="nightwatch">
+      <div
+        class="shell house-bleed-v2"
+        data-theme="nightwatch"
+        style={{ '--bottom-nav-h': `${navHeight}px` } as Record<string, string>}
+      >
         {!onHouse && property && <HouseGhostBackdrop property={property} />}
         {!onHouse && property && (
           <div class="home-identity-bar">
@@ -108,7 +130,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             children
           )}
         </div>
-        <nav class="map-bottom-nav" aria-label="Main">
+        <nav class="map-bottom-nav" aria-label="Main" ref={navRef}>
           {NAV.map((item) => (
             <button
               key={item.id}

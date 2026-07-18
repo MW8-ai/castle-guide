@@ -90,6 +90,17 @@ export function SettingsPage() {
       </div>
 
       <div class="card">
+        <h2>Prompt Pack import</h2>
+        <p class="muted">
+          Paste JSON from any LLM to create a new house from a photo or
+          description — no AI keys required.
+        </p>
+        <button type="button" class="btn primary" onClick={() => go('import')}>
+          Open Prompt Pack import
+        </button>
+      </div>
+
+      <div class="card">
         <h2>BYO AI keys (optional)</h2>
         <p class="muted">
           Manual Prompt Pack mode always works with zero keys. Keys stay in
