@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Real art** in the walk renderer, replacing flat-shape placeholders: CC0 floor textures (wood/tile/stone/metal/grass), furniture sprites (sofa/bed/desk), and a walking-pose avatar — all baked from CC0 3D models (KayKit, Screaming Brain Studios) via a new reusable `tools/sprite-bake` pipeline (Three.js, matched to the renderer's own isometric camera angle)
 - **Art view** (angled painted house illustration + clickable hotspots) is now a real, selectable view on the House page for the Sample Home demo — previously a fully built component (`ImageHouseView`) sat unused, never imported anywhere
-- **Sprite-asset sockets** on the default walk renderer: furniture, floor tiles, and the avatar all check an image manifest before falling back to today's flat-shape drawing — real art drops in later under `assets/iso/` with no renderer code changes (see HUMAN_DIRECTIONS §9)
-- **Real first-run onboarding**: the landing page now shows an actual "Start my house" vs "Explore sample home" choice instead of auto-redirecting into the demo; creating a house is a single-field form
+- **Multi-story support**: floor tabs (basement/ground/upper/yard) and an outdoor yard room type
+- **Drag-and-drop floor plan editor**: reposition rooms with edge-snapping, set wall height, toggle see-through walls, and drag-to-resize a room's footprint (collision-aware — can't be dragged/resized on top of a neighbor)
+- **Real first-run onboarding**: the landing page shows an actual "Start my house" vs "Explore sample home" choice instead of auto-redirecting into the demo, and "Start my house" now offers Prompt Pack (paste AI-generated JSON) vs typing it in by hand
+- **Prompt Pack import is now reachable** — previously had zero UI entry points anywhere in the app (only reachable by typing `/import` directly); now linked from first-run and from Settings
 - **Empty-state House view** for a freshly created home — one clear "add your first room or appliance" CTA instead of a populated-looking HUD with nothing behind it
 - **Emergency shutoffs UI** — previously had zero creation path anywhere in the app despite being shown on every House HUD; now addable/removable from Inventory
 - **Consumables UI** and **Documents vault UI** (upload/view/remove, backed by real blob storage) — both had working storage methods but no UI anywhere; fully wired now
+- Common room chip presets and "Other" field reveals for shutoff/consumable types on Inventory
+- General maintenance event form (type/title/frequency) plus a separate recurring-events list on the Maintenance page, and HOA/utility-bill event templates
 
 ### Fixed
 
@@ -30,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a stale-load race and removed a no-op `keepRoom` flag on the House page's property loader
 - New "glass" pages (Settings/Inventory/Import) no longer render an unstyled, fully-interactive background canvas that hijacked scroll/keyboard input
 - Replaced two blocking `window.prompt()` calls (add room, add trash day) with real inline forms
+- Ops-calendar events that couldn't be removed once created
+- Floor textures visibly slid independently of the room instead of staying anchored to it while the camera panned (canvas pattern was anchored to pixel space instead of world space)
+- Cramped, hard-to-hit "✕" remove buttons across every list in the app (shutoffs, consumables, docs, ops-events, dream board) — one shared layout fix
+- **Art view / See through walls / Edit floor plan buttons were completely unclickable** — an ancestor's `pointer-events: none` (added so decorative hint text wouldn't block canvas dragging) was silently swallowing clicks on these buttons too
+- Bottom-nav clipping: page content (confirm buttons, list items) could render partially or fully underneath the fixed bottom nav because its height was hardcoded instead of measured — now measured via `ResizeObserver` and exposed as CSS variables (`--top-bars-h`, `--bottom-nav-h`) wherever it matters
+- **Council chat pushed the room-jump strip completely off-screen** — `.live-council-chat` had zero CSS anywhere (a rename left it and `.live-room-jump` unstyled while old, dead CSS for the pre-rename class names lingered unused); both now have real, non-overlapping positioning
+- Two WCAG AA contrast failures in light theme (gold accent text, primary button text)
+- Added test coverage for `removeOpsEvent`, floor filtering, floor-plan editor snap/collision math, and demo-seed floor assignment — all shipped with zero tests initially
 
 ## [1.2.0] — 2026-07-10
 
