@@ -129,7 +129,7 @@ function roomKind(name: string): RoomKind {
   const s = name.toLowerCase();
   if (/bath|toilet/.test(s)) return 'bath';
   if (/kitchen/.test(s)) return 'kitchen';
-  if (/garage/.test(s)) return 'garage';
+  if (/garage|basement/.test(s)) return 'garage';
   if (/utility|laundry|mech/.test(s)) return 'utility';
   if (/bed|primary/.test(s)) return 'bed';
   if (/living|family|dining/.test(s)) return 'living';
