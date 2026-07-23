@@ -13,6 +13,10 @@ import floorGrassUrl from '../../../assets/iso/floors/grass.png';
 import sofaUrl from '../../../assets/iso/items/sofa.png';
 import bedUrl from '../../../assets/iso/items/bed.png';
 import deskUrl from '../../../assets/iso/items/desk.png';
+import chairUrl from '../../../assets/iso/items/chair.png';
+import diningTableUrl from '../../../assets/iso/items/diningtable.png';
+import shelfUrl from '../../../assets/iso/items/shelf.png';
+import lampUrl from '../../../assets/iso/items/lamp.png';
 import avatarWalkUrl from '../../../assets/iso/avatar/walk.png';
 
 const BASE = 22;
@@ -31,6 +35,10 @@ type Kind =
   | 'toilet'
   | 'desk'
   | 'car'
+  | 'chair'
+  | 'table'
+  | 'shelf'
+  | 'lamp'
   | 'generic';
 
 function kindOf(label: string): Kind {
@@ -48,6 +56,10 @@ function kindOf(label: string): Kind {
   if (/toilet|toto|kohler|american standard|bath/.test(s)) return 'toilet';
   if (/desk|jarvis/.test(s)) return 'desk';
   if (/rav4|cr-v|toyota|honda|vehicle|car/.test(s)) return 'car';
+  if (/chair|armchair|recliner|stool/.test(s)) return 'chair';
+  if (/table/.test(s)) return 'table';
+  if (/shelf|shelves|bookcase|dresser|cabinet/.test(s)) return 'shelf';
+  if (/\blamp\b|light fixture/.test(s)) return 'lamp';
   return 'generic';
 }
 
@@ -65,6 +77,10 @@ const BODY: Record<Kind, string> = {
   toilet: '#f4f6f8',
   desk: '#a08050',
   car: '#3a6a9a',
+  chair: '#7a9a6a',
+  table: '#8a6a4a',
+  shelf: '#8a5a3a',
+  lamp: '#c8b898',
   generic: '#9ab0c0',
 };
 
@@ -82,6 +98,10 @@ const ICON: Record<Kind, string> = {
   toilet: '🚽',
   desk: '🖥️',
   car: '🚗',
+  chair: '🪑',
+  table: '🍽️',
+  shelf: '🗄️',
+  lamp: '💡',
   generic: '📦',
 };
 
@@ -143,6 +163,10 @@ const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
   sofa: sofaUrl,
   bed: bedUrl,
   desk: deskUrl,
+  chair: chairUrl,
+  table: diningTableUrl,
+  shelf: shelfUrl,
+  lamp: lampUrl,
 };
 const AVATAR_SPRITE_SRC: string | null = avatarWalkUrl;
 

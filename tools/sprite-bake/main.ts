@@ -14,6 +14,10 @@ const MODELS: Record<string, string> = {
   couch: './models/couch/couch.gltf',
   bed_double_A: './models/bed_double_A/bed_double_A.gltf',
   table_medium: './models/table_medium/table_medium.gltf',
+  armchair: './models/armchair/armchair.gltf',
+  table_medium_long: './models/table_medium_long/table_medium_long.gltf',
+  cabinet_medium: './models/cabinet_medium/cabinet_medium.gltf',
+  lamp_standing: './models/lamp_standing/lamp_standing.gltf',
 };
 
 const CHARACTER_URL = './models/rogue/Rogue.glb';
