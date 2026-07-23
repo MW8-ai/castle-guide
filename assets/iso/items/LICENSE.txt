@@ -6,11 +6,18 @@ https://creativecommons.org/publicdomain/zero/1.0/
 
 No attribution required by the license, but noted here for provenance.
 
-Source models: tools/sprite-bake/models/ (couch.gltf, bed_double_A.gltf,
-table_medium.gltf). Baked via tools/sprite-bake — see that tool to
-re-render at a different angle or add more items from the same pack.
+Source models: tools/sprite-bake/models/. Baked via tools/sprite-bake —
+see that tool to re-render at a different angle or add more items from
+the same pack.
 
-sofa.png  <- couch.gltf
-bed.png   <- bed_double_A.gltf
-desk.png  <- table_medium.gltf (stand-in; KayKit Furniture Bits has no
-             dedicated desk model)
+sofa.png        <- couch.gltf
+bed.png         <- bed_double_A.gltf
+desk.png        <- table_medium.gltf (stand-in; KayKit Furniture Bits
+                    has no dedicated desk model)
+chair.png       <- armchair.gltf
+diningtable.png <- table_medium_long.gltf
+lamp.png        <- lamp_standing.gltf
+shelf.png       <- cabinet_medium.gltf (stand-in; the pack's actual
+                    "shelf" models are wall-mounted and don't read well
+                    as a standalone billboard sprite — a standing
+                    cabinet reads as storage furniture much better)
