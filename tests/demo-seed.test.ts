@@ -64,13 +64,19 @@ describe('demo starter castle', () => {
     const yard = byFloor('yard');
     expect(yard).toEqual(['Backyard']);
 
+    const basement = byFloor('basement');
+    expect(basement).toEqual(['Basement']);
+
     const ground = byFloor('ground');
     expect(ground).toEqual(
       expect.arrayContaining(['Kitchen', 'Living Room', 'Bath 1', 'Utility'])
     );
     expect(ground).not.toEqual(expect.arrayContaining(['Primary Bedroom']));
+    expect(ground).not.toEqual(expect.arrayContaining(['Basement']));
 
-    expect(p.rooms).toHaveLength(upper.length + yard.length + ground.length);
+    expect(p.rooms).toHaveLength(
+      upper.length + yard.length + basement.length + ground.length
+    );
   });
 
   it('is idempotent — second ensure returns same demo', async () => {

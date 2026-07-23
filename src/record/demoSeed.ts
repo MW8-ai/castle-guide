@@ -124,6 +124,7 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   const garage2 = newId();
   const garage3 = newId();
   const office = newId();
+  const basement = newId();
 
   // Item ids
   const fridge = newId();
@@ -152,6 +153,14 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   const car1 = newId();
   const car2 = newId();
   const freezer = newId();
+  const sumpPump = newId();
+  const basementCouch = newId();
+  const basementShelf = newId();
+  const basementLamp = newId();
+  const grill = newId();
+  const patioChairs = newId();
+  const shed = newId();
+  const yardPlant = newId();
 
   property.rooms = [
     // Main living floor cluster
@@ -243,6 +252,20 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
       { floor: 'concrete' }
     ),
     room(garage3, 'Garage 3', 'garage', 18, 12, [], { floor: 'concrete' }),
+    room(
+      basement,
+      'Basement',
+      'basement',
+      22,
+      18,
+      [
+        place(sumpPump, 1, 1, 2, 2),
+        place(basementCouch, 5, 3, 7, 3),
+        place(basementShelf, 15, 1, 4, 2),
+        place(basementLamp, 14, 6, 1.5, 1.5),
+      ],
+      { floor: 'concrete' }
+    ),
   ];
 
   // Fix family room - had bogus placement. Put a second sofa-like item
@@ -259,12 +282,32 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   // floor, plus a yard room so the outdoor tab has real content.
   const backyard = newId();
   property.rooms.push(
-    room(backyard, 'Backyard', 'yard', 24, 18, [], { floor: 'grass' })
+    room(
+      backyard,
+      'Backyard',
+      'yard',
+      24,
+      18,
+      [
+        place(grill, 2, 2, 3, 2),
+        place(patioChairs, 8, 2, 4, 3),
+        place(shed, 18, 12, 4, 4),
+        place(yardPlant, 2, 14, 1.5, 1.5),
+      ],
+      { floor: 'grass' }
+    )
   );
   const upperFloorRoomIds = new Set([bed1, bed2, bed3, bed4, bed5, bath2, bath3]);
   property.rooms = property.rooms.map((r) => ({
     ...r,
-    floor: r.id === backyard ? 'yard' : upperFloorRoomIds.has(r.id) ? 'upper' : 'ground',
+    floor:
+      r.id === backyard
+        ? 'yard'
+        : r.id === basement
+          ? 'basement'
+          : upperFloorRoomIds.has(r.id)
+            ? 'upper'
+            : 'ground',
   }));
 
   property.items = [
@@ -526,6 +569,82 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
       model: 'Chest Freezer',
       purchaseDate: '2020-11-01',
       price: 450,
+    }),
+    item({
+      id: sumpPump,
+      category: 'sump-pump',
+      roomId: basement,
+      brand: 'Zoeller',
+      model: 'M53',
+      purchaseDate: '2019-03-01',
+      price: 320,
+      notes: 'Test quarterly; battery backup sits in the closet behind it.',
+    }),
+    item({
+      id: basementCouch,
+      category: 'furniture',
+      roomId: basement,
+      brand: 'Wayfair',
+      model: 'Sectional Couch',
+      purchaseDate: '2020-02-01',
+      price: 850,
+      notes: 'Rec-room corner.',
+    }),
+    item({
+      id: basementShelf,
+      category: 'furniture',
+      roomId: basement,
+      brand: 'Gladiator',
+      model: 'GearTrack Shelving',
+      purchaseDate: '2019-03-01',
+      price: 280,
+    }),
+    item({
+      id: basementLamp,
+      category: 'furniture',
+      roomId: basement,
+      brand: 'IKEA',
+      model: 'Floor Lamp',
+      purchaseDate: '2020-02-01',
+      price: 40,
+    }),
+    item({
+      id: grill,
+      category: 'grill',
+      roomId: backyard,
+      brand: 'Weber',
+      model: 'Genesis II',
+      purchaseDate: '2021-05-01',
+      price: 900,
+      notes: 'Propane tank swap at the hardware store, not a refill station.',
+    }),
+    item({
+      id: patioChairs,
+      category: 'furniture',
+      roomId: backyard,
+      brand: 'Wayfair',
+      model: 'Patio Chair Set',
+      purchaseDate: '2021-05-01',
+      price: 420,
+    }),
+    item({
+      id: shed,
+      category: 'shed',
+      roomId: backyard,
+      brand: 'Suncast',
+      model: 'Tremont',
+      purchaseDate: '2020-06-01',
+      price: 650,
+      notes: 'Mower, hoses, and yard tools.',
+    }),
+    item({
+      id: yardPlant,
+      category: 'furniture',
+      roomId: backyard,
+      brand: 'Local nursery',
+      model: 'Potted Hydrangea',
+      purchaseDate: '2023-04-01',
+      price: 35,
     }),
   ];
 
