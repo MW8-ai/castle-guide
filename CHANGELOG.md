@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Real art** in the walk renderer, replacing flat-shape placeholders: CC0 floor textures (wood/tile/stone/metal/grass), furniture sprites (sofa/bed/desk/chair/table/shelf/lamp), and a walking-pose avatar — all baked from CC0 3D models (KayKit, Screaming Brain Studios) via a new reusable `tools/sprite-bake` pipeline (Three.js, matched to the renderer's own isometric camera angle)
+- **Real art** in the walk renderer, replacing flat-shape placeholders: CC0 floor textures (wood/tile/stone/metal/grass), furniture sprites (sofa/bed/desk/chair/table/shelf/lamp/picture/plant), and a walking-pose avatar — all baked from CC0 3D models (KayKit, Screaming Brain Studios) via a new reusable `tools/sprite-bake` pipeline (Three.js, matched to the renderer's own isometric camera angle)
 - **Art view** (angled painted house illustration + clickable hotspots) is now a real, selectable view on the House page for the Sample Home demo — previously a fully built component (`ImageHouseView`) sat unused, never imported anywhere
 - **Multi-story support**: floor tabs (basement/ground/upper/yard) and an outdoor yard room type
 - **Drag-and-drop floor plan editor**: reposition rooms with edge-snapping, set wall height, toggle see-through walls, and drag-to-resize a room's footprint (collision-aware — can't be dragged/resized on top of a neighbor)
