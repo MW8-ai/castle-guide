@@ -2,8 +2,9 @@ Source models in this directory are CC0 1.0 Universal (Public Domain):
 https://creativecommons.org/publicdomain/zero/1.0/
 
 - couch/, bed_double_A/, table_medium/, armchair/, table_medium_long/,
-  cabinet_medium/, lamp_standing/ — from "KayKit: Furniture Bits (1.0)"
-  by Kay Lousberg (www.kaylousberg.com)
+  cabinet_medium/, lamp_standing/, pictureframe_standing_A/,
+  cactus_medium_A/ — from "KayKit: Furniture Bits (1.0)" by Kay
+  Lousberg (www.kaylousberg.com)
 - rogue/, anim/ — from "KayKit: Adventurers Character Pack (2.0)"
   by Kay Lousberg (www.kaylousberg.com)
 
