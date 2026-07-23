@@ -600,24 +600,6 @@ export function HousePage({ id }: Props) {
         )}
       </aside>
 
-      {/* Council chat */}
-      <aside class="live-council-chat" aria-label="Council chat">
-        <header class="live-up-head">
-          <h3>Council</h3>
-        </header>
-        <div class="live-chat-scroll">
-          {chat.map((m, i) => (
-            <div key={i} class="live-chat-line">
-              <span class="live-council-face sm">{m.face}</span>
-              <div>
-                <strong>{m.who}</strong>
-                <p>{m.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </aside>
-
       {/* Room dock — draggable */}
       {room && !selected && (
         <aside
@@ -740,6 +722,23 @@ export function HousePage({ id }: Props) {
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {chat.length > 0 && (
+            <section class="live-block">
+              <h3>Council</h3>
+              <div class="live-chat-scroll">
+                {chat.map((m, i) => (
+                  <div key={i} class="live-chat-line">
+                    <span class="live-council-face sm">{m.face}</span>
+                    <div>
+                      <strong>{m.who}</strong>
+                      <p>{m.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 
