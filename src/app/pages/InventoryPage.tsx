@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { ensureStorageReady } from '../storageContext';
 import type { DocMeta, Item, Property, RoomFloor, ShutoffType } from '../../storage';
 import { useActiveCastle } from '../ActiveCastle';
@@ -86,6 +86,16 @@ export function InventoryPage({ id }: Props) {
   const [consumableKindOther, setConsumableKindOther] = useState('');
   const [consumableLabel, setConsumableLabel] = useState('');
   const [consumableSize, setConsumableSize] = useState('');
+  const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [editBrand, setEditBrand] = useState('');
+  const [editModel, setEditModel] = useState('');
+  const [editSerial, setEditSerial] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editRoomId, setEditRoomId] = useState('');
+  const [editPurchaseDate, setEditPurchaseDate] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editWarrantyEnd, setEditWarrantyEnd] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   const propertyId = id;
 
@@ -102,6 +112,19 @@ export function InventoryPage({ id }: Props) {
   useEffect(() => {
     void load();
   }, [propertyId]);
+
+  const appliedDeepLink = useRef(false);
+  useEffect(() => {
+    if (!property || appliedDeepLink.current) return;
+    appliedDeepLink.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const itemId = params.get('item');
+    if (!itemId) return;
+    const item = property.items.find((i) => i.id === itemId);
+    if (!item) return;
+    setPicked(item);
+    if (params.get('edit') === '1') startEdit(item);
+  }, [property]);
 
   if (!propertyId) return null;
   if (!property) return <div class="page loading-splash">Loading…</div>;
@@ -146,6 +169,41 @@ export function InventoryPage({ id }: Props) {
     setModel('');
     setShowAdd(false);
     await load();
+  }
+
+  function startEdit(item: Item) {
+    setEditingItem(item);
+    setEditBrand(item.brand ?? '');
+    setEditModel(item.model ?? '');
+    setEditSerial(item.serial ?? '');
+    setEditCategory(item.category);
+    setEditRoomId(item.roomId ?? '');
+    setEditPurchaseDate(item.purchaseDate ?? '');
+    setEditPrice(item.price != null ? String(item.price) : '');
+    setEditWarrantyEnd(item.warrantyEnd ?? '');
+    setEditNotes(item.notes ?? '');
+  }
+
+  async function saveEdit(e: Event) {
+    e.preventDefault();
+    if (!editingItem || !propertyId) return;
+    const s = await ensureStorageReady();
+    await s.updateItem(propertyId, editingItem.id, {
+      brand: editBrand.trim() || null,
+      model: editModel.trim() || null,
+      serial: editSerial.trim() || null,
+      category: editCategory.trim() || editingItem.category,
+      roomId: editRoomId || null,
+      purchaseDate: editPurchaseDate || null,
+      price: editPrice.trim() ? Number(editPrice) : null,
+      warrantyEnd: editWarrantyEnd || null,
+      notes: editNotes.trim() || null,
+    });
+    const p = await s.getProperty(propertyId);
+    setProperty(p);
+    setPicked(p?.items.find((i) => i.id === editingItem.id) ?? null);
+    setEditingItem(null);
+    await refreshActive();
   }
 
   async function addRoom(e: Event) {
@@ -709,7 +767,133 @@ export function InventoryPage({ id }: Props) {
           )}
         </div>
 
-        {picked && (
+        {picked && editingItem?.id === picked.id && (
+          <form
+            class="card picked-panel edit-item-form"
+            onSubmit={(e) => void saveEdit(e)}
+          >
+            <h2>Edit item</h2>
+            <div class="form-grid">
+              <label>
+                Type
+                <select
+                  value={editCategory}
+                  onChange={(e) =>
+                    setEditCategory((e.target as HTMLSelectElement).value)
+                  }
+                >
+                  {QUICK.includes(editCategory) ? null : (
+                    <option value={editCategory}>{editCategory}</option>
+                  )}
+                  {QUICK.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Brand
+                <input
+                  value={editBrand}
+                  onInput={(e) =>
+                    setEditBrand((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+              <label>
+                Model
+                <input
+                  value={editModel}
+                  onInput={(e) =>
+                    setEditModel((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+              <label>
+                Serial
+                <input
+                  value={editSerial}
+                  onInput={(e) =>
+                    setEditSerial((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+              <label>
+                Room
+                <select
+                  value={editRoomId}
+                  onChange={(e) =>
+                    setEditRoomId((e.target as HTMLSelectElement).value)
+                  }
+                >
+                  <option value="">Unassigned</option>
+                  {property.rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Purchase date
+                <input
+                  type="date"
+                  value={editPurchaseDate}
+                  onInput={(e) =>
+                    setEditPurchaseDate((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+              <label>
+                Price
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={editPrice}
+                  onInput={(e) =>
+                    setEditPrice((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+              <label>
+                Warranty end
+                <input
+                  type="date"
+                  value={editWarrantyEnd}
+                  onInput={(e) =>
+                    setEditWarrantyEnd((e.target as HTMLInputElement).value)
+                  }
+                />
+              </label>
+            </div>
+            <label class="edit-item-notes">
+              Notes
+              <textarea
+                rows={3}
+                value={editNotes}
+                onInput={(e) =>
+                  setEditNotes((e.target as HTMLTextAreaElement).value)
+                }
+              />
+            </label>
+            <div class="btn-row">
+              <button type="submit" class="btn primary">
+                Save changes
+              </button>
+              <button
+                type="button"
+                class="btn"
+                onClick={() => setEditingItem(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {picked && editingItem?.id !== picked.id && (
           <div class="card picked-panel inv-detail">
             <ItemCard
               brand={picked.brand ?? picked.category}
@@ -736,7 +920,8 @@ export function InventoryPage({ id }: Props) {
                 picked.manualDocIds.length + (picked.photos?.length ?? 0)
               }
               onView={() => go('property', propertyId, 'house')}
-              onEdit={() => setPicked(null)}
+              onEdit={() => startEdit(picked)}
+              onClose={() => setPicked(null)}
             />
             {picked.filterSpecs[0] && (
               <p class="muted" style={{ marginTop: '0.75rem' }}>

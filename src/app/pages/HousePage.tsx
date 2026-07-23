@@ -827,7 +827,13 @@ export function HousePage({ id }: Props) {
               selected.manualDocIds.length + (selected.photos?.length ?? 0)
             }
             onView={() => go('property', property.id, 'inventory')}
-            onEdit={() => setSelected(null)}
+            onEdit={() =>
+              go(
+                'property',
+                property.id,
+                `inventory?item=${selected.id}&edit=1`
+              )
+            }
           />
           {selected.filterSpecs[0] && (
             <p class="live-part">

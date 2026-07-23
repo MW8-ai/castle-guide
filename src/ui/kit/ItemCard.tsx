@@ -17,6 +17,7 @@ export interface ItemCardProps {
   photoUrl?: string | null;
   onView?: () => void;
   onEdit?: () => void;
+  onClose?: () => void;
 }
 
 function categoryIcon(category?: string): string {
@@ -52,6 +53,7 @@ export function ItemCard({
   photoUrl,
   onView,
   onEdit,
+  onClose,
 }: ItemCardProps) {
   const warrantyLabel =
     warranty === 'active'
@@ -151,12 +153,21 @@ export function ItemCard({
           </div>
         </div>
         <div class="kit-item-actions">
-          <button type="button" class="kit-btn primary" onClick={onView}>
-            Open inventory
-          </button>
-          <button type="button" class="kit-btn" onClick={onEdit}>
-            Close
-          </button>
+          {onView && (
+            <button type="button" class="kit-btn primary" onClick={onView}>
+              Open inventory
+            </button>
+          )}
+          {onEdit && (
+            <button type="button" class="kit-btn primary" onClick={onEdit}>
+              Edit
+            </button>
+          )}
+          {onClose && (
+            <button type="button" class="kit-btn" onClick={onClose}>
+              Close
+            </button>
+          )}
         </div>
       </div>
     </article>
