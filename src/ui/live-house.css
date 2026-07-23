@@ -508,26 +508,9 @@
   font-size: 1.15rem;
 }
 
-/* ── Council chat bottom strip — sits left of the docks (.live-dock
-   claims the full right-side column), matching the width reserved for
-   the docks so the two never overlap. Lowest-priority panel: hidden
-   first as the viewport narrows (see media queries below). ── */
-
-.live-council-chat {
-  position: absolute;
-  left: 12px;
-  right: calc(24px + min(340px, 38vw));
-  bottom: 106px;
-  max-height: 180px;
-  z-index: 2;
-  background: rgba(35, 47, 71, 0.93);
-  border: 2px solid #35466a;
-  border-radius: 14px;
-  padding: 0.6rem 0.7rem;
-  overflow: auto;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
-}
+/* ── Council — now a section inside the room dock instead of its own
+   floating panel (it used to compete with .live-dock for the same
+   screen real estate). ── */
 
 .live-chat-scroll {
   display: flex;
@@ -616,9 +599,6 @@
     right: 8px;
     width: auto;
     max-height: 40vh;
-  }
-  .live-council-chat {
-    display: none;
   }
   .live-room-jump {
     /* .live-dock becomes a full-width bottom sheet at this width (above),
