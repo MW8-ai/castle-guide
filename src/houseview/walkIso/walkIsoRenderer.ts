@@ -17,6 +17,8 @@ import chairUrl from '../../../assets/iso/items/chair.png';
 import diningTableUrl from '../../../assets/iso/items/diningtable.png';
 import shelfUrl from '../../../assets/iso/items/shelf.png';
 import lampUrl from '../../../assets/iso/items/lamp.png';
+import pictureUrl from '../../../assets/iso/items/picture.png';
+import plantUrl from '../../../assets/iso/items/plant.png';
 import avatarWalkUrl from '../../../assets/iso/avatar/walk.png';
 
 const BASE = 22;
@@ -39,6 +41,8 @@ type Kind =
   | 'table'
   | 'shelf'
   | 'lamp'
+  | 'picture'
+  | 'plant'
   | 'generic';
 
 function kindOf(label: string): Kind {
@@ -60,6 +64,8 @@ function kindOf(label: string): Kind {
   if (/table/.test(s)) return 'table';
   if (/shelf|shelves|bookcase|dresser|cabinet/.test(s)) return 'shelf';
   if (/\blamp\b|light fixture/.test(s)) return 'lamp';
+  if (/picture|frame|art(work)?|painting/.test(s)) return 'picture';
+  if (/plant|cactus|succulent|greenery/.test(s)) return 'plant';
   return 'generic';
 }
 
@@ -81,6 +87,8 @@ const BODY: Record<Kind, string> = {
   table: '#8a6a4a',
   shelf: '#8a5a3a',
   lamp: '#c8b898',
+  picture: '#6a4a3a',
+  plant: '#4a8a5a',
   generic: '#9ab0c0',
 };
 
@@ -102,6 +110,8 @@ const ICON: Record<Kind, string> = {
   table: '🍽️',
   shelf: '🗄️',
   lamp: '💡',
+  picture: '🖼️',
+  plant: '🪴',
   generic: '📦',
 };
 
@@ -167,6 +177,8 @@ const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
   table: diningTableUrl,
   shelf: shelfUrl,
   lamp: lampUrl,
+  picture: pictureUrl,
+  plant: plantUrl,
 };
 const AVATAR_SPRITE_SRC: string | null = avatarWalkUrl;
 

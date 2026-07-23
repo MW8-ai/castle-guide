@@ -18,6 +18,8 @@ const MODELS: Record<string, string> = {
   table_medium_long: './models/table_medium_long/table_medium_long.gltf',
   cabinet_medium: './models/cabinet_medium/cabinet_medium.gltf',
   lamp_standing: './models/lamp_standing/lamp_standing.gltf',
+  pictureframe_standing_A: './models/pictureframe_standing_A/pictureframe_standing_A.gltf',
+  cactus_medium_A: './models/cactus_medium_A/cactus_medium_A.gltf',
 };
 
 const CHARACTER_URL = './models/rogue/Rogue.glb';

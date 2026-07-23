@@ -21,3 +21,15 @@ shelf.png       <- cabinet_medium.gltf (stand-in; the pack's actual
                     "shelf" models are wall-mounted and don't read well
                     as a standalone billboard sprite — a standing
                     cabinet reads as storage furniture much better)
+picture.png     <- pictureframe_standing_A.gltf
+plant.png       <- cactus_medium_A.gltf (the pack's only potted-plant
+                    model; a literal cactus, used as the general
+                    "plant" stand-in)
+
+Tried rug_rectangle_A.gltf for a "rug" kind and rejected it: baked
+from this camera angle a flat floor rug renders as a foreshortened
+top-down diamond, which looks like a slab standing on its edge when
+drawn through the same upright-billboard path everything else uses —
+not a rug lying on the floor. Flat/floor-level decor needs a different
+render path (applied to the floor plane, like the room floor texture)
+before it's worth baking.
