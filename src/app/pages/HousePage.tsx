@@ -65,6 +65,7 @@ export function HousePage({ id }: Props) {
   const [wallsTranslucent, setWallsTranslucent] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
+  const [openShutoffId, setOpenShutoffId] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [noteStatus, setNoteStatus] = useState<string | null>(null);
   const [dockPos, setDockPos] = useState<{ x: number; y: number } | null>(
@@ -433,9 +434,23 @@ export function HousePage({ id }: Props) {
           </div>
           <div class="live-id-shutoffs">
             {property.shutoffs.map((sh) => (
-              <span key={sh.id} class="live-id-chip" title={sh.locationNote}>
-                ⛔ {sh.type.replace(/-/g, ' ')}
-              </span>
+              <div key={sh.id} class="live-id-chip-wrap">
+                <button
+                  type="button"
+                  class="live-id-chip"
+                  onClick={() =>
+                    setOpenShutoffId(openShutoffId === sh.id ? null : sh.id)
+                  }
+                >
+                  ⛔ {sh.type.replace(/-/g, ' ')}
+                </button>
+                {openShutoffId === sh.id && (
+                  <div class="live-id-chip-pop">
+                    <strong>{sh.type.replace(/-/g, ' ')} shutoff</strong>
+                    <p>{sh.locationNote || 'No location noted yet.'}</p>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
