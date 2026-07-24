@@ -203,11 +203,20 @@
 }
 
 .live-stat-chip {
+  display: block;
+  text-align: left;
   background: rgba(35, 47, 71, 0.92);
   border: 1px solid #3a4d72;
   border-radius: 10px;
   padding: 0.35rem 0.65rem;
   min-width: 5.5rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.live-stat-chip:hover {
+  background: rgba(50, 66, 96, 0.95);
+  border-color: #4d6690;
 }
 
 .live-stat-chip.muted-chip {

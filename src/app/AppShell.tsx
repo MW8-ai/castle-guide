@@ -54,9 +54,11 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const onHouse =
     path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
 
-  // Nightwatch theme applies to the whole "inside a property" experience
-  // (house view plus the glass pages layered over it), not just the house
-  // view itself.
+  // The "glass over house" overlay (translucent dark cards layered over the
+  // dimmed house background) is styled assuming a dark backdrop — it isn't
+  // theme-aware, so forcing nightwatch here is deliberate, not a leftover
+  // bug. Making the whole in-app experience genuinely re-skin for light
+  // mode is a larger follow-up, not a safe scope for this fix.
   const houseTheme =
     onHouse ||
     (Boolean(pid) &&
@@ -110,12 +112,14 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
           <button
             type="button"
             class="theme-btn"
-            title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+            title={
+              theme === 'dark' ? 'Night mode — tap for day' : 'Day mode — tap for night'
+            }
             onClick={onToggleTheme}
           >
-            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+            <span aria-hidden="true">{theme === 'dark' ? '🌙' : '☀️'}</span>
             <span class="sidebar-label">
-              {theme === 'dark' ? 'Light' : 'Dark'}
+              {theme === 'dark' ? 'Night' : 'Day'}
             </span>
           </button>
         </div>
