@@ -88,15 +88,6 @@ export function HousePage({ id }: Props) {
   const [addressDraft, setAddressDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [noteStatus, setNoteStatus] = useState<string | null>(null);
-  const [dockPos, setDockPos] = useState<{ x: number; y: number } | null>(
-    null
-  );
-  const dragRef = useRef<{
-    ox: number;
-    oy: number;
-    sx: number;
-    sy: number;
-  } | null>(null);
 
   const propertyId = id || active?.id;
   const loadToken = useRef(0);
@@ -399,46 +390,6 @@ export function HousePage({ id }: Props) {
     await refreshActive();
   }
 
-  function onDockPointerDown(e: PointerEvent) {
-    const el = e.currentTarget as HTMLElement;
-    if (!(e.target as HTMLElement).closest('.live-dock-drag')) return;
-    const rect = el.getBoundingClientRect();
-    dragRef.current = {
-      ox: e.clientX,
-      oy: e.clientY,
-      sx: dockPos?.x ?? rect.left,
-      sy: dockPos?.y ?? rect.top,
-    };
-    try {
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    } catch {
-      /* ignore — capture is a nicety, not a requirement */
-    }
-  }
-
-  function onDockPointerMove(e: PointerEvent) {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.ox;
-    const dy = e.clientY - dragRef.current.oy;
-    setDockPos({
-      x: Math.max(8, dragRef.current.sx + dx),
-      y: Math.max(56, dragRef.current.sy + dy),
-    });
-  }
-
-  function onDockPointerUp() {
-    dragRef.current = null;
-  }
-
-  const dockStyle = dockPos
-    ? {
-        left: `${dockPos.x}px`,
-        top: `${dockPos.y}px`,
-        right: 'auto',
-        bottom: 'auto',
-      }
-    : undefined;
-
   const isDemoHome = property.name === DEMO_PROPERTY_NAME;
 
   return (
@@ -518,19 +469,35 @@ export function HousePage({ id }: Props) {
         </div>
 
         {viewMode === 'walk' && (
-          <div class="live-floor-tabs">
-            {FLOORS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                class={f === activeFloor ? 'active' : ''}
-                disabled={f === activeFloor}
-                onClick={() => switchFloor(f)}
-              >
-                {FLOOR_LABELS[f]}
-                {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
-              </button>
-            ))}
+          <div class="live-room-nav">
+            <div class="live-floor-tabs">
+              {FLOORS.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  class={f === activeFloor ? 'active' : ''}
+                  disabled={f === activeFloor}
+                  onClick={() => switchFloor(f)}
+                >
+                  {FLOOR_LABELS[f]}
+                  {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
+                </button>
+              ))}
+            </div>
+            {currentFloorRooms.length > 0 && (
+              <div class="live-room-jump">
+                {currentFloorRooms.slice(0, 12).map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    class={r.id === roomId ? 'active' : ''}
+                    onClick={() => handleRef.current?.travelToRoom?.(r.id)}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -693,20 +660,12 @@ export function HousePage({ id }: Props) {
         )}
       </aside>
 
-      {/* Room dock — draggable */}
+      {/* Room dock — fixed right-side panel */}
       {room && !selected && (
-        <aside
-          class="live-dock room-dock fade-in"
-          style={dockStyle}
-          onPointerDown={onDockPointerDown as unknown as (e: Event) => void}
-          onPointerMove={onDockPointerMove as unknown as (e: Event) => void}
-          onPointerUp={onDockPointerUp}
-        >
+        <aside class="live-dock room-dock fade-in">
           <header class="live-dock-head">
             <div>
-              <p class="live-kicker live-dock-drag" title="Drag panel">
-                ⠿ You are in
-              </p>
+              <p class="live-kicker">You are in</p>
               <h2>{room.name}</h2>
             </div>
             <button
@@ -868,16 +827,10 @@ export function HousePage({ id }: Props) {
       )}
 
       {selected && (
-        <aside
-          class="live-dock item-dock fade-in"
-          style={dockStyle}
-          onPointerDown={onDockPointerDown as unknown as (e: Event) => void}
-          onPointerMove={onDockPointerMove as unknown as (e: Event) => void}
-          onPointerUp={onDockPointerUp}
-        >
+        <aside class="live-dock item-dock fade-in">
           <header class="live-dock-head">
             <div>
-              <p class="live-kicker live-dock-drag">⠿ Item</p>
+              <p class="live-kicker">Item</p>
               <h2>
                 {selected.brand ?? selected.category}
                 {selected.model ? ` ${selected.model}` : ''}
@@ -950,21 +903,6 @@ export function HousePage({ id }: Props) {
         </aside>
       )}
 
-      {/* Mini room jump list */}
-      {viewMode === 'walk' && (
-        <div class="live-room-jump">
-          {currentFloorRooms.slice(0, 12).map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              class={r.id === roomId ? 'active' : ''}
-              onClick={() => handleRef.current?.travelToRoom?.(r.id)}
-            >
-              {r.name}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
