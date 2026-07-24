@@ -20,6 +20,13 @@ export interface ItemCardProps {
   onClose?: () => void;
 }
 
+const RETAILERS: { name: string; url: (q: string) => string }[] = [
+  { name: 'Home Depot', url: (q) => `https://www.homedepot.com/s/${q}` },
+  { name: "Lowe's", url: (q) => `https://www.lowes.com/search?searchTerm=${q}` },
+  { name: 'Menards', url: (q) => `https://www.menards.com/main/search.html?search=${q}` },
+  { name: 'Amazon', url: (q) => `https://www.amazon.com/s?k=${q}` },
+];
+
 function categoryIcon(category?: string): string {
   const s = (category ?? '').toLowerCase();
   if (/fridge|refriger/.test(s)) return '🧊';
@@ -65,6 +72,7 @@ export function ItemCard({
           : 'Unknown';
 
   const title = [brand, model].filter(Boolean).join(' ') || category || 'Item';
+  const shopQuery = [brand, model].filter(Boolean).join(' ').trim();
   const dueLabel =
     maintenanceDueInDays == null
       ? ''
@@ -152,6 +160,24 @@ export function ItemCard({
             <span />
           </div>
         </div>
+        {shopQuery && (
+          <div class="kit-shop-strip">
+            <span class="muted">Compare prices</span>
+            <div class="kit-shop-links">
+              {RETAILERS.map((r) => (
+                <a
+                  key={r.name}
+                  class="kit-shop-link"
+                  href={r.url(encodeURIComponent(shopQuery))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {r.name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         <div class="kit-item-actions">
           {onView && (
             <button type="button" class="kit-btn primary" onClick={onView}>

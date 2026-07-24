@@ -338,6 +338,34 @@
   background: var(--bg);
   border: 1px solid var(--border);
 }
+.kit-shop-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.kit-shop-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.kit-shop-link {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+}
+.kit-shop-link:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
 .kit-item-actions {
   display: flex;
   gap: 0.4rem;
