@@ -208,6 +208,29 @@ a {
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
+  z-index: 40;
+}
+
+/* Icon-only rail on narrow screens — nav stays reachable everywhere
+   instead of eating a third of a phone screen with text labels. */
+@media (max-width: 640px) {
+  .calm-shell,
+  .game-shell {
+    grid-template-columns: 56px 1fr;
+  }
+  .calm-sidebar,
+  .game-sidebar {
+    padding: 0.75rem 0.35rem;
+  }
+  .sidebar-label {
+    display: none;
+  }
+  .sidebar-link,
+  .theme-btn {
+    justify-content: center;
+    padding: 0.55rem 0.3rem;
+  }
 }
 
 .brand-mark {
@@ -314,6 +337,9 @@ a {
 }
 
 .theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text);
@@ -324,14 +350,19 @@ a {
   cursor: pointer;
 }
 
-/* House map: full stage + labeled bottom nav (not letter rail over the map) */
-.house-bleed-v2 {
+/* House map: content column next to the persistent left sidebar. */
+.shell-main-col {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 100vh;
-  background: #141b2d;
 }
-.house-bleed-v2 .shell-main.bleed {
+.shell-main-col.bleed {
+  height: 100vh;
+  background: #141b2d;
+  overflow: hidden;
+}
+.shell-main-col.bleed .shell-main.bleed {
   flex: 1;
   min-height: 0;
   min-width: 0;
@@ -407,8 +438,7 @@ a {
   border-radius: var(--radius);
   margin-top: 1rem;
   margin-bottom: 1rem;
-  /* Clearance for the fixed bottom nav so it never covers the last card. */
-  padding-bottom: calc(2rem + var(--bottom-nav-h, 68px) + env(safe-area-inset-bottom, 0));
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0));
 }
 .glass-over-house .card,
 .glass-over-house .game-card {
@@ -419,54 +449,6 @@ a {
 .glass-over-house .btn:not(.primary) {
   background: rgba(255, 255, 255, 0.06);
 }
-.map-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.65rem calc(0.5rem + env(safe-area-inset-bottom, 0));
-  background: rgba(14, 20, 34, 0.96);
-  border-top: 1px solid #35466a;
-  z-index: 30;
-}
-.map-nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  min-width: 4.4rem;
-  padding: 0.4rem 0.45rem;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: transparent;
-  color: #c5d0e0;
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.map-nav-btn:hover:not(:disabled),
-.map-nav-btn.active {
-  background: rgba(240, 180, 65, 0.14);
-  border-color: rgba(240, 180, 65, 0.45);
-  color: #fff;
-}
-.map-nav-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.map-nav-ico {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-.map-nav-label {
-  letter-spacing: 0.01em;
-}
-
 .house-bleed {
   display: grid;
   grid-template-columns: 1fr;

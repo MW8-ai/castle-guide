@@ -203,12 +203,6 @@
   letter-spacing: -0.02em;
 }
 
-.live-hint {
-  font-size: 0.8rem;
-  color: #9aabc4;
-  margin-top: 0.15rem;
-}
-
 .live-hud-stats {
   display: flex;
   flex-wrap: wrap;

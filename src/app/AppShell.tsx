@@ -1,5 +1,4 @@
 import type { ComponentChildren } from 'preact';
-import { useCallback, useRef, useState } from 'preact/hooks';
 import { useActiveCastle } from './ActiveCastle';
 import { href, go } from './paths';
 import { HouseGhostBackdrop } from './HouseGhostBackdrop';
@@ -25,23 +24,6 @@ const NAV: { id: string; label: string; segment: string; icon: string }[] = [
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const { property, loading } = useActiveCastle();
   const pid = property?.id;
-
-  // The bottom nav's real height varies with label wrapping at narrow/short
-  // viewports — pages compensate for it via --bottom-nav-h instead of a
-  // hardcoded guess, so content never ends up clipped underneath it.
-  const [navHeight, setNavHeight] = useState(68);
-  const roRef = useRef<ResizeObserver | null>(null);
-  const navRef = useCallback((el: HTMLElement | null) => {
-    roRef.current?.disconnect();
-    roRef.current = null;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height;
-      if (h) setNavHeight(Math.ceil(h));
-    });
-    ro.observe(el);
-    roRef.current = ro;
-  }, []);
 
   function navTo(segment: string) {
     if (!pid) {
@@ -72,24 +54,73 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const onHouse =
     path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
 
-  const inHomeApp =
-    Boolean(pid) &&
-    (path.includes('/property') ||
-      path.includes('/settings') ||
-      path.includes('/import'));
+  // Nightwatch theme applies to the whole "inside a property" experience
+  // (house view plus the glass pages layered over it), not just the house
+  // view itself.
+  const houseTheme =
+    onHouse ||
+    (Boolean(pid) &&
+      (path.includes('/property') ||
+        path.includes('/settings') ||
+        path.includes('/import')));
 
   if (bare) {
     return <div class="shell-title">{loading ? null : children}</div>;
   }
 
-  // Unified home shell: bottom nav always; house ghost under non-home pages
-  if (inHomeApp || onHouse) {
-    return (
-      <div
-        class="shell house-bleed-v2"
-        data-theme="nightwatch"
-        style={{ '--bottom-nav-h': `${navHeight}px` } as Record<string, string>}
-      >
+  // Single persistent left sidebar for every in-app page, including the
+  // house view — no more separate bottom-nav layout to keep in sync.
+  return (
+    <div class="shell calm-shell" data-theme={houseTheme ? 'nightwatch' : undefined}>
+      <aside class="sidebar calm-sidebar">
+        <a
+          class="sidebar-brand"
+          href={href()}
+          onClick={(e) => {
+            e.preventDefault();
+            go();
+          }}
+        >
+          <span class="brand-mark">⌂</span>
+          <div class="sidebar-label">
+            <div class="brand-title">Home Guide</div>
+            {property && <div class="brand-sub">{property.name}</div>}
+          </div>
+        </a>
+        <nav class="sidebar-nav">
+          {NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              class={
+                isActive(item.segment) ? 'sidebar-link active' : 'sidebar-link'
+              }
+              title={item.label}
+              disabled={!pid && item.segment !== 'settings'}
+              onClick={() => navTo(item.segment)}
+            >
+              <span class="sidebar-ico" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span class="sidebar-label">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div class="sidebar-foot">
+          <button
+            type="button"
+            class="theme-btn"
+            title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+            onClick={onToggleTheme}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+            <span class="sidebar-label">
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </span>
+          </button>
+        </div>
+      </aside>
+      <div class={onHouse ? 'shell-main-col bleed' : 'shell-main-col'}>
         {!onHouse && property && <HouseGhostBackdrop property={property} />}
         {!onHouse && property && (
           <div class="home-identity-bar">
@@ -119,9 +150,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
         )}
         <div
           class={
-            onHouse
-              ? 'shell-main bleed'
-              : 'shell-main bleed glass-over-house'
+            onHouse ? 'shell-main bleed' : 'shell-main glass-over-house'
           }
         >
           {loading ? (
@@ -130,86 +159,6 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             children
           )}
         </div>
-        <nav class="map-bottom-nav" aria-label="Main" ref={navRef}>
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              class={
-                isActive(item.segment) ? 'map-nav-btn active' : 'map-nav-btn'
-              }
-              disabled={!pid && item.segment !== 'settings'}
-              onClick={() => navTo(item.segment)}
-            >
-              <span class="map-nav-ico" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span class="map-nav-label">{item.label}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            class="map-nav-btn"
-            onClick={onToggleTheme}
-          >
-            <span class="map-nav-ico" aria-hidden="true">
-              {theme === 'dark' ? '☀' : '☾'}
-            </span>
-            <span class="map-nav-label">
-              {theme === 'dark' ? 'Light' : 'Dark'}
-            </span>
-          </button>
-        </nav>
-      </div>
-    );
-  }
-
-  // Fallback (no active property)
-  return (
-    <div class="shell calm-shell">
-      <aside class="sidebar calm-sidebar">
-        <a
-          class="sidebar-brand"
-          href={href()}
-          onClick={(e) => {
-            e.preventDefault();
-            go();
-          }}
-        >
-          <span class="brand-mark">⌂</span>
-          <div>
-            <div class="brand-title">Home Guide</div>
-            {property && <div class="brand-sub">{property.name}</div>}
-          </div>
-        </a>
-        <nav class="sidebar-nav">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              class={
-                isActive(item.segment) ? 'sidebar-link active' : 'sidebar-link'
-              }
-              disabled={!pid && item.segment !== 'settings'}
-              onClick={() => navTo(item.segment)}
-            >
-              <span class="sidebar-ico">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div class="sidebar-foot">
-          <button type="button" class="theme-btn" onClick={onToggleTheme}>
-            {theme === 'dark' ? 'Light' : 'Dark'}
-          </button>
-        </div>
-      </aside>
-      <div class="shell-main">
-        {loading ? (
-          <div class="page loading-splash">Loading…</div>
-        ) : (
-          children
-        )}
       </div>
     </div>
   );
