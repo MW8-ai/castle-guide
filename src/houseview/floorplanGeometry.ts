@@ -16,7 +16,9 @@ export const MIN_ROOM_FT = 4;
  * close (only against neighbors it actually runs alongside on the other
  * axis, so it forms a shared wall rather than aligning with an unrelated
  * room), then push out of any remaining overlap along whichever axis has
- * the least overlap, clamped to x/y >= 0 throughout.
+ * the least overlap. x/y are NOT clamped to >= 0 — a house has rooms in
+ * every direction from wherever the first one happened to be dropped, not
+ * just down-and-right of a fixed corner.
  */
 export function resolveRoomPosition(
   room: { id: string; L: number; W: number },
@@ -74,8 +76,6 @@ export function resolveRoomPosition(
   }
   if (bestDX != null) x = bestDX;
   if (bestDY != null) y = bestDY;
-  x = Math.max(0, x);
-  y = Math.max(0, y);
 
   for (let pass = 0; pass < 6; pass++) {
     const hit = others.find((other) => {
@@ -94,8 +94,8 @@ export function resolveRoomPosition(
     const overlapX = Math.min(x + room.L, oR) - Math.max(x, oL);
     const overlapY = Math.min(y + room.W, oB) - Math.max(y, oT);
     if (overlapX < overlapY) {
-      // "Push left" can go negative (room dragged near x=0) — fall back to
-      // "push right" rather than let the later clamp re-collide it.
+      // Prefer pushing left, but not into a negative position when pushing
+      // right is just as valid a resolution of the same collision.
       const pushLeft = oL - room.L;
       const preferLeft = x + room.L / 2 < oL + hit.L / 2;
       x = preferLeft && pushLeft >= 0 ? pushLeft : oR;
@@ -105,8 +105,6 @@ export function resolveRoomPosition(
       y = preferUp && pushUp >= 0 ? pushUp : oB;
     }
   }
-  x = Math.max(0, x);
-  y = Math.max(0, y);
 
   return { x, y };
 }

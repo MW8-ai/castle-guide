@@ -216,6 +216,11 @@ export function FloorPlanPage({ id }: Props) {
     W: resizeDims && resizeDims.id === r.id ? resizeDims.W : r.dims.W,
     room: r,
   }));
+  // Rooms can now sit at negative x/y (dragged above/left of wherever the
+  // first room landed), so the viewBox origin has to track the actual
+  // minimum instead of assuming everything starts at 0.
+  const minX = Math.min(0, ...positions.map((p) => p.x));
+  const minY = Math.min(0, ...positions.map((p) => p.y));
   const maxX = Math.max(10, ...positions.map((p) => p.x + p.L));
   const maxY = Math.max(10, ...positions.map((p) => p.y + p.W));
   const pad = 4;
@@ -256,7 +261,7 @@ export function FloorPlanPage({ id }: Props) {
       <div class="floorplan-canvas-wrap">
         <svg
           ref={svgRef}
-          viewBox={`${-pad} ${-pad} ${maxX + pad * 2} ${maxY + pad * 2}`}
+          viewBox={`${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`}
           class="floorplan-svg"
           onPointerMove={(e) => onPointerMove(e as unknown as PointerEvent)}
           onPointerUp={() => void onPointerUp()}

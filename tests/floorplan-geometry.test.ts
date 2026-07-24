@@ -54,10 +54,13 @@ describe('resolveRoomPosition (floor-plan drag snap + collision)', () => {
     expect(y).toBe(1);
   });
 
-  it('never returns a negative position', () => {
+  it('allows negative positions — a house has rooms in every direction', () => {
+    // Regression test: this used to be hard-clamped to (0, 0), which meant
+    // a room dragged "above" or "left of" wherever the first room happened
+    // to land could never actually get there.
     const { x, y } = resolveRoomPosition({ id: 'a', L: 10, W: 10 }, [], -5, -3);
-    expect(x).toBe(0);
-    expect(y).toBe(0);
+    expect(x).toBe(-5);
+    expect(y).toBe(-3);
   });
 
   it('pushes a room out of full overlap along the least-overlap axis', () => {
