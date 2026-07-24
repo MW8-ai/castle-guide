@@ -115,6 +115,36 @@ const ICON: Record<Kind, string> = {
   generic: '📦',
 };
 
+/**
+ * Flat-shape fallback box height, in the same iso units as room wall
+ * height (see drawRoom's hWall — baseline 9ft room ↔ 3 iso units, so
+ * 1 unit ≈ 3ft). Previously every kind but sofa/bed/car shared a single
+ * H=1.5, which made a toilet the same height as a fridge and, before the
+ * wall-height fix, put items taller than the walls they sit against.
+ */
+const ITEM_HEIGHT: Record<Kind, number> = {
+  fridge: 2.1,
+  range: 1.4,
+  washer: 1.3,
+  dryer: 1.3,
+  heater: 1.9,
+  furnace: 1.7,
+  ac: 1.2,
+  tv: 1.2,
+  sofa: 0.9,
+  bed: 0.9,
+  toilet: 0.8,
+  desk: 1.1,
+  car: 1.15,
+  chair: 0.9,
+  table: 1.0,
+  shelf: 2.0,
+  lamp: 1.6,
+  picture: 1.3,
+  plant: 1.1,
+  generic: 1.5,
+};
+
 type RoomKind =
   | 'bath'
   | 'kitchen'
@@ -640,12 +670,7 @@ export const walkIsoRenderer = {
       const L = Math.max(1.3, p.footprint.L);
       const W = Math.max(1.3, p.footprint.W);
       const kind = kindOf(p.label);
-      const H =
-        kind === 'sofa' || kind === 'bed'
-          ? 0.9
-          : kind === 'car'
-            ? 1.15
-            : 1.5;
+      const H = ITEM_HEIGHT[kind];
       const body = BODY[kind];
       const rim =
         health === 'overdue'
