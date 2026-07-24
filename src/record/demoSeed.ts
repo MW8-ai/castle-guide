@@ -161,6 +161,8 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   const patioChairs = newId();
   const shed = newId();
   const yardPlant = newId();
+  const mailbox = newId();
+  const hoseReel = newId();
 
   property.rooms = [
     // Main living floor cluster
@@ -279,8 +281,11 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
   });
 
   // Floors: bedrooms + full baths upstairs, everything else on the ground
-  // floor, plus a yard room so the outdoor tab has real content.
+  // floor, plus a yard that wraps around the house on two sides (not just
+  // one bare square) so the outdoor tab has real content and real shape.
   const backyard = newId();
+  const frontYard = newId();
+  const sideYard = newId();
   property.rooms.push(
     room(
       backyard,
@@ -295,19 +300,25 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
         place(yardPlant, 2, 14, 1.5, 1.5),
       ],
       { floor: 'grass' }
-    )
+    ),
+    { ...room(frontYard, 'Front Yard', 'yard', 24, 10, [place(mailbox, 21, 4, 1.5, 1.5)], { floor: 'grass' }), pos: { x: 0, y: -10 } },
+    { ...room(sideYard, 'Side Yard', 'yard', 10, 28, [place(hoseReel, 5, 24, 1.5, 1.5)], { floor: 'grass' }), pos: { x: -10, y: -10 } }
   );
+  property.rooms = property.rooms.map((r) => {
+    if (r.id === backyard) return { ...r, pos: { x: 0, y: 0 } };
+    return r;
+  });
   const upperFloorRoomIds = new Set([bed1, bed2, bed3, bed4, bed5, bath2, bath3]);
+  const yardRoomIds = new Set([backyard, frontYard, sideYard]);
   property.rooms = property.rooms.map((r) => ({
     ...r,
-    floor:
-      r.id === backyard
-        ? 'yard'
-        : r.id === basement
-          ? 'basement'
-          : upperFloorRoomIds.has(r.id)
-            ? 'upper'
-            : 'ground',
+    floor: yardRoomIds.has(r.id)
+      ? 'yard'
+      : r.id === basement
+        ? 'basement'
+        : upperFloorRoomIds.has(r.id)
+          ? 'upper'
+          : 'ground',
   }));
 
   property.items = [
@@ -645,6 +656,24 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
       model: 'Potted Hydrangea',
       purchaseDate: '2023-04-01',
       price: 35,
+    }),
+    item({
+      id: mailbox,
+      category: 'mailbox',
+      roomId: frontYard,
+      brand: 'Gibraltar',
+      model: 'Elite Steel Post Mailbox',
+      purchaseDate: '2019-08-01',
+      price: 180,
+    }),
+    item({
+      id: hoseReel,
+      category: 'furniture',
+      roomId: sideYard,
+      brand: 'Suncast',
+      model: 'Hideaway Hose Reel',
+      purchaseDate: '2022-06-01',
+      price: 90,
     }),
   ];
 

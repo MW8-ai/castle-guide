@@ -153,6 +153,7 @@ type RoomKind =
   | 'bed'
   | 'living'
   | 'office'
+  | 'yard'
   | 'generic';
 
 function roomKind(name: string): RoomKind {
@@ -164,6 +165,7 @@ function roomKind(name: string): RoomKind {
   if (/bed|primary/.test(s)) return 'bed';
   if (/living|family|dining/.test(s)) return 'living';
   if (/office/.test(s)) return 'office';
+  if (/yard|patio|garden|lawn/.test(s)) return 'yard';
   return 'generic';
 }
 
@@ -175,6 +177,7 @@ const FLOOR_COLOR: Record<RoomKind, string> = {
   bed: '#c9b8a0',
   living: '#c4a574',
   office: '#b8a888',
+  yard: '#3d8f4a',
   generic: '#c2a878',
 };
 
@@ -196,6 +199,7 @@ const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {
   bed: floorWoodUrl,
   living: floorWoodUrl,
   office: floorWoodUrl,
+  yard: floorGrassUrl,
   generic: floorWoodUrl,
 };
 const YARD_SPRITE_SRC: string = floorGrassUrl;
