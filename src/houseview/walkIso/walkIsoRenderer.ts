@@ -557,11 +557,11 @@ export const walkIsoRenderer = {
       const f = floorOf(room);
       const L = f.L;
       const W = f.W;
-      // Scaled from the room's real ceiling height, baseline 9ft ↔ 3 iso
+      // Scaled from the room's real ceiling height, baseline 9ft ↔ 3.6 iso
       // units — tall enough to actually read as a wall (rooms felt like
       // 4-inch curbs before this), clamped so extreme values don't break
       // the cutaway look.
-      const hWall = Math.max(1.6, Math.min(5.5, (room.dims.H / 9) * 3));
+      const hWall = Math.max(2, Math.min(6.5, (room.dims.H / 9) * 3.6));
       const c0 = iso(o.x, o.y, 0, panX, panY);
       const c1 = iso(o.x + L, o.y, 0, panX, panY);
       const c2 = iso(o.x + L, o.y + W, 0, panX, panY);

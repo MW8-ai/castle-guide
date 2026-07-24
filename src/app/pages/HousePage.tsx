@@ -474,15 +474,9 @@ export function HousePage({ id }: Props) {
 
         <header class="live-hud-top">
           <div class="live-hud-left">
-            {viewMode === 'walk' && (
-              <div class="live-hint">
-                Click a room to walk there · WASD · yard is open · drag the
-                dock handle
-              </div>
-            )}
             {isDemoHome && (
               <button type="button" class="live-link-btn" onClick={toggleViewMode}>
-                {viewMode === 'walk' ? '🖼️ Art view' : '🚶 Walk view'}
+                {viewMode === 'walk' ? '🧊 3D view' : '🚶 Walk view'}
               </button>
             )}
             {viewMode === 'walk' && (
