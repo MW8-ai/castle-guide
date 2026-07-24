@@ -3,7 +3,7 @@ import { ensureStorageReady } from '../storageContext';
 import type { DocMeta, Item, Property, RoomFloor, ShutoffType } from '../../storage';
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
-import { newId } from '../../storage';
+import { newId, nowIso } from '../../storage';
 import { ageFromInstall, daysUntil, FLOORS, FLOOR_LABELS } from '../../houseview';
 import { ItemCard } from '../../ui/kit/ItemCard';
 import '../../ui/kit/kit.css';
@@ -96,6 +96,7 @@ export function InventoryPage({ id }: Props) {
   const [editPrice, setEditPrice] = useState('');
   const [editWarrantyEnd, setEditWarrantyEnd] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [pickedPhotoUrl, setPickedPhotoUrl] = useState<string | null>(null);
 
   const propertyId = id;
 
@@ -125,6 +126,30 @@ export function InventoryPage({ id }: Props) {
     setPicked(item);
     if (params.get('edit') === '1') startEdit(item);
   }, [property]);
+
+  // Resolve the picked item's first photo to a displayable object URL,
+  // revoking the previous one so we don't leak blob URLs as selection
+  // changes.
+  useEffect(() => {
+    let cancelled = false;
+    let url: string | null = null;
+    const firstPhoto = picked?.photos[0];
+    if (firstPhoto) {
+      void (async () => {
+        const s = await ensureStorageReady();
+        const blob = await s.getBlob(firstPhoto.blobId);
+        if (cancelled || !blob) return;
+        url = URL.createObjectURL(blob);
+        setPickedPhotoUrl(url);
+      })();
+    } else {
+      setPickedPhotoUrl(null);
+    }
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [picked?.id, picked?.photos.length]);
 
   if (!propertyId) return null;
   if (!property) return <div class="page loading-splash">Loading…</div>;
@@ -204,6 +229,23 @@ export function InventoryPage({ id }: Props) {
     setPicked(p?.items.find((i) => i.id === editingItem.id) ?? null);
     setEditingItem(null);
     await refreshActive();
+  }
+
+  async function addItemPhoto(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !picked || !propertyId) return;
+    const s = await ensureStorageReady();
+    const { blobId } = await s.putBlob(file, file.type);
+    const photos = [
+      ...picked.photos,
+      { blobId, kind: 'photo' as const, createdAt: nowIso() },
+    ];
+    await s.updateItem(propertyId, picked.id, { photos });
+    input.value = '';
+    const p = await s.getProperty(propertyId);
+    setProperty(p);
+    setPicked(p?.items.find((i) => i.id === picked.id) ?? null);
   }
 
   async function addRoom(e: Event) {
@@ -919,6 +961,7 @@ export function InventoryPage({ id }: Props) {
               docsCount={
                 picked.manualDocIds.length + (picked.photos?.length ?? 0)
               }
+              photoUrl={pickedPhotoUrl}
               onView={() => go('property', propertyId, 'house')}
               onEdit={() => startEdit(picked)}
               onClose={() => setPicked(null)}
@@ -930,6 +973,15 @@ export function InventoryPage({ id }: Props) {
               </p>
             )}
             {picked.notes && <p class="muted">{picked.notes}</p>}
+            <label class="btn sm add-photo-btn">
+              📷 {picked.photos.length > 0 ? 'Add another photo' : 'Add a photo'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => void addItemPhoto(e)}
+                hidden
+              />
+            </label>
           </div>
         )}
       </div>

@@ -702,6 +702,11 @@ h3 {
   margin: 0;
 }
 
+.add-photo-btn {
+  display: inline-flex;
+  margin-top: 0.75rem;
+}
+
 .link-btn {
   border: none;
   background: transparent;
