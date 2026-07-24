@@ -5,11 +5,6 @@ import type {
   PlacementView,
   RoomView,
 } from '../types';
-import floorWoodUrl from '../../../assets/iso/floors/wood.png';
-import floorTileUrl from '../../../assets/iso/floors/tile.png';
-import floorStoneUrl from '../../../assets/iso/floors/stone.png';
-import floorMetalUrl from '../../../assets/iso/floors/metal.png';
-import floorGrassUrl from '../../../assets/iso/floors/grass.png';
 import sofaUrl from '../../../assets/iso/items/sofa.png';
 import bedUrl from '../../../assets/iso/items/bed.png';
 import deskUrl from '../../../assets/iso/items/desk.png';
@@ -185,24 +180,10 @@ const FLOOR_COLOR: Record<RoomKind, string> = {
  * Real art sockets — drop matching PNGs under assets/iso/ (see
  * HUMAN_DIRECTIONS.md §9) and these start rendering with zero code changes.
  * Until then, missing/404 images fail silently and the flat-shape fallback
- * below keeps drawing exactly as it does today.
- *
- * Floor textures are CC0 (Screaming Brain Studios, see assets/iso/floors/LICENSE.txt).
- * Furniture/item sprites and the avatar are still unset — no CC0 furniture
- * pack was found yet, so those keep using the flat-shape fallback.
+ * below keeps drawing exactly as it does today. Room/yard floors are flat
+ * colors by design (see FLOOR_COLOR) — repeating tile art there read as
+ * "busy pattern squares" rather than a real floor.
  */
-const FLOOR_SPRITE_SRC: Partial<Record<RoomKind, string>> = {
-  bath: floorTileUrl,
-  kitchen: floorTileUrl,
-  garage: floorStoneUrl,
-  utility: floorMetalUrl,
-  bed: floorWoodUrl,
-  living: floorWoodUrl,
-  office: floorWoodUrl,
-  yard: floorGrassUrl,
-  generic: floorWoodUrl,
-};
-const YARD_SPRITE_SRC: string = floorGrassUrl;
 const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
   sofa: sofaUrl,
   bed: bedUrl,
@@ -408,24 +389,6 @@ export const walkIsoRenderer = {
       };
     }
 
-    /**
-     * Anchors a repeating floor pattern to world space (via the same
-     * linear transform iso() uses) instead of canvas-pixel space, so the
-     * texture pans/zooms in lockstep with the room instead of sliding
-     * independently underneath it as the camera moves.
-     */
-    function anchorPatternToWorld(
-      pattern: CanvasPattern,
-      img: HTMLImageElement,
-      panX: number,
-      panY: number,
-      tileFeet = 2
-    ) {
-      const s = BASE * zoom;
-      const k = tileFeet / (img.naturalWidth || 1);
-      pattern.setTransform(new DOMMatrix([s * k, s * 0.5 * k, -s * k, s * 0.5 * k, panX, panY]));
-    }
-
     function roomAt(wx: number, wy: number, pad = 0.05): string | null {
       let best: { id: string; d: number } | null = null;
       for (const r of current.rooms) {
@@ -448,6 +411,38 @@ export const walkIsoRenderer = {
       return best?.id ?? null;
     }
 
+    function drawTree(
+      ctx: CanvasRenderingContext2D,
+      fx: number,
+      fy: number,
+      panX: number,
+      panY: number
+    ) {
+      const s = BASE * zoom;
+      const base = iso(fx, fy, 0, panX, panY);
+      const trunkTop = iso(fx, fy, 0.7, panX, panY);
+      ctx.strokeStyle = '#4a3624';
+      ctx.lineWidth = Math.max(2, s * 0.09);
+      ctx.beginPath();
+      ctx.moveTo(base.sx, base.sy);
+      ctx.lineTo(trunkTop.sx, trunkTop.sy);
+      ctx.stroke();
+      const canopy = iso(fx, fy, 1.5, panX, panY);
+      const r = s * 0.42;
+      ctx.fillStyle = 'rgba(20, 45, 25, 0.5)';
+      ctx.beginPath();
+      ctx.ellipse(canopy.sx, canopy.sy + 3, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2f6b3c';
+      ctx.beginPath();
+      ctx.arc(canopy.sx, canopy.sy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3d8f4a';
+      ctx.beginPath();
+      ctx.arc(canopy.sx - r * 0.25, canopy.sy - r * 0.25, r * 0.65, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     function drawYard(
       ctx: CanvasRenderingContext2D,
       panX: number,
@@ -464,21 +459,13 @@ export const walkIsoRenderer = {
       ctx.lineTo(y2.sx, y2.sy);
       ctx.lineTo(y3.sx, y3.sy);
       ctx.closePath();
-      const yardImg = getSprite(YARD_SPRITE_SRC);
-      const yardPattern = yardImg ? ctx.createPattern(yardImg, 'repeat') : null;
-      if (yardPattern && yardImg) {
-        anchorPatternToWorld(yardPattern, yardImg, panX, panY, 4);
-      }
-      ctx.fillStyle = yardPattern ?? '#3d8f4a';
+      // Smooth two-tone fill instead of a repeating tile — reads as grass
+      // without the busy pattern-square look.
+      const grassGrad = ctx.createLinearGradient(y0.sx, y0.sy, y2.sx, y2.sy);
+      grassGrad.addColorStop(0, '#458a4f');
+      grassGrad.addColorStop(1, '#357240');
+      ctx.fillStyle = grassGrad;
       ctx.fill();
-      // grass flecks
-      ctx.fillStyle = 'rgba(30, 100, 40, 0.35)';
-      for (let i = 0; i < 40; i++) {
-        const gx = w.minX + ((i * 7) % (w.maxX - w.minX));
-        const gy = w.minY + ((i * 11) % (w.maxY - w.minY));
-        const g = iso(gx, gy, 0, panX, panY);
-        ctx.fillRect(g.sx, g.sy, 3, 2);
-      }
 
       // driveway strip on garage side (max X)
       const hb = houseBounds();
@@ -507,6 +494,47 @@ export const walkIsoRenderer = {
       ctx.lineTo(m1.sx, m1.sy);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Tree line around the walkable edge so the world beyond it reads as
+      // "neighborhood" instead of an empty gradient void.
+      const driveway = {
+        minX: hb.maxX + 0.5,
+        maxX: hb.maxX + 8,
+        minY: hb.minY + 2,
+        maxY: hb.maxY - 2,
+      };
+      const perimeter = 2 * (w.maxX - w.minX) + 2 * (w.maxY - w.minY);
+      const treeCount = Math.max(10, Math.min(28, Math.round(perimeter / 9)));
+      for (let i = 0; i < treeCount; i++) {
+        const t = i / treeCount;
+        const p = t * perimeter;
+        const wide = w.maxX - w.minX;
+        const tall = w.maxY - w.minY;
+        let tx: number;
+        let ty: number;
+        if (p < wide) {
+          tx = w.minX + p;
+          ty = w.minY - 1.2;
+        } else if (p < wide + tall) {
+          tx = w.maxX + 1.2;
+          ty = w.minY + (p - wide);
+        } else if (p < wide * 2 + tall) {
+          tx = w.maxX - (p - wide - tall);
+          ty = w.maxY + 1.2;
+        } else {
+          tx = w.minX - 1.2;
+          ty = w.maxY - (p - wide * 2 - tall);
+        }
+        if (
+          tx >= driveway.minX - 1.5 &&
+          tx <= driveway.maxX + 1.5 &&
+          ty >= driveway.minY - 1.5 &&
+          ty <= driveway.maxY + 1.5
+        ) {
+          continue;
+        }
+        drawTree(ctx, tx, ty, panX, panY);
+      }
     }
 
     function drawFoundation(
@@ -553,7 +581,6 @@ export const walkIsoRenderer = {
     ) {
       const kind = roomKind(room.name);
       const floor = FLOOR_COLOR[kind];
-      const floorImg = getSprite(FLOOR_SPRITE_SRC[kind]);
       const f = floorOf(room);
       const L = f.L;
       const W = f.W;
@@ -576,32 +603,11 @@ export const walkIsoRenderer = {
       ctx.lineTo(c2.sx, c2.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      const floorPattern = floorImg ? ctx.createPattern(floorImg, 'repeat') : null;
-      if (floorPattern && floorImg) {
-        anchorPatternToWorld(floorPattern, floorImg, panX, panY);
-        ctx.save();
-        ctx.clip();
-        ctx.fillStyle = floorPattern;
-        ctx.fill();
-        ctx.restore();
-      } else {
-        ctx.fillStyle = floor;
-        ctx.fill();
-      }
+      ctx.fillStyle = floor;
+      ctx.fill();
       if (highlight) {
         ctx.fillStyle = 'rgba(240, 180, 65, 0.18)';
         ctx.fill();
-      }
-      // floor grain
-      ctx.strokeStyle = 'rgba(60,40,20,0.12)';
-      ctx.lineWidth = 1;
-      for (let i = 1; i < 4; i++) {
-        const a = iso(o.x + (L * i) / 4, o.y, 0, panX, panY);
-        const b2 = iso(o.x + (L * i) / 4, o.y + W, 0, panX, panY);
-        ctx.beginPath();
-        ctx.moveTo(a.sx, a.sy);
-        ctx.lineTo(b2.sx, b2.sy);
-        ctx.stroke();
       }
       ctx.strokeStyle = highlight ? '#f0b441' : 'rgba(60,40,25,0.45)';
       ctx.lineWidth = highlight ? 3 : 1.5;
