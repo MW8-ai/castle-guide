@@ -4,7 +4,13 @@ import type { DocMeta, Item, Property, RoomFloor, ShutoffType } from '../../stor
 import { useActiveCastle } from '../ActiveCastle';
 import { go } from '../paths';
 import { newId, nowIso } from '../../storage';
-import { ageFromInstall, daysUntil, FLOORS, FLOOR_LABELS } from '../../houseview';
+import {
+  ageFromInstall,
+  daysUntil,
+  addMonthsIso,
+  FLOORS,
+  FLOOR_LABELS,
+} from '../../houseview';
 import { ItemCard } from '../../ui/kit/ItemCard';
 import '../../ui/kit/kit.css';
 
@@ -22,6 +28,14 @@ const QUICK = [
   'furniture',
   'other',
 ];
+
+/** Starting-point suggestions only — editable, not a sourced claim. */
+const CONSUMABLE_LIFESPAN_MONTHS: Record<string, number> = {
+  filter: 3,
+  battery: 12,
+  bulb: 24,
+  cartridge: 6,
+};
 
 const COMMON_ROOMS = [
   'Kitchen',
@@ -86,6 +100,10 @@ export function InventoryPage({ id }: Props) {
   const [consumableKindOther, setConsumableKindOther] = useState('');
   const [consumableLabel, setConsumableLabel] = useState('');
   const [consumableSize, setConsumableSize] = useState('');
+  const [consumableRoomId, setConsumableRoomId] = useState('');
+  const [consumableInstalled, setConsumableInstalled] = useState('');
+  const [consumableLifespan, setConsumableLifespan] = useState('');
+  const [consumableCost, setConsumableCost] = useState('');
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [editBrand, setEditBrand] = useState('');
   const [editModel, setEditModel] = useState('');
@@ -336,10 +354,20 @@ export function InventoryPage({ id }: Props) {
       kind,
       label,
       sizeOrModel: consumableSize.trim(),
+      roomId: consumableRoomId || null,
+      installedDate: consumableInstalled || null,
+      lifespanMonths: consumableLifespan.trim()
+        ? Number(consumableLifespan)
+        : null,
+      estCost: consumableCost.trim() ? Number(consumableCost) : null,
     });
     setConsumableLabel('');
     setConsumableSize('');
     setConsumableKindOther('');
+    setConsumableRoomId('');
+    setConsumableInstalled('');
+    setConsumableLifespan('');
+    setConsumableCost('');
     setShowAddConsumable(false);
     await load();
   }
@@ -527,9 +555,13 @@ export function InventoryPage({ id }: Props) {
               Kind
               <select
                 value={consumableKind}
-                onChange={(e) =>
-                  setConsumableKind((e.target as HTMLSelectElement).value)
-                }
+                onChange={(e) => {
+                  const k = (e.target as HTMLSelectElement).value;
+                  setConsumableKind(k);
+                  if (!consumableLifespan && CONSUMABLE_LIFESPAN_MONTHS[k]) {
+                    setConsumableLifespan(String(CONSUMABLE_LIFESPAN_MONTHS[k]));
+                  }
+                }}
               >
                 {['filter', 'battery', 'bulb', 'cartridge', 'other'].map((k) => (
                   <option key={k} value={k}>
@@ -572,6 +604,57 @@ export function InventoryPage({ id }: Props) {
                 }
               />
             </label>
+            <label>
+              Location
+              <select
+                value={consumableRoomId}
+                onChange={(e) =>
+                  setConsumableRoomId((e.target as HTMLSelectElement).value)
+                }
+              >
+                <option value="">—</option>
+                {property.rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Installed
+              <input
+                type="date"
+                value={consumableInstalled}
+                onInput={(e) =>
+                  setConsumableInstalled((e.target as HTMLInputElement).value)
+                }
+              />
+            </label>
+            <label>
+              Typical lifespan (months)
+              <input
+                type="number"
+                min="1"
+                placeholder="e.g. 12"
+                value={consumableLifespan}
+                onInput={(e) =>
+                  setConsumableLifespan((e.target as HTMLInputElement).value)
+                }
+              />
+            </label>
+            <label>
+              Est. cost to replace ($)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="optional"
+                value={consumableCost}
+                onInput={(e) =>
+                  setConsumableCost((e.target as HTMLInputElement).value)
+                }
+              />
+            </label>
             <button type="submit" class="btn primary">
               Save
             </button>
@@ -582,23 +665,48 @@ export function InventoryPage({ id }: Props) {
       {property.consumables.length > 0 && (
         <div class="card">
           <h2>Filters &amp; Supplies</h2>
+          <p class="muted">
+            Replaceables — filters, batteries, bulbs, and where each one is.
+          </p>
           <ul class="plain-list">
-            {property.consumables.map((c) => (
-              <li key={c.id}>
-                <strong>{c.label}</strong>
-                {c.sizeOrModel ? ` — ${c.sizeOrModel}` : ''}
-                {' · '}
-                <span class="muted tiny">{c.kind}</span>
-                <button
-                  type="button"
-                  class="kit-icon-btn"
-                  aria-label="Remove"
-                  onClick={() => void removeConsumable(c.id)}
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
+            {property.consumables.map((c) => {
+              const dueDate =
+                c.installedDate && c.lifespanMonths
+                  ? addMonthsIso(c.installedDate, c.lifespanMonths)
+                  : null;
+              const due = daysUntil(dueDate);
+              const dueClass =
+                due == null ? '' : due < 0 ? 'danger-text' : due <= 30 ? 'warn-text' : '';
+              return (
+                <li key={c.id}>
+                  <div>
+                    <strong>{c.label}</strong>
+                    {c.sizeOrModel ? ` — ${c.sizeOrModel}` : ''}
+                    {' · '}
+                    <span class="muted tiny">{c.kind}</span>
+                    {c.roomId && (
+                      <span class="muted tiny"> · {roomName(c.roomId)}</span>
+                    )}
+                    {dueDate && (
+                      <div class={`tiny ${dueClass}`}>
+                        {due != null && due < 0
+                          ? `Overdue — replace by ${dueDate}`
+                          : `Replace by ${dueDate}`}
+                        {c.estCost != null ? ` · ~$${c.estCost}` : ''}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    class="kit-icon-btn"
+                    aria-label="Remove"
+                    onClick={() => void removeConsumable(c.id)}
+                  >
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

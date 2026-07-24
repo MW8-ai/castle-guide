@@ -108,6 +108,14 @@ export function daysUntil(iso: string | null | undefined, asOf = todayUtc()): nu
   return Math.round((b - a) / 86400000);
 }
 
+/** Add whole months to an ISO date — used to project a "replace by" date
+ * from an install date + typical lifespan. */
+export function addMonthsIso(iso: string, months: number): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
 export function ageFromInstall(
   iso: string | null | undefined,
   asOf = todayUtc()

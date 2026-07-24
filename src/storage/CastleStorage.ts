@@ -354,6 +354,9 @@ export class CastleStorage {
       roomId: c.roomId ?? null,
       itemId: c.itemId ?? null,
       notes: c.notes ?? null,
+      installedDate: c.installedDate ?? null,
+      lifespanMonths: c.lifespanMonths ?? null,
+      estCost: c.estCost ?? null,
     };
     property.consumables.push(row);
     await this.saveProperty(property);

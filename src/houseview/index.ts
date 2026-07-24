@@ -12,6 +12,7 @@ export {
   healthGrade,
   healthTone,
   daysUntil,
+  addMonthsIso,
   ageFromInstall,
   upcomingTasks,
   catalogStats,
