@@ -1079,6 +1079,72 @@ select {
   color: var(--text-muted);
 }
 
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.cal-weekday {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0.25rem 0;
+}
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1;
+  min-height: 2.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+}
+.cal-day.out {
+  color: var(--text-muted);
+  opacity: 0.45;
+}
+.cal-day.today {
+  border-color: var(--accent);
+}
+.cal-day.selected {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.cal-day-num {
+  font-size: 0.85rem;
+}
+.cal-day-dots {
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+.cal-day.selected .cal-day-dots {
+  color: var(--bg);
+}
+.cal-day-dots.warn {
+  color: var(--danger);
+}
+.cal-day.selected .cal-day-dots.warn {
+  color: var(--bg);
+}
+.cal-selected {
+  margin-top: 0.75rem;
+}
+
 .plain-list {
   list-style: none;
   padding: 0;
