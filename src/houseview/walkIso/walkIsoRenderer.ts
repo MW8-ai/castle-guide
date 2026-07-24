@@ -612,6 +612,7 @@ export const walkIsoRenderer = {
       const c2 = iso(o.x + L, o.y + W, 0, panX, panY);
       const c3 = iso(o.x, o.y + W, 0, panX, panY);
       const t0 = iso(o.x, o.y, hWall, panX, panY);
+      const t1 = iso(o.x + L, o.y, hWall, panX, panY);
       const t3 = iso(o.x, o.y + W, hWall, panX, panY);
 
       // floor
@@ -640,48 +641,85 @@ export const walkIsoRenderer = {
       // low walls (cutaway) — translucent when "see through walls" is on
       ctx.save();
       if (wallsTranslucent) ctx.globalAlpha = 0.22;
+      const wallColor = highlight ? '#9a7a55' : '#7d6548';
       ctx.beginPath();
       ctx.moveTo(c0.sx, c0.sy);
       ctx.lineTo(t0.sx, t0.sy);
       ctx.lineTo(t3.sx, t3.sy);
       ctx.lineTo(c3.sx, c3.sy);
       ctx.closePath();
-      ctx.fillStyle = highlight ? '#9a7a55' : '#7d6548';
+      ctx.fillStyle = wallColor;
       ctx.fill();
       ctx.strokeStyle = '#4a3020';
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // north wall — split around an actual doorway opening instead of
-      // one solid slab (used to be just a 3px "passage cue" line).
-      const doorW = Math.min(3.2, L * 0.4);
-      const doorH = hWall * 0.78;
+      // Window on the west wall — sill above the floor, doesn't reach the
+      // ceiling. Drawn as an overlay on the solid wall rather than a real
+      // hole (nothing is visible "through" it either way in this flat
+      // cutaway style, so a hole would look identical but cost more code).
+      const winW = Math.min(1.1, W * 0.14);
+      const winY0 = o.y + W / 2 - winW / 2;
+      const winY1 = winY0 + winW;
+      const sillZ = hWall * 0.32;
+      const headZ = hWall * 0.82;
+      const wf0 = iso(o.x, winY0, sillZ, panX, panY);
+      const wf1 = iso(o.x, winY1, sillZ, panX, panY);
+      const wf2 = iso(o.x, winY1, headZ, panX, panY);
+      const wf3 = iso(o.x, winY0, headZ, panX, panY);
+      ctx.fillStyle = '#3a3020';
+      ctx.beginPath();
+      ctx.moveTo(wf0.sx, wf0.sy);
+      ctx.lineTo(wf1.sx, wf1.sy);
+      ctx.lineTo(wf2.sx, wf2.sy);
+      ctx.lineTo(wf3.sx, wf3.sy);
+      ctx.closePath();
+      ctx.fill();
+      const paneInset = winW * 0.12;
+      const wp0 = iso(o.x, winY0 + paneInset, sillZ + (headZ - sillZ) * 0.1, panX, panY);
+      const wp1 = iso(o.x, winY1 - paneInset, sillZ + (headZ - sillZ) * 0.1, panX, panY);
+      const wp2 = iso(o.x, winY1 - paneInset, headZ - (headZ - sillZ) * 0.1, panX, panY);
+      const wp3 = iso(o.x, winY0 + paneInset, headZ - (headZ - sillZ) * 0.1, panX, panY);
+      ctx.fillStyle = highlight ? 'rgba(190,220,235,0.75)' : 'rgba(150,190,210,0.65)';
+      ctx.beginPath();
+      ctx.moveTo(wp0.sx, wp0.sy);
+      ctx.lineTo(wp1.sx, wp1.sy);
+      ctx.lineTo(wp2.sx, wp2.sy);
+      ctx.lineTo(wp3.sx, wp3.sy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#3a3020';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      const wMidZ = (sillZ + headZ) / 2;
+      const wm0 = iso(o.x, winY0 + paneInset, wMidZ, panX, panY);
+      const wm1 = iso(o.x, winY1 - paneInset, wMidZ, panX, panY);
+      ctx.beginPath();
+      ctx.moveTo(wm0.sx, wm0.sy);
+      ctx.lineTo(wm1.sx, wm1.sy);
+      ctx.stroke();
+
+      // North wall — solid base, then the doorway overlay below.
+      ctx.beginPath();
+      ctx.moveTo(c0.sx, c0.sy);
+      ctx.lineTo(t0.sx, t0.sy);
+      ctx.lineTo(t1.sx, t1.sy);
+      ctx.lineTo(c1.sx, c1.sy);
+      ctx.closePath();
+      ctx.fillStyle = wallColor;
+      ctx.fill();
+      ctx.strokeStyle = '#4a3020';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Doorway — narrow and nearly full-height, like a real door, instead
+      // of the previous squat panel that (thanks to the iso skew) read as
+      // a wide horizontal slit rather than an opening.
+      const doorW = Math.min(1.5, L * 0.16);
+      const doorH = hWall * 0.88;
       const doorX0 = o.x + L / 2 - doorW / 2;
       const doorX1 = doorX0 + doorW;
-      const wallColor = highlight ? '#b09068' : '#947858';
-      const drawWallSeg = (xa: number, xb: number) => {
-        if (xb - xa < 0.05) return;
-        const a0 = iso(xa, o.y, 0, panX, panY);
-        const a1 = iso(xa, o.y, hWall, panX, panY);
-        const b1 = iso(xb, o.y, hWall, panX, panY);
-        const b0 = iso(xb, o.y, 0, panX, panY);
-        ctx.beginPath();
-        ctx.moveTo(a0.sx, a0.sy);
-        ctx.lineTo(a1.sx, a1.sy);
-        ctx.lineTo(b1.sx, b1.sy);
-        ctx.lineTo(b0.sx, b0.sy);
-        ctx.closePath();
-        ctx.fillStyle = wallColor;
-        ctx.fill();
-        ctx.stroke();
-      };
-      drawWallSeg(o.x, doorX0);
-      drawWallSeg(doorX1, o.x + L);
-      ctx.restore();
 
-      // door: frame lintel + leaf panel + handle, sitting in the gap
-      ctx.save();
-      if (wallsTranslucent) ctx.globalAlpha = 0.22;
       const j0t = iso(doorX0, o.y, doorH, panX, panY);
       const j1t = iso(doorX1, o.y, doorH, panX, panY);
       ctx.beginPath();
@@ -693,10 +731,10 @@ export const walkIsoRenderer = {
       ctx.fillStyle = '#4a3020';
       ctx.fill();
 
-      const leafInset = doorW * 0.08;
+      const leafInset = doorW * 0.1;
       const l0b = iso(doorX0 + leafInset, o.y, 0, panX, panY);
-      const l0t = iso(doorX0 + leafInset, o.y, doorH * 0.96, panX, panY);
-      const l1t = iso(doorX1 - leafInset, o.y, doorH * 0.96, panX, panY);
+      const l0t = iso(doorX0 + leafInset, o.y, doorH * 0.97, panX, panY);
+      const l1t = iso(doorX1 - leafInset, o.y, doorH * 0.97, panX, panY);
       const l1b = iso(doorX1 - leafInset, o.y, 0, panX, panY);
       ctx.beginPath();
       ctx.moveTo(l0b.sx, l0b.sy);
@@ -710,7 +748,7 @@ export const walkIsoRenderer = {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      const hx = doorX0 + leafInset + (doorW - 2 * leafInset) * 0.82;
+      const hx = doorX0 + leafInset + (doorW - 2 * leafInset) * 0.78;
       const handle = iso(hx, o.y, doorH * 0.42, panX, panY);
       ctx.fillStyle = '#2a2a2a';
       ctx.beginPath();
