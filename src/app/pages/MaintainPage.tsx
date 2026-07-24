@@ -37,6 +37,15 @@ const EVENT_TYPE_LABELS: Record<OpsEventType, string> = {
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 type Frequency = 'weekly' | 'monthly' | 'yearly' | 'once';
 
+/** Local Y-M-D — avoids the UTC-shift toISOString() causes near midnight
+ * in timezones ahead of UTC. */
+function ymd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function describeSchedule(schedule: string): string {
   const [mode, ...rest] = schedule.split(':');
   if (mode === 'weekly' && rest[1] != null) {
@@ -72,6 +81,9 @@ export function MaintainPage({ id }: Props) {
   const [yearMonth, setYearMonth] = useState('01');
   const [yearDay, setYearDay] = useState('01');
   const [onceDate, setOnceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [calMonthOffset, setCalMonthOffset] = useState(0);
+  const todayIso = ymd(new Date());
+  const [selectedCalDate, setSelectedCalDate] = useState(todayIso);
 
   async function refresh() {
     if (!id) return;
@@ -79,7 +91,7 @@ export function MaintainPage({ id }: Props) {
     const p = await s.getProperty(id);
     setProperty(p);
     if (p) {
-      setCalendar(await s.getCalendar(p.id, 8));
+      setCalendar(await s.getCalendar(p.id, 16));
     }
   }
 
@@ -242,6 +254,39 @@ export function MaintainPage({ id }: Props) {
     lim.setUTCDate(lim.getUTCDate() + 14);
     return d <= lim;
   });
+
+  const calByDate = new Map<string, typeof calendar>();
+  for (const c of calendar) {
+    const list = calByDate.get(c.date) ?? [];
+    list.push(c);
+    calByDate.set(c.date, list);
+  }
+  const MAX_CAL_MONTH_OFFSET = 3;
+  const viewDate = new Date();
+  viewDate.setDate(1);
+  viewDate.setMonth(viewDate.getMonth() + calMonthOffset);
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+  const monthLabel = viewDate.toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
+  const firstOfMonth = new Date(viewYear, viewMonth, 1);
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const totalCells = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7) * 7;
+  const calDays: { iso: string; day: number; inMonth: boolean }[] = [];
+  const cursor = new Date(gridStart);
+  for (let i = 0; i < totalCells; i++) {
+    calDays.push({
+      iso: ymd(cursor),
+      day: cursor.getDate(),
+      inMonth: cursor.getMonth() === viewMonth,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  const selectedDayEvents = calByDate.get(selectedCalDate) ?? [];
 
   return (
     <section class="page inv-calm">
@@ -547,20 +592,78 @@ export function MaintainPage({ id }: Props) {
 
       <div class="card">
         <h2>Upcoming</h2>
-        <p class="muted">Next 8 weeks, from the recurring events above plus your maintenance tasks.</p>
-        {calendar.length === 0 ? (
-          <p class="muted">Nothing scheduled yet.</p>
-        ) : (
-          <ul class="plain-list cal-list">
-            {calendar.map((c) => (
-              <li key={`${c.date}-${c.title}-${c.kind}`}>
-                <span class="cal-date">{c.date}</span>{' '}
-                <span class={c.whenNotToDiy ? 'danger-text' : ''}>{c.title}</span>{' '}
-                <span class="muted">({c.kind})</span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <p class="muted">
+          From the recurring events above plus your maintenance tasks.
+        </p>
+        <div class="cal-nav">
+          <button
+            type="button"
+            class="btn sm"
+            disabled={calMonthOffset <= 0}
+            onClick={() => setCalMonthOffset((n) => Math.max(0, n - 1))}
+          >
+            ‹ Prev
+          </button>
+          <strong>{monthLabel}</strong>
+          <button
+            type="button"
+            class="btn sm"
+            disabled={calMonthOffset >= MAX_CAL_MONTH_OFFSET}
+            onClick={() =>
+              setCalMonthOffset((n) => Math.min(MAX_CAL_MONTH_OFFSET, n + 1))
+            }
+          >
+            Next ›
+          </button>
+        </div>
+        <div class="cal-grid">
+          {WEEKDAYS.map((w) => (
+            <div key={w} class="cal-weekday">
+              {w.slice(0, 3)}
+            </div>
+          ))}
+          {calDays.map((d) => {
+            const entries = calByDate.get(d.iso) ?? [];
+            const hasWarning = entries.some((e) => e.whenNotToDiy);
+            return (
+              <button
+                type="button"
+                key={d.iso}
+                class={
+                  'cal-day' +
+                  (d.inMonth ? '' : ' out') +
+                  (d.iso === todayIso ? ' today' : '') +
+                  (d.iso === selectedCalDate ? ' selected' : '')
+                }
+                onClick={() => setSelectedCalDate(d.iso)}
+              >
+                <span class="cal-day-num">{d.day}</span>
+                {entries.length > 0 && (
+                  <span class={`cal-day-dots${hasWarning ? ' warn' : ''}`}>
+                    {'•'.repeat(Math.min(3, entries.length))}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div class="cal-selected">
+          <h3>{selectedCalDate}</h3>
+          {selectedDayEvents.length === 0 ? (
+            <p class="muted">Nothing scheduled this day.</p>
+          ) : (
+            <ul class="plain-list cal-list">
+              {selectedDayEvents.map((c) => (
+                <li key={`${c.date}-${c.title}-${c.kind}`}>
+                  <span class={c.whenNotToDiy ? 'danger-text' : ''}>
+                    {c.title}
+                  </span>{' '}
+                  <span class="muted">({c.kind})</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {seasonal.map((list) => (
