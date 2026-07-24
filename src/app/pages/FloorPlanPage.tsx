@@ -241,6 +241,13 @@ export function FloorPlanPage({ id }: Props) {
         Drag rooms to reposition — edges snap into place near neighbors. Drag
         the corner handle on a selected room to resize it.
       </p>
+      <p class="muted">
+        Footprint: {Math.round(maxX - minX)}' × {Math.round(maxY - minY)}' ·{' '}
+        {Math.round(
+          positions.reduce((sum, p) => sum + p.L * p.W, 0)
+        ).toLocaleString()}{' '}
+        sq ft of rooms on {FLOOR_LABELS[floor].toLowerCase()}
+      </p>
 
       <nav class="tabs">
         {FLOORS.map((f) => (

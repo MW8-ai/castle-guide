@@ -561,35 +561,57 @@ export function HousePage({ id }: Props) {
             )}
           </div>
           <div class="live-hud-stats">
-            <div
+            <button
+              type="button"
               class={`live-stat-chip health-${tone}`}
-              title={serenityLabel(score)}
+              title={`${serenityLabel(score)} — see Maintenance`}
+              onClick={() => go('property', property.id, 'maintain')}
             >
               <span class="live-stat-k">Home health</span>
               <strong>
                 {grade} · {score}%
               </strong>
-            </div>
+            </button>
             {equity != null && (
-              <div class="live-stat-chip">
+              <button
+                type="button"
+                class="live-stat-chip"
+                title="See Money"
+                onClick={() => go('property', property.id, 'money')}
+              >
                 <span class="live-stat-k">Equity</span>
                 <strong>{money(equity)}</strong>
-              </div>
+              </button>
             )}
-            <div class="live-stat-chip">
+            <button
+              type="button"
+              class="live-stat-chip"
+              title="See Maintenance"
+              onClick={() => go('property', property.id, 'maintain')}
+            >
               <span class="live-stat-k">Repairs</span>
               <strong>{repairs > 0 ? money(repairs) : '—'}</strong>
-            </div>
-            <div class="live-stat-chip">
+            </button>
+            <button
+              type="button"
+              class="live-stat-chip"
+              title="See Build list"
+              onClick={() => go('property', property.id, 'builders')}
+            >
               <span class="live-stat-k">Build list</span>
               <strong>{buildList > 0 ? money(buildList) : '—'}</strong>
-            </div>
-            <div class="live-stat-chip muted-chip">
+            </button>
+            <button
+              type="button"
+              class="live-stat-chip muted-chip"
+              title="See Inventory"
+              onClick={() => go('property', property.id, 'inventory')}
+            >
               <span class="live-stat-k">Catalog</span>
               <strong>
                 {stats.items} items · {stats.rooms} rms
               </strong>
-            </div>
+            </button>
           </div>
         </header>
       </div>
