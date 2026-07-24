@@ -377,7 +377,7 @@ export function InventoryPage({ id }: Props) {
             class="btn"
             onClick={() => setShowAddConsumable((v) => !v)}
           >
-            {showAddConsumable ? 'Cancel' : '🧻 Add consumable'}
+            {showAddConsumable ? 'Cancel' : '🧻 Add filter/supply'}
           </button>
           <select
             class="doc-type-select"
@@ -539,7 +539,7 @@ export function InventoryPage({ id }: Props) {
 
       {property.consumables.length > 0 && (
         <div class="card">
-          <h2>Consumables</h2>
+          <h2>Filters &amp; Supplies</h2>
           <ul class="plain-list">
             {property.consumables.map((c) => (
               <li key={c.id}>
