@@ -135,17 +135,13 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
                   .join(' · ') || 'Your house'}
               </span>
             </div>
-            <div class="home-id-shutoffs" title="Emergency shutoffs">
-              {property.shutoffs.length === 0 ? (
-                <span class="muted">No shutoffs logged</span>
-              ) : (
-                property.shutoffs.slice(0, 4).map((sh) => (
-                  <span key={sh.id} class="home-id-chip">
-                    {sh.type.replace(/-/g, ' ')}
-                  </span>
-                ))
-              )}
-            </div>
+            <button
+              type="button"
+              class="home-id-emergency"
+              onClick={() => navTo('emergency')}
+            >
+              🚨 Emergency
+            </button>
           </div>
         )}
         <div

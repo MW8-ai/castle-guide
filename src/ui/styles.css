@@ -408,21 +408,20 @@ a {
 .home-id-main strong {
   font-size: 0.92rem;
 }
-.home-id-shutoffs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  justify-content: flex-end;
-}
-.home-id-chip {
-  background: rgba(200, 60, 50, 0.22);
-  border: 1px solid rgba(230, 90, 80, 0.5);
+.home-id-emergency {
+  flex-shrink: 0;
+  background: rgba(200, 60, 50, 0.28);
+  border: 1px solid rgba(230, 90, 80, 0.6);
   color: #ffd9d0;
-  font-size: 0.68rem;
+  font: inherit;
   font-weight: 700;
-  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.75rem;
   border-radius: 999px;
-  text-transform: capitalize;
+  cursor: pointer;
+}
+.home-id-emergency:hover {
+  background: rgba(200, 60, 50, 0.42);
 }
 
 .glass-over-house {

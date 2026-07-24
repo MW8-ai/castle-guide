@@ -176,6 +176,13 @@ export interface Shutoff {
   photo?: BlobRef | null;
 }
 
+export interface EmergencyContact {
+  id: string;
+  label: string;
+  phone: string;
+  notes?: string | null;
+}
+
 export interface Consumable {
   id: string;
   kind: string;
@@ -323,6 +330,7 @@ export interface Property {
   areaLinks: AreaLink[];
   shutoffs: Shutoff[];
   consumables: Consumable[];
+  emergencyContacts: EmergencyContact[];
   mortgage?: MortgageInfo | null;
   createdAt: string;
   updatedAt: string;

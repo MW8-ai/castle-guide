@@ -52,6 +52,7 @@ export function createEmptyProperty(name: string, zip?: string | null): Property
     areaLinks: [],
     shutoffs: [],
     consumables: [],
+    emergencyContacts: [],
     createdAt: ts,
     updatedAt: ts,
   };
