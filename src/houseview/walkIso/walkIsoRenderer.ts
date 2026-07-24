@@ -196,6 +196,11 @@ const ITEM_SPRITE_SRC: Partial<Record<Kind, string>> = {
   plant: plantUrl,
 };
 const AVATAR_SPRITE_SRC: string | null = avatarWalkUrl;
+/** Roughly a person's footprint/height in iso-units — same scale basis
+ * furniture uses, so the character doesn't dwarf or vanish next to it. */
+const AVATAR_L = 1.4;
+const AVATAR_W = 1.4;
+const AVATAR_H = 2.0;
 
 const spriteCache = new Map<string, HTMLImageElement | 'loading' | 'error'>();
 function getSprite(src: string | null | undefined): HTMLImageElement | null {
@@ -387,6 +392,19 @@ export const walkIsoRenderer = {
         sx: panX + (fx - fy) * s,
         sy: panY + (fx + fy) * (s * 0.5) - z * s * 0.42,
       };
+    }
+
+    /**
+     * Target screen height (px) for a flat billboard sprite standing in for
+     * a real L×W×H footprint, matching what a true 3D box of that size
+     * would occupy on screen (height's z-foreshortening plus the vertical
+     * rise from the footprint's iso diagonal) — so sprite furniture, boxy
+     * flat-shape furniture, and the avatar all read at the same scale
+     * instead of three independently-tuned sizes.
+     */
+    function billboardPx(L: number, W: number, H: number): number {
+      const s = BASE * zoom;
+      return (H * 0.42 + (L + W) * 0.5) * s;
     }
 
     function roomAt(wx: number, wy: number, pad = 0.05): string | null {
@@ -735,8 +753,7 @@ export const walkIsoRenderer = {
 
       if (sprite) {
         const base = iso(fx + L / 2, fy + W / 2, 0, panX, panY);
-        const spriteH =
-          70 * zoom * Math.max(0.75, Math.min(1.6, (L + W) / 4));
+        const spriteH = billboardPx(L, W, H);
         const spriteW = spriteH * (sprite.naturalWidth / sprite.naturalHeight || 1);
         ctx.drawImage(
           sprite,
@@ -1005,7 +1022,7 @@ export const walkIsoRenderer = {
         ctx.beginPath();
         ctx.ellipse(0, 6, 11, 5, 0, 0, Math.PI * 2);
         ctx.fill();
-        const h = 44;
+        const h = billboardPx(AVATAR_L, AVATAR_W, AVATAR_H);
         const w =
           h * (avatarSprite.naturalWidth / avatarSprite.naturalHeight || 0.6);
         ctx.drawImage(avatarSprite, -w / 2, -h + 4, w, h);
