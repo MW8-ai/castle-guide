@@ -247,6 +247,7 @@ export interface OpsEvent {
   source?: string | null;
   remind: boolean;
   notes?: string | null;
+  costEstimate?: number | null;
   createdAt: string;
 }
 

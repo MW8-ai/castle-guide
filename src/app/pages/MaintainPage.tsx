@@ -61,9 +61,11 @@ export function MaintainPage({ id }: Props) {
     { date: string; title: string; kind: string; whenNotToDiy?: boolean }[]
   >([]);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [eventType, setEventType] = useState<OpsEventType>('bill');
   const [eventTypeOther, setEventTypeOther] = useState('');
   const [eventTitle, setEventTitle] = useState('');
+  const [eventCost, setEventCost] = useState('');
   const [frequency, setFrequency] = useState<Frequency>('monthly');
   const [weekday, setWeekday] = useState('2');
   const [monthDay, setMonthDay] = useState('1');
@@ -112,22 +114,73 @@ export function MaintainPage({ id }: Props) {
     return `once:${onceDate}`;
   }
 
-  async function addEvent(e: Event) {
+  /** Inverse of buildSchedule — pre-fills the form's fields when editing. */
+  function applySchedule(schedule: string) {
+    const [mode, ...rest] = schedule.split(':');
+    if (mode === 'weekly' && rest[1] != null) {
+      setFrequency('weekly');
+      setWeekday(rest[1]);
+    } else if (mode === 'monthly' && rest[1] != null) {
+      setFrequency('monthly');
+      setMonthDay(rest[1]);
+    } else if (mode === 'yearly' && rest[0]) {
+      setFrequency('yearly');
+      const [m, d] = rest[0].split('-');
+      if (m) setYearMonth(m);
+      if (d) setYearDay(d);
+    } else if (mode === 'once' && rest[0]) {
+      setFrequency('once');
+      setOnceDate(rest[0]);
+    }
+  }
+
+  function resetEventForm() {
+    setEditingEventId(null);
+    setEventTitle('');
+    setEventTypeOther('');
+    setEventCost('');
+    setShowAddEvent(false);
+  }
+
+  function startEditEvent(ev: OpsEvent) {
+    setEditingEventId(ev.id);
+    setEventType(ev.type);
+    // The free-text "what kind of event?" box (shown only when type is
+    // 'other') is never stored separately — it just seeds the title, which
+    // is already pre-filled below, so there's nothing to reconstruct here.
+    setEventTypeOther('');
+    setEventTitle(ev.title);
+    setEventCost(ev.costEstimate != null ? String(ev.costEstimate) : '');
+    applySchedule(ev.schedule);
+    setShowAddEvent(true);
+  }
+
+  async function saveEvent(e: Event) {
     e.preventDefault();
     const title = eventTitle.trim() || (eventType === 'other' ? eventTypeOther.trim() : EVENT_TYPE_LABELS[eventType]);
     if (!title) return;
     const s = await ensureStorageReady();
-    await s.addOpsEvent(property!.id, {
-      type: eventType,
-      title,
-      schedule: buildSchedule(),
-      source: 'user',
-      remind: true,
-    });
-    setMessage(`${title} added to your home calendar.`);
-    setEventTitle('');
-    setEventTypeOther('');
-    setShowAddEvent(false);
+    const costEstimate = eventCost.trim() ? Number(eventCost) : null;
+    if (editingEventId) {
+      await s.updateOpsEvent(property!.id, editingEventId, {
+        type: eventType,
+        title,
+        schedule: buildSchedule(),
+        costEstimate,
+      });
+      setMessage(`${title} updated.`);
+    } else {
+      await s.addOpsEvent(property!.id, {
+        type: eventType,
+        title,
+        schedule: buildSchedule(),
+        source: 'user',
+        remind: true,
+        costEstimate,
+      });
+      setMessage(`${title} added to your home calendar.`);
+    }
+    resetEventForm();
     await refresh();
   }
 
@@ -219,7 +272,13 @@ export function MaintainPage({ id }: Props) {
           <button
             type="button"
             class="btn"
-            onClick={() => setShowAddEvent((v) => !v)}
+            onClick={() => {
+              if (showAddEvent) {
+                resetEventForm();
+              } else {
+                setShowAddEvent(true);
+              }
+            }}
           >
             {showAddEvent ? 'Cancel' : '+ Add calendar event'}
           </button>
@@ -232,7 +291,7 @@ export function MaintainPage({ id }: Props) {
       {message && <p class="ok-text">{message}</p>}
 
       {showAddEvent && (
-        <form class="card add-strip" onSubmit={(e) => void addEvent(e)}>
+        <form class="card add-strip" onSubmit={(e) => void saveEvent(e)}>
           <div class="add-row">
             <label>
               Type
@@ -351,8 +410,19 @@ export function MaintainPage({ id }: Props) {
                 />
               </label>
             )}
+            <label>
+              Est. cost ($)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="optional"
+                value={eventCost}
+                onInput={(e) => setEventCost((e.target as HTMLInputElement).value)}
+              />
+            </label>
             <button type="submit" class="btn primary">
-              Save
+              {editingEventId ? 'Save changes' : 'Save'}
             </button>
           </div>
         </form>
@@ -451,7 +521,16 @@ export function MaintainPage({ id }: Props) {
                 <span class="muted">
                   · {EVENT_TYPE_LABELS[ev.type] ?? ev.type} ·{' '}
                   {describeSchedule(ev.schedule)}
+                  {ev.costEstimate != null ? ` · ~$${ev.costEstimate}` : ''}
                 </span>
+                <button
+                  type="button"
+                  class="kit-icon-btn"
+                  aria-label="Edit"
+                  onClick={() => startEditEvent(ev)}
+                >
+                  ✏️
+                </button>
                 <button
                   type="button"
                   class="kit-icon-btn"
