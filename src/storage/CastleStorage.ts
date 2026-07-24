@@ -127,7 +127,11 @@ export class CastleStorage {
   async getProperty(id: string): Promise<Property | null> {
     const p = await this.db.properties.get(id);
     if (!p) return null;
-    return { ...p, items: refreezePropertyLineage(p.items) };
+    return {
+      ...p,
+      items: refreezePropertyLineage(p.items),
+      emergencyContacts: p.emergencyContacts ?? [],
+    };
   }
 
   async createProperty(name: string, zip?: string | null): Promise<Property> {

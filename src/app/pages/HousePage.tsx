@@ -42,6 +42,24 @@ function money(n: number): string {
   return `$${Math.round(n).toLocaleString()}`;
 }
 
+function houseAgeInfo(yearBuilt: number | null | undefined): {
+  age: number;
+  hint: string;
+} | null {
+  if (!yearBuilt) return null;
+  const age = new Date().getFullYear() - yearBuilt;
+  if (age < 0) return null;
+  const hint =
+    age >= 25
+      ? 'Roof, HVAC, and water heater are likely due or overdue for replacement.'
+      : age >= 15
+        ? 'Water heater and major appliances are approaching typical end-of-life.'
+        : age >= 8
+          ? 'Routine maintenance window — filters, seals, and caulking matter most.'
+          : 'Still within most original systems’ expected lifespan.';
+  return { age, hint };
+}
+
 function dueBarPct(dueInDays: number | null): number {
   if (dueInDays == null) return 40;
   if (dueInDays < 0) return 100;
@@ -65,7 +83,9 @@ export function HousePage({ id }: Props) {
   const [wallsTranslucent, setWallsTranslucent] = useState(false);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
-  const [openShutoffId, setOpenShutoffId] = useState<string | null>(null);
+  const [editingIdentity, setEditingIdentity] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [addressDraft, setAddressDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [noteStatus, setNoteStatus] = useState<string | null>(null);
   const [dockPos, setDockPos] = useState<{ x: number; y: number } | null>(
@@ -270,6 +290,7 @@ export function HousePage({ id }: Props) {
     month: 'short',
     day: 'numeric',
   });
+  const ageInfo = houseAgeInfo(property.yearBuilt);
 
   // Council chat messages from room + home + urgent tasks
   const chat = [
@@ -315,6 +336,28 @@ export function HousePage({ id }: Props) {
     const s = await ensureStorageReady();
     await s.completeTask(property.id, task.id);
     await load();
+  }
+
+  function startEditIdentity() {
+    if (!property) return;
+    setNameDraft(property.name);
+    setAddressDraft(property.address ?? '');
+    setEditingIdentity(true);
+  }
+
+  async function saveIdentity(e: Event) {
+    e.preventDefault();
+    if (!property) return;
+    const s = await ensureStorageReady();
+    const p = await s.getProperty(property.id);
+    if (!p) return;
+    p.name = nameDraft.trim() || p.name;
+    p.address = addressDraft.trim() || null;
+    await s.saveProperty(p);
+    setEditingIdentity(false);
+    propRef.current = p;
+    setProperty(p);
+    await refreshActive();
   }
 
   async function saveRoomNote() {
@@ -420,39 +463,58 @@ export function HousePage({ id }: Props) {
           panels below, regardless of content length. */}
       <div class="live-top-bars" ref={topBarsRef}>
         <div class="live-identity">
-          <div class="live-id-text">
-            <strong>{property.name}</strong>
-            <span>
-              {[
-                property.address,
-                property.yearBuilt ? `Built ${property.yearBuilt}` : null,
-                dateLabel,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </span>
-          </div>
-          <div class="live-id-shutoffs">
-            {property.shutoffs.map((sh) => (
-              <div key={sh.id} class="live-id-chip-wrap">
-                <button
-                  type="button"
-                  class="live-id-chip"
-                  onClick={() =>
-                    setOpenShutoffId(openShutoffId === sh.id ? null : sh.id)
-                  }
-                >
-                  ⛔ {sh.type.replace(/-/g, ' ')}
-                </button>
-                {openShutoffId === sh.id && (
-                  <div class="live-id-chip-pop">
-                    <strong>{sh.type.replace(/-/g, ' ')} shutoff</strong>
-                    <p>{sh.locationNote || 'No location noted yet.'}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {editingIdentity ? (
+            <form class="live-id-edit" onSubmit={(e) => void saveIdentity(e)}>
+              <input
+                value={nameDraft}
+                onInput={(e) => setNameDraft((e.target as HTMLInputElement).value)}
+                placeholder="House name"
+                autoFocus
+              />
+              <input
+                value={addressDraft}
+                onInput={(e) => setAddressDraft((e.target as HTMLInputElement).value)}
+                placeholder="Address"
+              />
+              <button type="submit" class="btn sm primary">
+                Save
+              </button>
+              <button
+                type="button"
+                class="btn sm"
+                onClick={() => setEditingIdentity(false)}
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              class="live-id-text"
+              onClick={startEditIdentity}
+              title="Edit name/address"
+            >
+              <strong>{property.name} ✏️</strong>
+              <span>
+                {[
+                  property.address,
+                  property.yearBuilt ? `Built ${property.yearBuilt}` : null,
+                  ageInfo ? `${ageInfo.age} yrs old` : null,
+                  dateLabel,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+              {ageInfo && <span class="live-id-age-hint">{ageInfo.hint}</span>}
+            </button>
+          )}
+          <button
+            type="button"
+            class="live-emergency-btn"
+            onClick={() => go('property', property.id, 'emergency')}
+          >
+            🚨 Emergency
+          </button>
         </div>
 
         {viewMode === 'walk' && (

@@ -15,6 +15,7 @@ export {
   type Shutoff,
   type ShutoffType,
   type Consumable,
+  type EmergencyContact,
   type LineageEntry,
   type PaintCard,
   type BlobRef,

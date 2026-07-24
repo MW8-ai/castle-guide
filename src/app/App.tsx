@@ -11,6 +11,7 @@ import { MaintainPage } from './pages/MaintainPage';
 import { MoneyPage } from './pages/MoneyPage';
 import { CouncilPage } from './pages/CouncilPage';
 import { AreaPage } from './pages/AreaPage';
+import { EmergencyPage } from './pages/EmergencyPage';
 import { BuildersPage } from './pages/BuildersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { ImportPage } from './pages/ImportPage';
@@ -76,6 +77,10 @@ export function App() {
             <Route
               path={routePath('/property/:id/area')}
               component={AreaPage}
+            />
+            <Route
+              path={routePath('/property/:id/emergency')}
+              component={EmergencyPage}
             />
             <Route
               path={routePath('/property/:id/builders')}

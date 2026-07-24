@@ -725,6 +725,18 @@ export async function ensureDemoCastle(storage: CastleStorage): Promise<Property
     },
   ];
 
+  property.emergencyContacts = [
+    { id: newId(), label: 'Poison control', phone: '1-800-222-1222', notes: null },
+    {
+      id: newId(),
+      label: 'Gas leak / emergency',
+      phone: 'See your utility bill',
+      notes: 'Leave the house first, then call from outside. If in doubt, call 911.',
+    },
+    { id: newId(), label: 'Plumber — Dublin Rooter', phone: '(614) 555-0148', notes: '24/7 emergency line' },
+    { id: newId(), label: 'Electrician — Watt Watchers', phone: '(614) 555-0172', notes: null },
+  ];
+
   const ts = nowIso();
   property.notes = [
     {
