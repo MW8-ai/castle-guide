@@ -17,13 +17,14 @@ describe('Phase 3 money + protection', () => {
     await deleteDatabase(DB);
   });
 
-  it('cost library entries all have asOfDate and confidence (no undated costs)', () => {
+  it('cost library entries all have asOfDate, confidence, and a real source link (no undated or unsourced costs)', () => {
     const costs = getCostLibrary();
     expect(costs.length).toBeGreaterThanOrEqual(4);
     for (const c of costs) {
       expect(c.asOfDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(['verified', 'typical', 'regional']).toContain(c.confidence);
       expect(c.source.length).toBeGreaterThan(5);
+      expect(c.sourceUrl).toMatch(/^https:\/\//);
     }
   });
 

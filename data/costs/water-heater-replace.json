@@ -1,11 +1,12 @@
 {
   "id": "cost-water-heater-replace-tank",
   "job": "Replace standard tank water heater (40–50 gal, like-for-like)",
-  "diyRange": { "min": 400, "max": 900 },
-  "proRange": { "min": 1200, "max": 2800 },
+  "diyRange": { "min": 500, "max": 1200 },
+  "proRange": { "min": 881, "max": 1825 },
   "currency": "USD",
-  "source": "Typical equipment + install ranges for standard tank units; power-vent, heat-pump, and tankless are higher. Educational only.",
-  "asOfDate": "2026-01-01",
+  "source": "Angi 2026 cost data (survey of 30,000+ real customers): professional tank-style water heater replacement runs $881–$1,825 (avg $1,346). DIY unit-only cost typically runs $500–$1,200 per NerdWallet — DIY installation can void the manufacturer warranty and violate local plumbing/gas code, so many jurisdictions require a licensed pro regardless of cost.",
+  "sourceUrl": "https://www.angi.com/articles/how-much-does-water-heater-installation-cost.htm",
+  "asOfDate": "2026-07-23",
   "regionNote": "U.S. typical; permit and code upgrades (pan, expansion tank) add cost.",
   "confidence": "typical"
 }

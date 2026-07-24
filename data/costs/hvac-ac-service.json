@@ -1,11 +1,12 @@
 {
   "id": "cost-hvac-tuneup",
   "job": "HVAC seasonal tune-up / service call",
-  "diyRange": { "min": 0, "max": 50 },
-  "proRange": { "min": 89, "max": 250 },
+  "diyRange": { "min": 15, "max": 50 },
+  "proRange": { "min": 65, "max": 200 },
   "currency": "USD",
-  "source": "Typical residential service-call and tune-up price bands; membership plans change effective cost. Educational typical range.",
-  "asOfDate": "2026-01-01",
-  "regionNote": "U.S. typical; after-hours and refrigerant work extra.",
+  "source": "This Old House: a professional AC tune-up runs $65–$200 (avg ~$133). DIY maintenance you can safely do yourself — a filter swap plus coil-cleaning supplies — typically runs $15–$50, per HomeGuide's AC coil-cleaning cost guide. Refrigerant work and internal coil service should stay with a licensed pro.",
+  "sourceUrl": "https://www.thisoldhouse.com/heating-cooling/ac-tune-up-cost",
+  "asOfDate": "2026-07-23",
+  "regionNote": "U.S. typical; after-hours calls, refrigerant work, and peak-season pricing run higher.",
   "confidence": "typical"
 }
