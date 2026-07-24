@@ -1,11 +1,12 @@
 {
   "id": "cost-furnace-filter-standard",
   "job": "Replace standard rectangular furnace filter (homeowner size)",
-  "diyRange": { "min": 5, "max": 40 },
-  "proRange": { "min": 50, "max": 150 },
+  "diyRange": { "min": 5, "max": 50 },
+  "proRange": { "min": 15, "max": 150 },
   "currency": "USD",
-  "source": "Retail filter price bands vary by MERV rating and brand; pro visit usually bundled with service call. Educational typical range only.",
-  "asOfDate": "2026-01-01",
+  "source": "This Old House: filters run about $5–$50 depending on type/MERV rating if you buy and swap it yourself; a professional replacement (filter plus service call) typically runs $15–$150.",
+  "sourceUrl": "https://www.thisoldhouse.com/heating-cooling/how-often-to-change-furnace-filter",
+  "asOfDate": "2026-07-23",
   "regionNote": "U.S. retail typical; specialty sizes and high-MERV filters cost more.",
   "confidence": "typical"
 }

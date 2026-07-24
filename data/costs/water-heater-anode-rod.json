@@ -1,11 +1,12 @@
 {
   "id": "cost-water-heater-anode-rod",
   "job": "Water heater anode rod inspection/replacement",
-  "diyRange": { "min": 20, "max": 80 },
-  "proRange": { "min": 150, "max": 400 },
+  "diyRange": { "min": 30, "max": 90 },
+  "proRange": { "min": 200, "max": 300 },
   "currency": "USD",
-  "source": "Industry typical ranges synthesized for educational UI seeding; not a contractor bid. Your market varies widely by tank type (standard vs power-vent), access, and whether the rod is stuck.",
-  "asOfDate": "2026-01-01",
+  "source": "Bob Vila: DIY anode rod replacement runs about $30–$90 in parts and materials; hiring a plumber runs about $200–$300, so doing it yourself typically saves $150–$250.",
+  "sourceUrl": "https://www.bobvila.com/articles/anode-rod-replacement/",
+  "asOfDate": "2026-07-23",
   "regionNote": "U.S. national ballpark only — obtain local quotes. Gas appliances and confined spaces may require a licensed pro.",
   "confidence": "typical"
 }

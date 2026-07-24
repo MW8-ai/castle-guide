@@ -201,6 +201,7 @@ export function MoneyPage({ id }: Props) {
                 <th>Pro</th>
                 <th>As of</th>
                 <th>Confidence</th>
+                <th>Source</th>
               </tr>
             </thead>
             <tbody>
@@ -222,6 +223,20 @@ export function MoneyPage({ id }: Props) {
                     <span class={`badge conf-${c.confidence}`}>
                       {c.confidence}
                     </span>
+                  </td>
+                  <td>
+                    {c.sourceUrl ? (
+                      <a
+                        href={c.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={c.source}
+                      >
+                        Link
+                      </a>
+                    ) : (
+                      <span class="muted tiny">{c.source}</span>
+                    )}
                   </td>
                 </tr>
               ))}
