@@ -387,6 +387,7 @@ export class CastleStorage {
       source?: string | null;
       remind?: boolean;
       notes?: string | null;
+      costEstimate?: number | null;
     }
   ): Promise<OpsEvent> {
     const property = await this.requireProperty(propertyId);
@@ -398,11 +399,31 @@ export class CastleStorage {
       source: partial.source ?? null,
       remind: partial.remind ?? true,
       notes: partial.notes ?? null,
+      costEstimate: partial.costEstimate ?? null,
       createdAt: nowIso(),
     };
     property.opsEvents.push(row);
     await this.saveProperty(property);
     return row;
+  }
+
+  async updateOpsEvent(
+    propertyId: string,
+    opsEventId: string,
+    patch: Partial<
+      Pick<
+        OpsEvent,
+        'type' | 'title' | 'schedule' | 'remind' | 'notes' | 'costEstimate'
+      >
+    >
+  ): Promise<OpsEvent> {
+    const property = await this.requireProperty(propertyId);
+    const idx = property.opsEvents.findIndex((e) => e.id === opsEventId);
+    if (idx < 0) throw new Error(`Ops event not found: ${opsEventId}`);
+    const updated: OpsEvent = { ...property.opsEvents[idx], ...patch };
+    property.opsEvents[idx] = updated;
+    await this.saveProperty(property);
+    return updated;
   }
 
   async removeOpsEvent(propertyId: string, opsEventId: string): Promise<void> {

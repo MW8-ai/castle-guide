@@ -599,6 +599,20 @@ h3 {
   color: var(--text);
 }
 
+/* Headings never had explicit sizes, so they rendered at the browser's
+   UA-default h1/h2/h3 sizes (~32px/24px/19px) everywhere — heavy and
+   oversized against this app's compact, card-dense layouts, especially
+   on pages that stack several h2 section headers (e.g. Maintenance). */
+h1 {
+  font-size: 1.6rem;
+}
+h2 {
+  font-size: 1.2rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
