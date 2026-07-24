@@ -191,6 +191,13 @@ export interface Consumable {
   roomId?: string | null;
   itemId?: string | null;
   notes?: string | null;
+  /** ISO date this one was put in service — basis for "when to replace". */
+  installedDate?: string | null;
+  /** Typical replacement interval, e.g. 3 for a furnace filter, 12 for a
+   * smoke-alarm battery. */
+  lifespanMonths?: number | null;
+  /** Rough cost to replace — lets the UI show what to budget/save for. */
+  estCost?: number | null;
 }
 
 export type TaskStatus = 'pending' | 'done' | 'skipped';

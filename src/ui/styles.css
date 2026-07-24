@@ -1183,6 +1183,9 @@ select {
 .danger-text {
   color: var(--danger);
 }
+.warn-text {
+  color: var(--accent-warm);
+}
 .gus-line {
   font-style: italic;
   color: var(--accent-warm);
