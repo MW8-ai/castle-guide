@@ -117,15 +117,23 @@
   background: rgba(200, 60, 50, 0.42);
 }
 
-/* ── Floor tabs ────────────────────────────────────── */
+/* ── Levels & rooms — combined, right-aligned ────────── */
+
+.live-room-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.3rem 0.85rem 0.4rem;
+  background: rgba(10, 15, 25, 0.78);
+  align-items: flex-end;
+}
 
 .live-floor-tabs {
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 0.35rem;
-  padding: 0.35rem 0.85rem;
-  background: rgba(10, 15, 25, 0.78);
+  max-width: 100%;
 }
 .live-floor-tabs button {
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -574,20 +582,15 @@
   font-size: 0.9rem;
 }
 
-/* ── Room jump strip — sits just above the canvas-drawn hint bar
-   (walkIsoRenderer draws it in the bottom ~42px of the canvas) and
-   below .live-dock's reserved bottom:88px clearance. ── */
+/* ── Room jump strip — lives inside .live-room-nav, right under the
+   floor tabs, so level + room selection are one combined control. ── */
 
 .live-room-jump {
-  position: absolute;
-  left: 12px;
-  right: calc(24px + min(340px, 38vw));
-  bottom: 46px;
-  z-index: 2;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.35rem;
-  overflow-x: auto;
-  padding: 0.3rem 0;
+  max-width: 100%;
 }
 
 .live-room-jump button {
@@ -629,20 +632,21 @@
     width: auto;
     max-height: 40vh;
   }
-  .live-room-jump {
-    /* .live-dock becomes a full-width bottom sheet at this width (above),
-       covering this same bottom strip whenever a room is active — hide
-       rather than fight it for space. */
-    display: none;
-  }
   .live-hud-stats {
     width: 100%;
   }
-  .map-nav-label {
-    font-size: 0.65rem;
+}
+
+/* Wide screens: give the fixed right panel more room, and let its item
+   list use two columns instead of a single long strip. */
+@media (min-width: 1300px) {
+  .live-dock {
+    width: min(460px, 30vw);
   }
-  .map-nav-btn {
-    min-width: 3.6rem;
+  .live-item-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 0.6rem;
   }
 }
 
