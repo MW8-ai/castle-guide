@@ -62,7 +62,10 @@ describe('demo starter castle', () => {
     expect(upper).toHaveLength(7);
 
     const yard = byFloor('yard');
-    expect(yard).toEqual(['Backyard']);
+    expect(yard).toEqual(
+      expect.arrayContaining(['Backyard', 'Front Yard', 'Side Yard'])
+    );
+    expect(yard).toHaveLength(3);
 
     const basement = byFloor('basement');
     expect(basement).toEqual(['Basement']);
