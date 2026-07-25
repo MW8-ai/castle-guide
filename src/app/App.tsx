@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { Router, Route } from 'preact-router';
 import { AppShell } from './AppShell';
 import { ActiveCastleProvider } from './ActiveCastle';
+import { ThemeProvider } from './ThemeContext';
 import { routePath } from './paths';
 import { HomePage } from './pages/HomePage';
 import { HousePage } from './pages/HousePage';
@@ -31,71 +32,73 @@ export function App() {
 
   return (
     <div class={`app theme-${theme}`} data-theme={theme}>
-      <ActiveCastleProvider>
-        <AppShell
-          theme={theme}
-          path={path}
-          onToggleTheme={() =>
-            setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
-          }
-        >
-          <Router
-            onChange={(e) => {
-              setPath(e.url || window.location.pathname);
-            }}
+      <ThemeProvider value={theme}>
+        <ActiveCastleProvider>
+          <AppShell
+            theme={theme}
+            path={path}
+            onToggleTheme={() =>
+              setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+            }
           >
-            <Route path={routePath('/')} component={HomePage} />
-            <Route path={routePath('')} component={HomePage} />
-            <Route
-              path={routePath('/property/:id/house')}
-              component={HousePage}
-            />
-            <Route
-              path={routePath('/property/:id/inventory')}
-              component={InventoryPage}
-            />
-            <Route
-              path={routePath('/property/:id/floorplan')}
-              component={FloorPlanPage}
-            />
-            <Route
-              path={routePath('/property/:id')}
-              component={HousePage}
-            />
-            <Route
-              path={routePath('/property/:id/maintain')}
-              component={MaintainPage}
-            />
-            <Route
-              path={routePath('/property/:id/money')}
-              component={MoneyPage}
-            />
-            <Route
-              path={routePath('/property/:id/council')}
-              component={CouncilPage}
-            />
-            <Route
-              path={routePath('/property/:id/area')}
-              component={AreaPage}
-            />
-            <Route
-              path={routePath('/property/:id/emergency')}
-              component={EmergencyPage}
-            />
-            <Route
-              path={routePath('/property/:id/builders')}
-              component={BuildersPage}
-            />
-            <Route path={routePath('/import')} component={ImportPage} />
-            <Route path={routePath('/import-zip')} component={ImportZipPage} />
-            <Route path={routePath('/settings')} component={SettingsPage} />
-            <Route path={routePath('/council')} component={CouncilPage} />
-            <Route path={routePath('/builders')} component={BuildersPage} />
-            <Route path={routePath('/kit')} component={KitPage} />
-            <Route default component={HomePage} />
-          </Router>
-        </AppShell>
-      </ActiveCastleProvider>
+            <Router
+              onChange={(e) => {
+                setPath(e.url || window.location.pathname);
+              }}
+            >
+              <Route path={routePath('/')} component={HomePage} />
+              <Route path={routePath('')} component={HomePage} />
+              <Route
+                path={routePath('/property/:id/house')}
+                component={HousePage}
+              />
+              <Route
+                path={routePath('/property/:id/inventory')}
+                component={InventoryPage}
+              />
+              <Route
+                path={routePath('/property/:id/floorplan')}
+                component={FloorPlanPage}
+              />
+              <Route path={routePath('/property/:id')} component={HousePage} />
+              <Route
+                path={routePath('/property/:id/maintain')}
+                component={MaintainPage}
+              />
+              <Route
+                path={routePath('/property/:id/money')}
+                component={MoneyPage}
+              />
+              <Route
+                path={routePath('/property/:id/council')}
+                component={CouncilPage}
+              />
+              <Route
+                path={routePath('/property/:id/area')}
+                component={AreaPage}
+              />
+              <Route
+                path={routePath('/property/:id/emergency')}
+                component={EmergencyPage}
+              />
+              <Route
+                path={routePath('/property/:id/builders')}
+                component={BuildersPage}
+              />
+              <Route path={routePath('/import')} component={ImportPage} />
+              <Route
+                path={routePath('/import-zip')}
+                component={ImportZipPage}
+              />
+              <Route path={routePath('/settings')} component={SettingsPage} />
+              <Route path={routePath('/council')} component={CouncilPage} />
+              <Route path={routePath('/builders')} component={BuildersPage} />
+              <Route path={routePath('/kit')} component={KitPage} />
+              <Route default component={HomePage} />
+            </Router>
+          </AppShell>
+        </ActiveCastleProvider>
+      </ThemeProvider>
     </div>
   );
 }
