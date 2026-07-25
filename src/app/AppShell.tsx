@@ -54,17 +54,20 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   const onHouse =
     path.includes('/house') || /\/property\/[^/]+\/?$/.test(path);
 
-  // The "glass over house" overlay (translucent dark cards layered over the
-  // dimmed house background) is styled assuming a dark backdrop — it isn't
-  // theme-aware, so forcing nightwatch here is deliberate, not a leftover
-  // bug. Making the whole in-app experience genuinely re-skin for light
-  // mode is a larger follow-up, not a safe scope for this fix.
-  const houseTheme =
+  // The house view and the glass pages layered over it use their own
+  // named theme tokens (nightwatch/hearthlight) rather than the plain
+  // theme-light/theme-dark classes, so it has to be picked explicitly here.
+  const inHouseExperience =
     onHouse ||
     (Boolean(pid) &&
       (path.includes('/property') ||
         path.includes('/settings') ||
         path.includes('/import')));
+  const houseDataTheme = inHouseExperience
+    ? theme === 'dark'
+      ? 'nightwatch'
+      : 'hearthlight'
+    : undefined;
 
   if (bare) {
     return <div class="shell-title">{loading ? null : children}</div>;
@@ -73,7 +76,7 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
   // Single persistent left sidebar for every in-app page, including the
   // house view — no more separate bottom-nav layout to keep in sync.
   return (
-    <div class="shell calm-shell" data-theme={houseTheme ? 'nightwatch' : undefined}>
+    <div class="shell calm-shell" data-theme={houseDataTheme}>
       <aside class="sidebar calm-sidebar">
         <a
           class="sidebar-brand"

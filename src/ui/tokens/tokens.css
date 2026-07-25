@@ -33,6 +33,16 @@
   --font-body: 'Nunito', system-ui, sans-serif;
   --font-display: 'Titan One', 'Bungee', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Translucent HUD/dock overlay pattern used over the walk-house canvas —
+     kept separate from --bg-elevated because these layer over a live
+     rendered scene, not a flat page background. */
+  --overlay-bg: rgba(246, 235, 210, 0.95);
+  --overlay-bg-soft: rgba(255, 255, 255, 0.55);
+  --overlay-border: var(--timber);
+  --bar-bg: rgba(246, 235, 210, 0.92);
+  --bar-bg-soft: rgba(246, 235, 210, 0.78);
+  --overlay-shadow: 0 10px 28px rgba(59, 46, 37, 0.22);
 }
 
 [data-theme='nightwatch'],
@@ -64,4 +74,11 @@
   --font-body: 'Nunito', system-ui, sans-serif;
   --font-display: 'Titan One', 'Bungee', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --overlay-bg: rgba(35, 47, 71, 0.95);
+  --overlay-bg-soft: rgba(20, 27, 45, 0.6);
+  --overlay-border: #35466a;
+  --bar-bg: rgba(10, 15, 25, 0.92);
+  --bar-bg-soft: rgba(10, 15, 25, 0.78);
+  --overlay-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
 }

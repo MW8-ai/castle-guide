@@ -23,6 +23,7 @@ import { walkIsoRenderer } from '../../houseview/walkIso/walkIsoRenderer';
 import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import type { HouseRendererHandle } from '../../houseview';
 import { useActiveCastle } from '../ActiveCastle';
+import { useTheme } from '../ThemeContext';
 import { tipsForRoomType, homeCouncilTips } from '../../council/roomTips';
 import { ItemCard } from '../../ui/kit/ItemCard';
 import { downloadNotesMarkdown } from '../../record/notesMarkdown';
@@ -71,6 +72,8 @@ function dueBarPct(dueInDays: number | null): number {
  * House home screen: walk, docks, health colors, build list $, notes, council chat.
  */
 export function HousePage({ id }: Props) {
+  const theme = useTheme();
+  const dataTheme = theme === 'dark' ? 'nightwatch' : 'hearthlight';
   const { property: active, refresh: refreshActive } = useActiveCastle();
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HouseRendererHandle | null>(null);
@@ -215,7 +218,7 @@ export function HousePage({ id }: Props) {
     !property.rooms.some((r) => r.id !== 'auto-room');
   if (isFreshHouse) {
     return (
-      <div class="live-house live-house-empty" data-theme="nightwatch">
+      <div class="live-house live-house-empty" data-theme={dataTheme}>
         <div class="empty-onboard">
           <h1>{property.name}</h1>
           <p>This house is empty — let's add your first room.</p>
@@ -395,7 +398,7 @@ export function HousePage({ id }: Props) {
   return (
     <div
       class="live-house"
-      data-theme="nightwatch"
+      data-theme={dataTheme}
       style={{ '--top-bars-h': `${topBarsHeight}px` } as Record<string, string>}
     >
       {viewMode === 'art' ? (
