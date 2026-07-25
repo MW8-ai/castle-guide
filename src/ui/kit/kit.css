@@ -331,12 +331,28 @@
   display: flex;
   gap: 0.25rem;
 }
-.kit-docs-thumbs span {
+.kit-doc-thumb {
+  display: block;
   width: 28px;
   height: 28px;
   border-radius: 6px;
   background: var(--bg);
   border: 1px solid var(--border);
+  overflow: hidden;
+}
+.kit-doc-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.kit-doc-thumb-file {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.95rem;
 }
 .kit-shop-strip {
   display: flex;
