@@ -14,6 +14,7 @@ export interface ItemCardProps {
   maintenanceNext?: string | null;
   maintenanceDueInDays?: number | null;
   docsCount?: number;
+  docThumbs?: { url: string; isImage: boolean }[];
   photoUrl?: string | null;
   onView?: () => void;
   onEdit?: () => void;
@@ -57,6 +58,7 @@ export function ItemCard({
   maintenanceNext,
   maintenanceDueInDays,
   docsCount = 0,
+  docThumbs = [],
   photoUrl,
   onView,
   onEdit,
@@ -154,11 +156,27 @@ export function ItemCard({
         )}
         <div class="kit-docs-strip">
           <span class="muted">Docs & photos ({docsCount})</span>
-          <div class="kit-docs-thumbs">
-            <span />
-            <span />
-            <span />
-          </div>
+          {docThumbs.length > 0 && (
+            <div class="kit-docs-thumbs">
+              {docThumbs.map((t, i) => (
+                <a
+                  key={i}
+                  href={t.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="kit-doc-thumb"
+                >
+                  {t.isImage ? (
+                    <img src={t.url} alt="" />
+                  ) : (
+                    <span class="kit-doc-thumb-file" aria-hidden="true">
+                      📄
+                    </span>
+                  )}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
         {shopQuery && (
           <div class="kit-shop-strip">

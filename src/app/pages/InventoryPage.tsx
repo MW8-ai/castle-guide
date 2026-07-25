@@ -115,6 +115,9 @@ export function InventoryPage({ id }: Props) {
   const [editWarrantyEnd, setEditWarrantyEnd] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [pickedPhotoUrl, setPickedPhotoUrl] = useState<string | null>(null);
+  const [docThumbs, setDocThumbs] = useState<{ url: string; isImage: boolean }[]>(
+    []
+  );
 
   const propertyId = id;
 
@@ -168,6 +171,40 @@ export function InventoryPage({ id }: Props) {
       if (url) URL.revokeObjectURL(url);
     };
   }, [picked?.id, picked?.photos.length]);
+
+  // Resolve every photo + attached doc for the picked item into real
+  // thumbnails — the docs strip used to show 3 empty decorative squares
+  // regardless of what was actually attached.
+  useEffect(() => {
+    let cancelled = false;
+    const urls: string[] = [];
+    if (!picked) {
+      setDocThumbs([]);
+      return;
+    }
+    void (async () => {
+      const s = await ensureStorageReady();
+      const blobIds = [
+        ...picked.photos.map((p) => p.blobId),
+        ...(property?.docs
+          .filter((d) => d.itemId === picked.id)
+          .map((d) => d.blobId) ?? []),
+      ];
+      const resolved: { url: string; isImage: boolean }[] = [];
+      for (const blobId of blobIds) {
+        const blob = await s.getBlob(blobId);
+        if (!blob) continue;
+        const url = URL.createObjectURL(blob);
+        urls.push(url);
+        resolved.push({ url, isImage: blob.type.startsWith('image/') });
+      }
+      if (!cancelled) setDocThumbs(resolved);
+    })();
+    return () => {
+      cancelled = true;
+      urls.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [picked?.id, picked?.photos.length, property?.docs.length]);
 
   if (!propertyId) return null;
   if (!property) return <div class="page loading-splash">Loading…</div>;
@@ -1066,9 +1103,8 @@ export function InventoryPage({ id }: Props) {
                   (t) => t.itemId === picked.id && t.status === 'pending'
                 )?.nextDue
               )}
-              docsCount={
-                picked.manualDocIds.length + (picked.photos?.length ?? 0)
-              }
+              docsCount={docThumbs.length}
+              docThumbs={docThumbs}
               photoUrl={pickedPhotoUrl}
               onView={() => go('property', propertyId, 'house')}
               onEdit={() => startEdit(picked)}
