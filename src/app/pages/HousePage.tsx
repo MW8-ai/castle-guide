@@ -18,8 +18,8 @@ import {
   FLOORS,
   FLOOR_LABELS,
   roomFloorOf,
+  getRenderer,
 } from '../../houseview';
-import { walkIsoRenderer } from '../../houseview/walkIso/walkIsoRenderer';
 import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import type { HouseRendererHandle } from '../../houseview';
 import { useActiveCastle } from '../ActiveCastle';
@@ -110,6 +110,8 @@ export function HousePage({ id }: Props) {
     }
     propRef.current = p;
     setProperty(p);
+    const profile = await s.getProfile();
+    const nextRendererId = profile?.settings.activeRendererId ?? 'iso';
     await refreshActive();
     if (token !== loadToken.current) return;
 
@@ -127,26 +129,40 @@ export function HousePage({ id }: Props) {
     };
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!hostRef.current || token !== loadToken.current) return;
-        const keep = handleRef.current;
-        if (keep) {
-          keep.update(model);
-          return;
-        }
-        handleRef.current = walkIsoRenderer.mount(hostRef.current, model, {
-          onSelectItem: (itemId) => {
-            const item =
-              propRef.current?.items.find((i) => i.id === itemId) ?? null;
-            setSelected(item);
-          },
-          onSelectRoom: (rid) => setRoomId(rid),
-          onEnterRoom: (rid) => {
-            setRoomId(rid);
-            if (!rid) setSelected(null);
-          },
-          onMovePlacement: () => {},
-        });
-        handleRef.current.setWallsTranslucent?.(wallsTranslucent);
+        void (async () => {
+          if (!hostRef.current || token !== loadToken.current) return;
+          const keep = handleRef.current;
+          if (keep) {
+            keep.update(model);
+            return;
+          }
+          const handle = await getRenderer(nextRendererId).mount(
+            hostRef.current,
+            model,
+            {
+              onSelectItem: (itemId) => {
+                const item =
+                  propRef.current?.items.find((i) => i.id === itemId) ?? null;
+                setSelected(item);
+              },
+              onSelectRoom: (rid) => setRoomId(rid),
+              onEnterRoom: (rid) => {
+                setRoomId(rid);
+                if (!rid) setSelected(null);
+              },
+              onMovePlacement: () => {},
+            }
+          );
+          // The dynamic import for a heavier renderer (e.g. walk3d) can
+          // resolve after the user has already navigated away — don't
+          // attach a stale renderer to a torn-down host.
+          if (!hostRef.current || token !== loadToken.current) {
+            handle.destroy();
+            return;
+          }
+          handleRef.current = handle;
+          handleRef.current.setWallsTranslucent?.(wallsTranslucent);
+        })();
       });
     });
   }

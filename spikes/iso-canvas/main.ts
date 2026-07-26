@@ -32,7 +32,7 @@ const cb: HouseRendererCallbacks = {
   },
 };
 
-const handle: HouseRendererHandle = createIsoSpikeRenderer().mount(
+const handle: HouseRendererHandle = await createIsoSpikeRenderer().mount(
   host,
   model,
   cb

@@ -1,262 +1,381 @@
+import * as THREE from 'three';
 import type {
-  HouseRendererCallbacks,
   HouseRendererHandle,
   HouseRendererPlugin,
+  HouseViewModel,
+  RoomView,
 } from '../types';
 
 /**
- * Lightweight first-person-style walkthrough using canvas (no Three.js dependency).
- * Rooms as floor plan with height-extruded walls; WASD / click to select.
- * BLUEPRINT full Three.js remains in HUMAN_DIRECTIONS — this is a working socket plug.
+ * Real first-person/orbit 3D walkthrough — the Three.js plugin blueprinted
+ * in HUMAN_DIRECTIONS.md and ADR-0002. Rooms are boxes extruded to their
+ * real height in feet (no isometric compression needed, unlike walkIso),
+ * items are simple colored boxes tinted by maintenance health, and the
+ * camera orbits a target point via drag + scroll.
  */
+
+const WALL_THICKNESS = 0.2;
+const ITEM_HEIGHT = 2;
+
+interface RoomRect {
+  x: number;
+  y: number;
+  L: number;
+  W: number;
+}
+
+/** Positioned rooms keep their saved spot; everything else auto-packs into
+ * a simple 4-column grid, same approach walkIsoRenderer uses. */
+function layoutRooms(rooms: RoomView[]): Map<string, RoomRect> {
+  const layout = new Map<string, RoomRect>();
+  const positioned = rooms.filter((r) => r.pos);
+  let autoOriginX = 0;
+  for (const r of positioned) {
+    layout.set(r.id, { x: r.pos!.x, y: r.pos!.y, L: r.dims.L, W: r.dims.W });
+    autoOriginX = Math.max(autoOriginX, r.pos!.x + r.dims.L);
+  }
+  const unpositioned = rooms.filter((r) => !r.pos);
+  const cols = 4;
+  const colWidths: number[] = Array.from({ length: cols }, () => 0);
+  const rowHeights: number[] = [];
+  const cells: { r: RoomView; col: number; row: number }[] = [];
+  let col = 0;
+  let row = 0;
+  for (const r of unpositioned) {
+    cells.push({ r, col, row });
+    colWidths[col] = Math.max(colWidths[col], r.dims.L);
+    rowHeights[row] = Math.max(rowHeights[row] ?? 0, r.dims.W);
+    col++;
+    if (col >= cols) {
+      col = 0;
+      row++;
+    }
+  }
+  for (const c of cells) {
+    let ox = autoOriginX;
+    for (let k = 0; k < c.col; k++) ox += colWidths[k];
+    let oy = 0;
+    for (let k = 0; k < c.row; k++) oy += rowHeights[k] ?? 0;
+    layout.set(c.r.id, {
+      x: ox,
+      y: oy,
+      L: colWidths[c.col],
+      W: rowHeights[c.row] ?? c.r.dims.W,
+    });
+  }
+  return layout;
+}
+
+/** feet (x, y-on-floor, z-up) → Three.js world (x, up, depth) */
+function toWorld(fx: number, fy: number, fz = 0): THREE.Vector3 {
+  return new THREE.Vector3(fx, fz, fy);
+}
+
+const ROOM_COLORS = [
+  0xc9a876, 0xb8c8c4, 0xc4a574, 0xa08050, 0x9aa0a8, 0xc9b8a0, 0x8a9098,
+];
+function colorForRoom(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return ROOM_COLORS[Math.abs(h) % ROOM_COLORS.length];
+}
+
 export const walk3dRenderer: HouseRendererPlugin = {
   id: 'walk3d',
-  label: 'Walkthrough 3D',
-  mount(el, model, cb) {
-    const canvas = document.createElement('canvas');
-    canvas.style.display = 'block';
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+  label: '3D Walkthrough',
+  mount(el, model, cb): HouseRendererHandle {
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     el.innerHTML = '';
-    el.appendChild(canvas);
+    el.appendChild(renderer.domElement);
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.cursor = 'grab';
 
-    let current = model;
-    let angle = 0.4;
-    let camX = 8;
-    let camY = 8;
-    const keys = new Set<string>();
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9ecdf0);
 
-    const paint = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const w = el.clientWidth || 800;
-      const h = el.clientHeight || 420;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x445544, 0.9);
+    scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    sun.position.set(30, 40, 20);
+    scene.add(sun);
 
-      // Sky / floor
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#1a2740');
-      grad.addColorStop(0.5, '#2a3548');
-      grad.addColorStop(0.5, '#3a4a3a');
-      grad.addColorStop(1, '#2a3028');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(400, 400),
+      new THREE.MeshStandardMaterial({ color: 0x4a8a54 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    scene.add(ground);
 
-      // Perspective floor grid from camera
-      const ox = w / 2;
-      const oy = h * 0.65;
+    const sceneRoot = new THREE.Group();
+    scene.add(sceneRoot);
 
-      function worldToScreen(x: number, y: number, z: number) {
-        // camera-relative
-        const dx = x - camX;
-        const dy = y - camY;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const rx = dx * cos - dy * sin;
-        const ry = dx * sin + dy * cos;
-        const depth = ry + 8;
-        if (depth < 0.5) return null;
-        const f = 220 / depth;
-        return {
-          sx: ox + rx * f,
-          sy: oy - z * f * 0.8 - (depth - 8) * 2,
-          f,
-          depth,
-        };
-      }
+    // ── Orbit camera — drag to rotate, wheel to zoom ──
+    let target = new THREE.Vector3(15, 0, 10);
+    let azimuth = Math.PI * 0.25;
+    let polar = Math.PI * 0.32;
+    let distance = 45;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
 
-      let roomOffX = 0;
-      for (const room of current.rooms) {
-        const corners = [
-          [roomOffX, 0],
-          [roomOffX + room.dims.L, 0],
-          [roomOffX + room.dims.L, room.dims.W],
-          [roomOffX, room.dims.W],
-        ] as [number, number][];
-        const floor = corners
-          .map(([x, y]) => worldToScreen(x, y, 0))
-          .filter(Boolean) as { sx: number; sy: number }[];
-        if (floor.length === 4) {
-          ctx.beginPath();
-          ctx.moveTo(floor[0].sx, floor[0].sy);
-          for (let i = 1; i < 4; i++) ctx.lineTo(floor[i].sx, floor[i].sy);
-          ctx.closePath();
-          ctx.fillStyle = 'rgba(60, 80, 100, 0.55)';
-          ctx.strokeStyle = '#5b9fd4';
-          ctx.fill();
-          ctx.stroke();
-        }
-
-        // wall height lines
-        for (const [x, y] of corners) {
-          const a = worldToScreen(x, y, 0);
-          const b = worldToScreen(x, y, room.dims.H * 0.35);
-          if (a && b) {
-            ctx.strokeStyle = 'rgba(200,220,255,0.35)';
-            ctx.beginPath();
-            ctx.moveTo(a.sx, a.sy);
-            ctx.lineTo(b.sx, b.sy);
-            ctx.stroke();
-          }
-        }
-
-        for (const p of current.placements.filter((pl) => pl.roomId === room.id)) {
-          const px = roomOffX + p.x + p.footprint.L / 2;
-          const py = p.y + p.footprint.W / 2;
-          const s = worldToScreen(px, py, 1.2);
-          if (!s) continue;
-          const health = current.healthByItemId[p.itemId] ?? 'ok';
-          const size = Math.max(8, 28 * (s.f / 40));
-          ctx.fillStyle =
-            health === 'overdue'
-              ? '#e07a7a'
-              : health === 'due'
-                ? '#e8b86d'
-                : '#6bcf8e';
-          ctx.beginPath();
-          ctx.arc(s.sx, s.sy, size / 2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#e8eef5';
-          ctx.font = '11px system-ui';
-          ctx.textAlign = 'center';
-          ctx.fillText(p.label.slice(0, 14), s.sx, s.sy - size / 2 - 4);
-        }
-
-        roomOffX += room.dims.L + 2;
-      }
-
-      ctx.fillStyle = '#9aabbd';
-      ctx.font = '12px system-ui';
-      ctx.textAlign = 'left';
-      ctx.fillText(
-        `${current.houseName} · Walkthrough · WASD move · Q/E turn · click item`,
-        16,
-        h - 16
+    function applyCamera() {
+      const clampedPolar = Math.max(0.12, Math.min(Math.PI / 2 - 0.05, polar));
+      const sinP = Math.sin(clampedPolar);
+      camera.position.set(
+        target.x + distance * sinP * Math.sin(azimuth),
+        target.y + distance * Math.cos(clampedPolar),
+        target.z + distance * sinP * Math.cos(azimuth)
       );
-    };
+      camera.lookAt(target);
+    }
+    applyCamera();
 
-    const screenHits: { itemId: string; sx: number; sy: number; r: number }[] =
-      [];
-
-    const paintWithHits = () => {
-      paint();
-      // rebuild hits roughly for click
-      screenHits.length = 0;
-      // simplified: store last placement screen positions during paint — recompute
+    function resize() {
       const w = el.clientWidth || 800;
       const h = el.clientHeight || 420;
-      const ox = w / 2;
-      const oy = h * 0.65;
-      function worldToScreen(x: number, y: number, z: number) {
-        const dx = x - camX;
-        const dy = y - camY;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        const rx = dx * cos - dy * sin;
-        const ry = dx * sin + dy * cos;
-        const depth = ry + 8;
-        if (depth < 0.5) return null;
-        const f = 220 / depth;
-        return { sx: ox + rx * f, sy: oy - z * f * 0.8, f };
-      }
-      let roomOffX = 0;
-      for (const room of current.rooms) {
-        for (const p of current.placements.filter((pl) => pl.roomId === room.id)) {
-          const px = roomOffX + p.x + p.footprint.L / 2;
-          const py = p.y + p.footprint.W / 2;
-          const s = worldToScreen(px, py, 1.2);
-          if (s)
-            screenHits.push({
-              itemId: p.itemId,
-              sx: s.sx,
-              sy: s.sy,
-              r: Math.max(8, 28 * (s.f / 40)),
-            });
+      camera.aspect = w / Math.max(1, h);
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(el);
+
+    const onPointerDown = (e: PointerEvent) => {
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      renderer.domElement.style.cursor = 'grabbing';
+      renderer.domElement.setPointerCapture?.(e.pointerId);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      azimuth -= dx * 0.006;
+      polar -= dy * 0.006;
+      applyCamera();
+    };
+    const onPointerUp = () => {
+      dragging = false;
+      renderer.domElement.style.cursor = 'grab';
+    };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      distance = Math.max(6, Math.min(140, distance + (e.deltaY > 0 ? 3 : -3)));
+      applyCamera();
+    };
+
+    let current: HouseViewModel = model;
+    let roomLayout = layoutRooms(model.rooms);
+    let translucent = false;
+    const wallMaterials: THREE.MeshStandardMaterial[] = [];
+
+    function healthColor(itemId: string): number {
+      const h = current.healthByItemId[itemId] ?? 'ok';
+      return h === 'overdue' ? 0xe05050 : h === 'due' ? 0xe8a838 : 0x3d9a5f;
+    }
+
+    function buildScene(next: HouseViewModel) {
+      // Dispose everything currently under sceneRoot before rebuilding.
+      sceneRoot.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          for (const m of mats) m.dispose();
         }
-        roomOffX += room.dims.L + 2;
-      }
-    };
+      });
+      sceneRoot.clear();
+      wallMaterials.length = 0;
 
-    let raf = 0;
-    const tick = () => {
-      let moved = false;
-      const speed = 0.15;
-      if (keys.has('w') || keys.has('arrowup')) {
-        camX += Math.sin(angle) * speed;
-        camY += Math.cos(angle) * speed;
-        moved = true;
-      }
-      if (keys.has('s') || keys.has('arrowdown')) {
-        camX -= Math.sin(angle) * speed;
-        camY -= Math.cos(angle) * speed;
-        moved = true;
-      }
-      if (keys.has('a') || keys.has('arrowleft')) {
-        camX -= Math.cos(angle) * speed;
-        camY += Math.sin(angle) * speed;
-        moved = true;
-      }
-      if (keys.has('d') || keys.has('arrowright')) {
-        camX += Math.cos(angle) * speed;
-        camY -= Math.sin(angle) * speed;
-        moved = true;
-      }
-      if (keys.has('q')) {
-        angle -= 0.04;
-        moved = true;
-      }
-      if (keys.has('e')) {
-        angle += 0.04;
-        moved = true;
-      }
-      if (moved || true) paintWithHits();
-      raf = requestAnimationFrame(tick);
-    };
+      current = next;
+      roomLayout = layoutRooms(next.rooms);
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      keys.add(e.key.toLowerCase());
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      keys.delete(e.key.toLowerCase());
-    };
-    const onClick = (ev: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const mx = ev.clientX - rect.left;
-      const my = ev.clientY - rect.top;
-      for (const hit of screenHits) {
-        const dx = mx - hit.sx;
-        const dy = my - hit.sy;
-        if (dx * dx + dy * dy < hit.r * hit.r * 2) {
-          cb.onSelectItem(hit.itemId);
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+
+      for (const room of next.rooms) {
+        const rect = roomLayout.get(room.id);
+        if (!rect) continue;
+        minX = Math.min(minX, rect.x);
+        minY = Math.min(minY, rect.y);
+        maxX = Math.max(maxX, rect.x + rect.L);
+        maxY = Math.max(maxY, rect.y + rect.W);
+
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: colorForRoom(room.id),
+        });
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(rect.L, rect.W),
+          floorMat
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.copy(toWorld(rect.x + rect.L / 2, rect.y + rect.W / 2, 0));
+        floor.userData = { type: 'room', roomId: room.id };
+        sceneRoot.add(floor);
+
+        const wallH = Math.max(6, room.dims.H);
+        const wallMat = new THREE.MeshStandardMaterial({
+          color: 0x9a8468,
+          transparent: translucent,
+          opacity: translucent ? 0.18 : 1,
+        });
+        wallMaterials.push(wallMat);
+
+        const addWall = (
+          cx: number,
+          cy: number,
+          w: number,
+          d: number
+        ) => {
+          const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), wallMat);
+          wall.position.copy(toWorld(cx, cy, wallH / 2));
+          sceneRoot.add(wall);
+        };
+        addWall(rect.x + rect.L / 2, rect.y, rect.L, WALL_THICKNESS);
+        addWall(rect.x + rect.L / 2, rect.y + rect.W, rect.L, WALL_THICKNESS);
+        addWall(rect.x, rect.y + rect.W / 2, WALL_THICKNESS, rect.W);
+        addWall(rect.x + rect.L, rect.y + rect.W / 2, WALL_THICKNESS, rect.W);
+
+        for (const p of next.placements.filter((pl) => pl.roomId === room.id)) {
+          const itemMat = new THREE.MeshStandardMaterial({
+            color: healthColor(p.itemId),
+          });
+          const item = new THREE.Mesh(
+            new THREE.BoxGeometry(
+              Math.max(1, p.footprint.L),
+              ITEM_HEIGHT,
+              Math.max(1, p.footprint.W)
+            ),
+            itemMat
+          );
+          item.position.copy(
+            toWorld(
+              rect.x + p.x + p.footprint.L / 2,
+              rect.y + p.y + p.footprint.W / 2,
+              ITEM_HEIGHT / 2
+            )
+          );
+          item.userData = { type: 'item', itemId: p.itemId };
+          sceneRoot.add(item);
+        }
+      }
+
+      if (Number.isFinite(minX)) {
+        target = toWorld((minX + maxX) / 2, (minY + maxY) / 2, 0);
+        distance = Math.max(20, Math.max(maxX - minX, maxY - minY) * 1.1);
+        applyCamera();
+      }
+    }
+
+    buildScene(model);
+
+    const raycaster = new THREE.Raycaster();
+    const onClick = (e: MouseEvent) => {
+      if (
+        Math.abs(e.clientX - lastX) > 4 ||
+        Math.abs(e.clientY - lastY) > 4
+      ) {
+        return; // was a drag, not a click
+      }
+      const rect = renderer.domElement.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      raycaster.setFromCamera(ndc, camera);
+      const hits = raycaster.intersectObjects(sceneRoot.children, false);
+      for (const hit of hits) {
+        const data = hit.object.userData as
+          | { type: 'item'; itemId: string }
+          | { type: 'room'; roomId: string }
+          | undefined;
+        if (data?.type === 'item') {
+          cb.onSelectItem(data.itemId);
+          return;
+        }
+        if (data?.type === 'room') {
+          cb.onSelectRoom(data.roomId);
           return;
         }
       }
     };
-    const onResize = () => paintWithHits();
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    canvas.addEventListener('click', onClick);
-    window.addEventListener('resize', onResize);
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointermove', onPointerMove);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
+    renderer.domElement.addEventListener('pointercancel', onPointerUp);
+    renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+    renderer.domElement.addEventListener('click', onClick);
+
+    let raf = 0;
+    const tick = () => {
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(tick);
+    };
     raf = requestAnimationFrame(tick);
 
-    const handle: HouseRendererHandle = {
+    return {
       update(next) {
-        current = next;
+        buildScene(next);
       },
       destroy() {
         cancelAnimationFrame(raf);
-        window.removeEventListener('keydown', onKeyDown);
-        window.removeEventListener('keyup', onKeyUp);
-        canvas.removeEventListener('click', onClick);
-        window.removeEventListener('resize', onResize);
-        canvas.remove();
+        ro.disconnect();
+        renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+        renderer.domElement.removeEventListener('pointermove', onPointerMove);
+        renderer.domElement.removeEventListener('pointerup', onPointerUp);
+        renderer.domElement.removeEventListener('pointercancel', onPointerUp);
+        renderer.domElement.removeEventListener('wheel', onWheel);
+        renderer.domElement.removeEventListener('click', onClick);
+        sceneRoot.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            for (const m of mats) m.dispose();
+          }
+        });
+        ground.geometry.dispose();
+        (ground.material as THREE.Material).dispose();
+        renderer.dispose();
+        renderer.domElement.remove();
+      },
+      travelToRoom(roomId) {
+        const rect = roomLayout.get(roomId);
+        if (!rect) return;
+        target = toWorld(rect.x + rect.L / 2, rect.y + rect.W / 2, 0);
+        distance = Math.max(14, Math.max(rect.L, rect.W) * 2.2);
+        applyCamera();
+      },
+      travelToItem(itemId) {
+        const p = current.placements.find((pl) => pl.itemId === itemId);
+        if (!p) return;
+        const rect = roomLayout.get(p.roomId);
+        if (!rect) return;
+        target = toWorld(
+          rect.x + p.x + p.footprint.L / 2,
+          rect.y + p.y + p.footprint.W / 2,
+          ITEM_HEIGHT / 2
+        );
+        distance = 10;
+        applyCamera();
+      },
+      setWallsTranslucent(on) {
+        translucent = on;
+        for (const m of wallMaterials) {
+          m.transparent = on;
+          m.opacity = on ? 0.18 : 1;
+        }
       },
     };
-    void (cb as HouseRendererCallbacks).onMovePlacement;
-    return handle;
   },
 };

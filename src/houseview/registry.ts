@@ -4,7 +4,17 @@ import { pixelHomeRenderer } from './pixelHome/pixelHomeRenderer';
 import { exploreRenderer } from './explore/exploreRenderer';
 import { isoRenderer } from './iso/isoRenderer';
 import { pixelRenderer } from './pixel/pixelRenderer';
-import { walk3dRenderer } from './walk3d/walk3dRenderer';
+
+/** Three.js (~500KB) only downloads if someone actually picks this
+ * renderer — everyone else's bundle stays untouched. */
+const walk3dRendererLazy: HouseRendererPlugin = {
+  id: 'walk3d',
+  label: '3D Walkthrough',
+  async mount(el, model, cb) {
+    const { walk3dRenderer } = await import('./walk3d/walk3dRenderer');
+    return walk3dRenderer.mount(el, model, cb);
+  },
+};
 
 const plugins: HouseRendererPlugin[] = [
   walkIsoRenderer,
@@ -12,7 +22,7 @@ const plugins: HouseRendererPlugin[] = [
   exploreRenderer,
   isoRenderer,
   pixelRenderer,
-  walk3dRenderer,
+  walk3dRendererLazy,
 ];
 
 export function listRenderers(): HouseRendererPlugin[] {
