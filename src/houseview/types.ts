@@ -58,9 +58,11 @@ export interface HouseRendererHandle {
 export interface HouseRendererPlugin {
   id: string;
   label: string;
+  /** May return a Promise so heavier renderers (e.g. Three.js) can be code-
+   * split and only downloaded when actually selected. */
   mount: (
     el: HTMLElement,
     model: HouseViewModel,
     cb: HouseRendererCallbacks
-  ) => HouseRendererHandle;
+  ) => HouseRendererHandle | Promise<HouseRendererHandle>;
 }
