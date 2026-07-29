@@ -82,27 +82,28 @@ export function createCanvasRenderer(
 
       function layoutOffsets(m: HouseViewModel) {
         roomOffsets.clear();
-        // 2-column-ish layout for readability
+        // Fixed column count instead of a width threshold — a width
+        // threshold (the old `maxRowW`) degrades to one room per row
+        // whenever rooms are wider than half the threshold, which is
+        // most real rooms (12-20ft against a 28ft cap), producing a
+        // single vertical line instead of a grid.
+        const cols = 4;
         let col = 0;
-        let row = 0;
-        let rowHeight = 0;
-        const maxRowW = 28;
         let x = 0;
         let y = 0;
+        let rowHeight = 0;
         for (const room of m.rooms) {
-          if (x > 0 && x + room.dims.L > maxRowW) {
-            x = 0;
-            y += rowHeight + 2;
-            rowHeight = 0;
-            row++;
-            col = 0;
-          }
           roomOffsets.set(room.id, { x, y });
           x += room.dims.L + 2;
           rowHeight = Math.max(rowHeight, room.dims.W);
           col++;
+          if (col >= cols) {
+            col = 0;
+            x = 0;
+            y += rowHeight + 2;
+            rowHeight = 0;
+          }
         }
-        void row;
       }
 
       function bounds(m: HouseViewModel) {
