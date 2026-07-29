@@ -7,21 +7,30 @@ import type {
 } from '../types';
 
 /**
- * Real first-person/orbit 3D walkthrough — the Three.js plugin blueprinted
- * in HUMAN_DIRECTIONS.md and ADR-0002. Rooms are boxes extruded to their
- * real height in feet (no isometric compression needed, unlike walkIso),
- * items are simple colored boxes tinted by maintenance health, and the
- * camera orbits a target point via drag + scroll.
+ * Real third-person 3D walkthrough — the Three.js plugin blueprinted in
+ * HUMAN_DIRECTIONS.md and ADR-0002. Rooms are boxes extruded to their real
+ * height in feet (no isometric compression needed, unlike walkIso), a
+ * visible avatar walks via WASD (camera-relative) with wall collision, and
+ * the camera orbits/follows via drag + scroll — mouse to look, WASD to walk.
  */
 
 const WALL_THICKNESS = 0.2;
-const ITEM_HEIGHT = 2;
+const DOOR_WIDTH = 3;
+const AVATAR_RADIUS = 0.9;
+const MOVE_SPEED = 9; // feet/second
 
 interface RoomRect {
   x: number;
   y: number;
   L: number;
   W: number;
+}
+
+interface WallSeg {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
 }
 
 /** Positioned rooms keep their saved spot; everything else auto-packs into
@@ -80,6 +89,79 @@ function colorForRoom(id: string): number {
   return ROOM_COLORS[Math.abs(h) % ROOM_COLORS.length];
 }
 
+/** Same coarse item classification walkIsoRenderer uses, kept local since
+ * that module's tables aren't exported. Kind drives the base color/height;
+ * maintenance health becomes a small floating marker instead of the whole
+ * box, so items actually read as different things instead of a wash of
+ * uniform "ok" green. */
+type Kind =
+  | 'fridge'
+  | 'range'
+  | 'washer'
+  | 'dryer'
+  | 'heater'
+  | 'furnace'
+  | 'tv'
+  | 'sofa'
+  | 'bed'
+  | 'toilet'
+  | 'desk'
+  | 'chair'
+  | 'table'
+  | 'generic';
+
+function kindOf(label: string): Kind {
+  const s = label.toLowerCase();
+  if (/fridge|refriger/.test(s)) return 'fridge';
+  if (/range|oven|stove/.test(s)) return 'range';
+  if (/wash/.test(s)) return 'washer';
+  if (/dry/.test(s)) return 'dryer';
+  if (/water|heater/.test(s)) return 'heater';
+  if (/furnace|carrier/.test(s)) return 'furnace';
+  if (/tv|television|sony/.test(s)) return 'tv';
+  if (/sofa|couch|loveseat/.test(s)) return 'sofa';
+  if (/bed/.test(s)) return 'bed';
+  if (/toilet|bath/.test(s)) return 'toilet';
+  if (/desk/.test(s)) return 'desk';
+  if (/chair/.test(s)) return 'chair';
+  if (/table/.test(s)) return 'table';
+  return 'generic';
+}
+
+const KIND_COLOR: Record<Kind, number> = {
+  fridge: 0xc8d4e0,
+  range: 0x3a3a42,
+  washer: 0xeef2f6,
+  dryer: 0xe8ecf0,
+  heater: 0xcfd4d8,
+  furnace: 0x6a7a88,
+  tv: 0x1c1c24,
+  sofa: 0x5a7a9a,
+  bed: 0x8a6a9a,
+  toilet: 0xf4f6f8,
+  desk: 0xa08050,
+  chair: 0x7a9a6a,
+  table: 0x8a6a4a,
+  generic: 0x9ab0c0,
+};
+
+const KIND_HEIGHT: Record<Kind, number> = {
+  fridge: 2.1,
+  range: 1.4,
+  washer: 1.3,
+  dryer: 1.3,
+  heater: 1.9,
+  furnace: 1.7,
+  tv: 1.2,
+  sofa: 0.9,
+  bed: 0.9,
+  toilet: 0.8,
+  desk: 1.1,
+  chair: 0.9,
+  table: 1.0,
+  generic: 1.5,
+};
+
 export const walk3dRenderer: HouseRendererPlugin = {
   id: 'walk3d',
   label: '3D Walkthrough',
@@ -92,6 +174,8 @@ export const walk3dRenderer: HouseRendererPlugin = {
     renderer.domElement.style.width = '100%';
     renderer.domElement.style.height = '100%';
     renderer.domElement.style.cursor = 'grab';
+    renderer.domElement.tabIndex = 0;
+    renderer.domElement.style.outline = 'none';
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x9ecdf0);
@@ -114,14 +198,59 @@ export const walk3dRenderer: HouseRendererPlugin = {
     const sceneRoot = new THREE.Group();
     scene.add(sceneRoot);
 
-    // ── Orbit camera — drag to rotate, wheel to zoom ──
-    let target = new THREE.Vector3(15, 0, 10);
+    // ── Avatar — simple capsule + head, visible so this reads as "you",
+    // not a disembodied camera. ──
+    const avatarGroup = new THREE.Group();
+    const avatarBody = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.8, 3, 4, 10),
+      new THREE.MeshStandardMaterial({ color: 0x3d9a5f })
+    );
+    avatarBody.position.y = 2.1;
+    avatarGroup.add(avatarBody);
+    const avatarHead = new THREE.Mesh(
+      new THREE.SphereGeometry(0.6, 14, 10),
+      new THREE.MeshStandardMaterial({ color: 0xf0c8a0 })
+    );
+    avatarHead.position.y = 4.1;
+    avatarGroup.add(avatarHead);
+    const avatarNose = new THREE.Mesh(
+      new THREE.ConeGeometry(0.12, 0.35, 8),
+      new THREE.MeshStandardMaterial({ color: 0xd8a878 })
+    );
+    avatarNose.rotation.x = Math.PI / 2;
+    avatarNose.position.set(0, 4.05, 0.55);
+    avatarGroup.add(avatarNose);
+    scene.add(avatarGroup);
+
+    let avatarPos = new THREE.Vector3(0, 0, 0);
+    let avatarSpawned = false;
+    let wallSegs: WallSeg[] = [];
+    const keys = new Set<string>();
+
+    function collidesAt(x: number, z: number): boolean {
+      for (const w of wallSegs) {
+        if (
+          x > w.minX - AVATAR_RADIUS &&
+          x < w.maxX + AVATAR_RADIUS &&
+          z > w.minZ - AVATAR_RADIUS &&
+          z < w.maxZ + AVATAR_RADIUS
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // ── Camera — orbits/follows the avatar. Drag to look, wheel to zoom. ──
+    let target = new THREE.Vector3(0, 2.5, 0);
     let azimuth = Math.PI * 0.25;
     let polar = Math.PI * 0.32;
-    let distance = 45;
+    let distance = 16;
     let dragging = false;
     let lastX = 0;
     let lastY = 0;
+    let downX = 0;
+    let downY = 0;
 
     function applyCamera() {
       const clampedPolar = Math.max(0.12, Math.min(Math.PI / 2 - 0.05, polar));
@@ -150,8 +279,11 @@ export const walk3dRenderer: HouseRendererPlugin = {
       dragging = true;
       lastX = e.clientX;
       lastY = e.clientY;
+      downX = e.clientX;
+      downY = e.clientY;
       renderer.domElement.style.cursor = 'grabbing';
       renderer.domElement.setPointerCapture?.(e.pointerId);
+      renderer.domElement.focus();
     };
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return;
@@ -169,22 +301,93 @@ export const walk3dRenderer: HouseRendererPlugin = {
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      distance = Math.max(6, Math.min(140, distance + (e.deltaY > 0 ? 3 : -3)));
+      distance = Math.max(5, Math.min(60, distance + (e.deltaY > 0 ? 2 : -2)));
       applyCamera();
     };
+    const onKeyDown = (e: KeyboardEvent) => keys.add(e.key.toLowerCase());
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
 
     let current: HouseViewModel = model;
     let roomLayout = layoutRooms(model.rooms);
     let translucent = false;
     const wallMaterials: THREE.MeshStandardMaterial[] = [];
 
-    function healthColor(itemId: string): number {
+    function healthMarkerColor(itemId: string): number | null {
       const h = current.healthByItemId[itemId] ?? 'ok';
-      return h === 'overdue' ? 0xe05050 : h === 'due' ? 0xe8a838 : 0x3d9a5f;
+      if (h === 'overdue') return 0xe05050;
+      if (h === 'due') return 0xe8a838;
+      return null;
+    }
+
+    function addWallSeg(
+      cx: number,
+      cy: number,
+      w: number,
+      d: number,
+      wallH: number,
+      wallMat: THREE.MeshStandardMaterial
+    ) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), wallMat);
+      wall.position.copy(toWorld(cx, cy, wallH / 2));
+      sceneRoot.add(wall);
+      wallSegs.push({
+        minX: cx - w / 2,
+        maxX: cx + w / 2,
+        minZ: cy - d / 2,
+        maxZ: cy + d / 2,
+      });
+    }
+
+    /** North wall (along x, at rect.y) gets a real door opening — two wall
+     * segments with a gap, plus a visible frame + leaf in the gap so it
+     * reads as a doorway, not just an absence. */
+    function addNorthWallWithDoor(
+      rect: RoomRect,
+      wallH: number,
+      wallMat: THREE.MeshStandardMaterial
+    ) {
+      const doorW = Math.min(DOOR_WIDTH, rect.L * 0.5);
+      const doorX0 = rect.x + rect.L / 2 - doorW / 2;
+      const doorX1 = doorX0 + doorW;
+      if (doorX0 - rect.x > 0.3) {
+        addWallSeg(
+          rect.x + (doorX0 - rect.x) / 2,
+          rect.y,
+          doorX0 - rect.x,
+          WALL_THICKNESS,
+          wallH,
+          wallMat
+        );
+      }
+      if (rect.x + rect.L - doorX1 > 0.3) {
+        addWallSeg(
+          doorX1 + (rect.x + rect.L - doorX1) / 2,
+          rect.y,
+          rect.x + rect.L - doorX1,
+          WALL_THICKNESS,
+          wallH,
+          wallMat
+        );
+      }
+      const doorH = Math.min(wallH * 0.85, 7);
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x4a3020 });
+      const lintel = new THREE.Mesh(
+        new THREE.BoxGeometry(doorW, 0.3, WALL_THICKNESS * 1.5),
+        frameMat
+      );
+      lintel.position.copy(toWorld(rect.x + rect.L / 2, rect.y, doorH));
+      sceneRoot.add(lintel);
+      const leaf = new THREE.Mesh(
+        new THREE.BoxGeometry(doorW * 0.85, doorH * 0.97, WALL_THICKNESS * 0.6),
+        new THREE.MeshStandardMaterial({ color: 0xc9a876 })
+      );
+      leaf.position.copy(
+        toWorld(rect.x + rect.L / 2, rect.y - WALL_THICKNESS * 0.3, doorH / 2)
+      );
+      sceneRoot.add(leaf);
     }
 
     function buildScene(next: HouseViewModel) {
-      // Dispose everything currently under sceneRoot before rebuilding.
       sceneRoot.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
@@ -194,6 +397,7 @@ export const walk3dRenderer: HouseRendererPlugin = {
       });
       sceneRoot.clear();
       wallMaterials.length = 0;
+      wallSegs = [];
 
       current = next;
       roomLayout = layoutRooms(next.rooms);
@@ -202,6 +406,7 @@ export const walk3dRenderer: HouseRendererPlugin = {
       let minY = Infinity;
       let maxX = -Infinity;
       let maxY = -Infinity;
+      let firstRoomCenter: THREE.Vector3 | null = null;
 
       for (const room of next.rooms) {
         const rect = roomLayout.get(room.id);
@@ -210,6 +415,9 @@ export const walk3dRenderer: HouseRendererPlugin = {
         minY = Math.min(minY, rect.y);
         maxX = Math.max(maxX, rect.x + rect.L);
         maxY = Math.max(maxY, rect.y + rect.W);
+        if (!firstRoomCenter) {
+          firstRoomCenter = toWorld(rect.x + rect.L / 2, rect.y + rect.W / 2, 0);
+        }
 
         const floorMat = new THREE.MeshStandardMaterial({
           color: colorForRoom(room.id),
@@ -231,48 +439,50 @@ export const walk3dRenderer: HouseRendererPlugin = {
         });
         wallMaterials.push(wallMat);
 
-        const addWall = (
-          cx: number,
-          cy: number,
-          w: number,
-          d: number
-        ) => {
-          const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), wallMat);
-          wall.position.copy(toWorld(cx, cy, wallH / 2));
-          sceneRoot.add(wall);
-        };
-        addWall(rect.x + rect.L / 2, rect.y, rect.L, WALL_THICKNESS);
-        addWall(rect.x + rect.L / 2, rect.y + rect.W, rect.L, WALL_THICKNESS);
-        addWall(rect.x, rect.y + rect.W / 2, WALL_THICKNESS, rect.W);
-        addWall(rect.x + rect.L, rect.y + rect.W / 2, WALL_THICKNESS, rect.W);
+        addNorthWallWithDoor(rect, wallH, wallMat);
+        addWallSeg(rect.x + rect.L / 2, rect.y + rect.W, rect.L, WALL_THICKNESS, wallH, wallMat);
+        addWallSeg(rect.x, rect.y + rect.W / 2, WALL_THICKNESS, rect.W, wallH, wallMat);
+        addWallSeg(rect.x + rect.L, rect.y + rect.W / 2, WALL_THICKNESS, rect.W, wallH, wallMat);
 
         for (const p of next.placements.filter((pl) => pl.roomId === room.id)) {
-          const itemMat = new THREE.MeshStandardMaterial({
-            color: healthColor(p.itemId),
-          });
+          const kind = kindOf(p.label);
+          const h = KIND_HEIGHT[kind];
           const item = new THREE.Mesh(
             new THREE.BoxGeometry(
               Math.max(1, p.footprint.L),
-              ITEM_HEIGHT,
+              h,
               Math.max(1, p.footprint.W)
             ),
-            itemMat
+            new THREE.MeshStandardMaterial({ color: KIND_COLOR[kind] })
           );
-          item.position.copy(
-            toWorld(
-              rect.x + p.x + p.footprint.L / 2,
-              rect.y + p.y + p.footprint.W / 2,
-              ITEM_HEIGHT / 2
-            )
-          );
+          const cx = rect.x + p.x + p.footprint.L / 2;
+          const cz = rect.y + p.y + p.footprint.W / 2;
+          item.position.copy(toWorld(cx, cz, h / 2));
           item.userData = { type: 'item', itemId: p.itemId };
           sceneRoot.add(item);
+
+          const markerColor = healthMarkerColor(p.itemId);
+          if (markerColor != null) {
+            const marker = new THREE.Mesh(
+              new THREE.SphereGeometry(0.22, 10, 8),
+              new THREE.MeshStandardMaterial({
+                color: markerColor,
+                emissive: markerColor,
+                emissiveIntensity: 0.6,
+              })
+            );
+            marker.position.copy(toWorld(cx, cz, h + 0.5));
+            sceneRoot.add(marker);
+          }
         }
       }
 
-      if (Number.isFinite(minX)) {
-        target = toWorld((minX + maxX) / 2, (minY + maxY) / 2, 0);
-        distance = Math.max(20, Math.max(maxX - minX, maxY - minY) * 1.1);
+      if (!avatarSpawned && firstRoomCenter) {
+        avatarPos = firstRoomCenter.clone();
+        avatarSpawned = true;
+      }
+      if (Number.isFinite(minX) && !avatarSpawned) {
+        target = toWorld((minX + maxX) / 2, (minY + maxY) / 2, 2.5);
         applyCamera();
       }
     }
@@ -281,10 +491,7 @@ export const walk3dRenderer: HouseRendererPlugin = {
 
     const raycaster = new THREE.Raycaster();
     const onClick = (e: MouseEvent) => {
-      if (
-        Math.abs(e.clientX - lastX) > 4 ||
-        Math.abs(e.clientY - lastY) > 4
-      ) {
+      if (Math.abs(e.clientX - downX) > 4 || Math.abs(e.clientY - downY) > 4) {
         return; // was a drag, not a click
       }
       const rect = renderer.domElement.getBoundingClientRect();
@@ -316,9 +523,46 @@ export const walk3dRenderer: HouseRendererPlugin = {
     renderer.domElement.addEventListener('pointercancel', onPointerUp);
     renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
     renderer.domElement.addEventListener('click', onClick);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
+    let lastTime = performance.now();
     let raf = 0;
     const tick = () => {
+      const now = performance.now();
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      let ix = 0;
+      let iz = 0;
+      if (keys.has('w') || keys.has('arrowup')) iz -= 1;
+      if (keys.has('s') || keys.has('arrowdown')) iz += 1;
+      if (keys.has('a') || keys.has('arrowleft')) ix -= 1;
+      if (keys.has('d') || keys.has('arrowright')) ix += 1;
+      if (ix !== 0 || iz !== 0) {
+        const len = Math.hypot(ix, iz) || 1;
+        const inForward = -iz / len;
+        const inRight = ix / len;
+        const sinA = Math.sin(azimuth);
+        const cosA = Math.cos(azimuth);
+        const forward = { x: -sinA, z: -cosA };
+        const right = { x: cosA, z: -sinA };
+        const moveX =
+          (inForward * forward.x + inRight * right.x) * MOVE_SPEED * dt;
+        const moveZ =
+          (inForward * forward.z + inRight * right.z) * MOVE_SPEED * dt;
+        const nx = avatarPos.x + moveX;
+        const nz = avatarPos.z + moveZ;
+        if (!collidesAt(nx, avatarPos.z)) avatarPos.x = nx;
+        if (!collidesAt(avatarPos.x, nz)) avatarPos.z = nz;
+        if (moveX !== 0 || moveZ !== 0) {
+          avatarGroup.rotation.y = Math.atan2(moveX, moveZ);
+        }
+      }
+      avatarGroup.position.set(avatarPos.x, 0, avatarPos.z);
+      target.set(avatarPos.x, 2.5, avatarPos.z);
+      applyCamera();
+
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
@@ -337,11 +581,19 @@ export const walk3dRenderer: HouseRendererPlugin = {
         renderer.domElement.removeEventListener('pointercancel', onPointerUp);
         renderer.domElement.removeEventListener('wheel', onWheel);
         renderer.domElement.removeEventListener('click', onClick);
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
         sceneRoot.traverse((obj) => {
           if (obj instanceof THREE.Mesh) {
             obj.geometry.dispose();
             const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
             for (const m of mats) m.dispose();
+          }
+        });
+        avatarGroup.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            (obj.material as THREE.Material).dispose();
           }
         });
         ground.geometry.dispose();
@@ -352,8 +604,8 @@ export const walk3dRenderer: HouseRendererPlugin = {
       travelToRoom(roomId) {
         const rect = roomLayout.get(roomId);
         if (!rect) return;
-        target = toWorld(rect.x + rect.L / 2, rect.y + rect.W / 2, 0);
-        distance = Math.max(14, Math.max(rect.L, rect.W) * 2.2);
+        avatarPos.set(rect.x + rect.L / 2, 0, rect.y + rect.W / 2);
+        distance = Math.max(12, Math.max(rect.L, rect.W) * 1.4);
         applyCamera();
       },
       travelToItem(itemId) {
@@ -361,12 +613,8 @@ export const walk3dRenderer: HouseRendererPlugin = {
         if (!p) return;
         const rect = roomLayout.get(p.roomId);
         if (!rect) return;
-        target = toWorld(
-          rect.x + p.x + p.footprint.L / 2,
-          rect.y + p.y + p.footprint.W / 2,
-          ITEM_HEIGHT / 2
-        );
-        distance = 10;
+        avatarPos.set(rect.x + p.x, 0, rect.y + p.y);
+        distance = 9;
         applyCamera();
       },
       setWallsTranslucent(on) {
