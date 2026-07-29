@@ -524,7 +524,7 @@ export function HousePage({ id }: Props) {
           <div class="live-hud-left">
             {isDemoHome && (
               <button type="button" class="live-link-btn" onClick={toggleViewMode}>
-                {viewMode === 'walk' ? '🧊 3D view' : '🚶 Walk view'}
+                {viewMode === 'walk' ? '🖼️ Reference pic' : '🚶 Walk view'}
               </button>
             )}
             {viewMode === 'walk' && (
