@@ -62,13 +62,6 @@ function houseAgeInfo(yearBuilt: number | null | undefined): {
   return { age, hint };
 }
 
-function dueBarPct(dueInDays: number | null): number {
-  if (dueInDays == null) return 40;
-  if (dueInDays < 0) return 100;
-  // 0 days = full bar urgency; 90+ days = thin
-  return Math.max(8, Math.min(100, 100 - dueInDays));
-}
-
 /**
  * House home screen: walk, docks, health colors, build list $, notes, council chat.
  */
@@ -371,21 +364,6 @@ export function HousePage({ id }: Props) {
     return 'active' as const;
   };
 
-  function partHint(task: Task): string | null {
-    if (!task.itemId || !property) return task.detail ?? null;
-    const item = property.items.find((i) => i.id === task.itemId);
-    const fs = item?.filterSpecs?.[0];
-    if (fs) return `${fs.name}: ${fs.sizeOrModel}`;
-    return task.detail ?? null;
-  }
-
-  async function markDone(task: Task) {
-    if (!property) return;
-    const s = await ensureStorageReady();
-    await s.completeTask(property.id, task.id);
-    await load();
-  }
-
   function startEditIdentity() {
     if (!property) return;
     setNameDraft(property.name);
@@ -668,70 +646,6 @@ export function HousePage({ id }: Props) {
           </button>
         </div>
       )}
-
-      {/* Up Next */}
-      <aside class="live-up-next" aria-label="Upcoming maintenance">
-        <header class="live-up-head">
-          <h3>Up next</h3>
-          <button
-            type="button"
-            class="live-link-btn"
-            onClick={() => go('property', property.id, 'maintain')}
-          >
-            All
-          </button>
-        </header>
-        {upNext.length === 0 ? (
-          <p class="muted tiny">
-            No scheduled tasks — Maintenance → Schedule from inventory.
-          </p>
-        ) : (
-          <ul class="live-up-list">
-            {upNext.map((t) => {
-              const due = t.dueInDays;
-              const toneT =
-                due != null && due < 0
-                  ? 'overdue'
-                  : due != null && due <= 14
-                    ? 'soon'
-                    : 'ok';
-              const part = partHint(t);
-              return (
-                <li key={t.id} class={`live-up-item ${toneT}`}>
-                  <div class="live-up-main">
-                    <strong>{t.title}</strong>
-                    <span class="muted">
-                      {due == null
-                        ? t.nextDue
-                        : due < 0
-                          ? `${Math.abs(due)}d overdue`
-                          : due === 0
-                            ? 'Due today'
-                            : `Due in ${due}d`}
-                      {t.whenNotToDiy ? ' · pro' : ''}
-                    </span>
-                    <div class="live-due-track" aria-hidden="true">
-                      <div
-                        class={`live-due-fill ${toneT}`}
-                        style={{ width: `${dueBarPct(due)}%` }}
-                      />
-                    </div>
-                    {part && <span class="live-part-hint">Part · {part}</span>}
-                  </div>
-                  <button
-                    type="button"
-                    class="live-check"
-                    title="Mark done"
-                    onClick={() => void markDone(t)}
-                  >
-                    ✓
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </aside>
 
       {/* Room dock — fixed right-side panel */}
       {room && !selected && (

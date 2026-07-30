@@ -463,6 +463,23 @@ export class CastleStorage {
     return property.tasks[idx];
   }
 
+  async rescheduleTask(
+    propertyId: string,
+    taskId: string,
+    nextDue: string
+  ): Promise<Task> {
+    const property = await this.requireProperty(propertyId);
+    const idx = property.tasks.findIndex((t) => t.id === taskId);
+    if (idx < 0) throw new Error(`Task not found: ${taskId}`);
+    property.tasks[idx] = {
+      ...property.tasks[idx],
+      nextDue,
+      updatedAt: nowIso(),
+    };
+    await this.saveProperty(property);
+    return property.tasks[idx];
+  }
+
   async getCalendar(
     propertyId: string,
     weeks = 12

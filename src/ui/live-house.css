@@ -245,39 +245,6 @@
   color: var(--danger);
 }
 
-/* ── Up Next left rail ─────────────────────────────── */
-
-.live-up-next {
-  position: absolute;
-  top: calc(var(--top-bars-h, 230px) + 10px);
-  left: 12px;
-  width: min(248px, 32vw);
-  max-height: calc(100% - var(--top-bars-h, 230px) - 90px);
-  z-index: 3;
-  background: var(--overlay-bg);
-  border: 2px solid var(--overlay-border);
-  border-radius: 14px;
-  padding: 0.7rem 0.75rem;
-  overflow: auto;
-  backdrop-filter: blur(8px);
-  box-shadow: var(--overlay-shadow);
-}
-
-.live-up-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.live-up-head h3 {
-  margin: 0;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-}
-
 .live-link-btn {
   border: none;
   background: transparent;
@@ -316,65 +283,6 @@
 .live-renderer-switch:hover {
   background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%),
     linear-gradient(135deg, var(--accent) 50%, transparent 50%);
-}
-
-.live-up-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.live-up-item {
-  display: flex;
-  gap: 0.4rem;
-  align-items: flex-start;
-  padding: 0.45rem 0.5rem;
-  border-radius: 10px;
-  background: var(--overlay-bg-soft);
-  border-left: 3px solid var(--ok);
-}
-
-.live-up-item.soon {
-  border-left-color: var(--accent);
-}
-
-.live-up-item.overdue {
-  border-left-color: var(--danger);
-}
-
-.live-up-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.live-up-main strong {
-  display: block;
-  font-size: 0.82rem;
-  line-height: 1.25;
-}
-
-.live-up-main .muted {
-  font-size: 0.72rem;
-}
-
-.live-check {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid var(--overlay-border);
-  background: rgba(95, 191, 119, 0.12);
-  color: var(--ok);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.live-check:hover {
-  background: rgba(95, 191, 119, 0.28);
-  border-color: var(--ok);
 }
 
 .live-shutoffs {
@@ -630,12 +538,6 @@
 
 .tiny {
   font-size: 0.78rem;
-}
-
-@media (max-width: 900px) {
-  .live-up-next {
-    display: none;
-  }
 }
 
 @media (max-width: 720px) {
