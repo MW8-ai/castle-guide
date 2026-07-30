@@ -11,16 +11,15 @@ Every BLUEPRINT capability ships a **socket** (data hooks + spec) even when the 
 | | |
 |---|---|
 | **Tier** | BLUEPRINT |
-| **Status** | SOCKET READY (data dims + plugin contract; no Three.js plugin yet) |
+| **Status** | SHIPPED — `walk3d` is a real Three.js `HouseRendererPlugin` (PRs #46, #49), registered and code-split (only downloads if picked), lazily behind `walk3dRendererLazy` in `src/houseview/registry.ts`. |
 | **Spec** | `docs/ARCHITECTURE.md` § Renderer Plugin Contract; `docs/adr/ADR-0002.md` |
 
-### What a human does later
+### What shipped
 
-1. Confirm `Room.dims.{L,W,H}` and `Placement.{x,y,z,rotation}` are populated for a test property.
-2. Implement `src/houseview/walk3d/` as a renderer plugin implementing `HouseRendererPlugin`.
-3. Suggested stack: Three.js or Threlte-on-Preact; load room boxes from dims; place appliances as simple meshes with click → `onSelectItem`.
-4. Register plugin id `walk3d` in app settings; verify switching iso ↔ walk3d loses zero catalog data.
-5. Accessibility: keep list-view navigation primary; walk3d is optional delight.
+1. `src/houseview/walk3d/walk3dRenderer.ts` — visible avatar (capsule + head), camera-relative WASD movement with lightweight AABB wall collision, real doors (wall segments split with a gap + frame/leaf), items colored by kind rather than uniform health-green, orbit camera that follows the avatar.
+2. Registered as plugin id `walk3d`; iso ↔ walk3d switching loses zero catalog data (same `HouseViewModel` in, same `onSelectItem`/`onSelectRoom` callbacks out).
+3. List-view navigation remains primary everywhere else — walk3d is opt-in, not a dependency for core catalog features.
+4. A live renderer switcher now sits in the HousePage HUD itself (PR #51) — all 6 registered renderers, one dropdown pick, no Settings detour.
 
 ### Do not
 
@@ -157,28 +156,19 @@ This is effectively a second company (supply-side sales, insurance, dispute reso
 | | |
 |---|---|
 | **Tier** | Deferred (not dropped) — parked until the repo is pushed |
-| **Status** | SOCKET READY (local + CI guards in place; live URL pending human push) |
+| **Status** | DONE — live at `https://mw8-ai.github.io/castle-guide/`, checklist below verified against the real URL. |
 | **Spec** | `vite.config.ts` `base: '/castle-guide/'`; `.github/workflows/pages.yml` |
 
-### Already true in the repo (keep honest)
+### Verified live
 
 1. `base: '/castle-guide/'` is set; comment documents that 404'd assets fail the gate.
 2. `pages.yml` greps built `dist/index.html` for `/castle-guide/` and fails deploy if missing.
-3. Local proxy honesty: after `npm run build`, `npm run preview` serves at the same base — open  
-   `http://localhost:4173/castle-guide/` (not the site root) and confirm JS/CSS load.
-4. Automated: `tests/base-path.test.ts` + Pages workflow check.
-
-### What a human does later (live verification)
-
-1. Create GitHub repo named **`castle-guide`** (name must match the base path).
-2. Push `main` (or enable Pages on the branch `pages.yml` uses).
-3. Settings → Pages → Source: **GitHub Actions**.
-4. Open `https://<owner>.github.io/castle-guide/` — confirm the shell renders (not a blank page).
-5. DevTools → Network: `index-*.js` and `index-*.css` return **200**, not 404.
-6. If assets 404, treat as **FAILED gate** — fix `base` / asset URLs before calling Pages done.
+3. `https://mw8-ai.github.io/castle-guide/` renders the shell (not blank); page title "Home Guide".
+4. DevTools → Network confirmed: `index-*.js` and `index-*.css` return **200**, not 404.
+5. Automated: `tests/base-path.test.ts` + Pages workflow check, both green on every push to master.
+6. Deploy is on autopilot — every squash-merge to master triggers a fresh Pages build and redeploy; no manual step needed per release.
 
 ### Do not
 
-- Claim live Pages works until this checklist is checked on a real URL.
 - Change repo name without updating `base` and docs together.
 
