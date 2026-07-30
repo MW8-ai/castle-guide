@@ -98,7 +98,7 @@ export function AreaPage({ id }: Props) {
               placeholder="https://"
             />
           </label>
-          <button type="submit" class="btn primary">
+          <button type="submit" class="btn sm" style={{ justifySelf: 'start' }}>
             Add link
           </button>
         </form>

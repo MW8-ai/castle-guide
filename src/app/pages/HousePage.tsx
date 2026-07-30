@@ -555,14 +555,18 @@ export function HousePage({ id }: Props) {
         <header class="live-hud-top">
           <div class="live-hud-left">
             {isDemoHome && (
-              <button type="button" class="live-link-btn" onClick={toggleViewMode}>
+              <button
+                type="button"
+                class="live-link-btn live-hud-pill"
+                onClick={toggleViewMode}
+              >
                 {viewMode === 'walk' ? '🖼️ Reference pic' : '🚶 Walk view'}
               </button>
             )}
             {viewMode === 'walk' && (
               <button
                 type="button"
-                class="live-link-btn"
+                class="live-link-btn live-hud-pill"
                 title={wallsTranslucent ? 'Show walls' : 'See through walls'}
                 onClick={toggleWallsTranslucent}
               >
@@ -571,7 +575,7 @@ export function HousePage({ id }: Props) {
             )}
             {viewMode === 'walk' && (
               <select
-                class="live-link-btn live-renderer-switch"
+                class="live-link-btn live-hud-pill live-renderer-switch"
                 aria-label="Renderer"
                 value={rendererId}
                 onChange={(e) =>
@@ -588,7 +592,7 @@ export function HousePage({ id }: Props) {
             {viewMode === 'walk' && (
               <button
                 type="button"
-                class="live-link-btn"
+                class="live-link-btn live-hud-pill"
                 title="Edit floor plan"
                 onClick={() => go('property', property.id, 'floorplan?floor=' + activeFloor)}
               >

@@ -113,6 +113,7 @@ export function BuildersPage({ id }: Props) {
           <strong>{tier.name} tier estimate:</strong> $
           {est.low.toLocaleString()} – ${est.high.toLocaleString()} {active.currency}
         </p>
+        <div class="table-scroll">
         <table class="data-table">
           <thead>
             <tr>
@@ -131,6 +132,7 @@ export function BuildersPage({ id }: Props) {
             ))}
           </tbody>
         </table>
+        </div>
         <h3>Considerations</h3>
         <ul>
           {tier.considerations.map((c) => (

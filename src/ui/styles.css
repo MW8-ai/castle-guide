@@ -758,6 +758,10 @@ h3 {
 .btn.big {
   padding: 0.7rem 1rem;
 }
+.btn.sm {
+  padding: 0.28rem 0.6rem;
+  font-size: 0.82rem;
+}
 .btn.block {
   width: 100%;
   margin-top: 0.5rem;
@@ -842,6 +846,27 @@ h3 {
   padding: 0.9rem 1rem;
   color: var(--text);
   border-radius: var(--radius);
+}
+
+/* Two-tier grouping on pages like Settings that mix things you'll
+   actually touch with reference-only material — a label per tier plus
+   a quieter treatment for the reference cards, instead of one flat
+   stack of identical cards. */
+.settings-tier-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 1.4rem 0 0.5rem;
+  border: none;
+}
+.settings-tier-label:first-of-type {
+  margin-top: 0.6rem;
+}
+.reference-card {
+  opacity: 0.85;
+  box-shadow: none;
 }
 
 .title-logo-calm {
@@ -1200,6 +1225,9 @@ select:hover {
   color: #062014;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1285,6 +1313,10 @@ select:hover {
   list-style: none;
   padding: 0;
   margin: 0.4rem 0;
+}
+.roster-face {
+  font-size: 1.15rem;
+  line-height: 1;
 }
 .plain-list li {
   display: flex;

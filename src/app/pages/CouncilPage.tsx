@@ -14,6 +14,21 @@ interface Props {
   id?: string;
 }
 
+const PORTRAITS: Record<string, string> = {
+  'grandpa-gus': '👴',
+  'frank-foreman': '👷',
+  'deco-dee': '🎨',
+  'wrench-wanda': '🔧',
+  'sod-father': '🌱',
+  'rhonda-realty': '🏡',
+  'banks-mccoin': '💰',
+  'karen-reformed': '⚖️',
+  scout: '🔍',
+  'adjuster-ada': '📋',
+  'the-colonel': '🪖',
+  dale: '🧾',
+};
+
 export function CouncilPage({ id }: Props) {
   const [property, setProperty] = useState<Property | null>(null);
   const [overrides, setOverrides] = useState<Record<string, string>>({});
@@ -61,9 +76,12 @@ export function CouncilPage({ id }: Props) {
 
       <div class="card">
         <h2>Council roster</h2>
-        <ul class="plain-list">
+        <ul class="plain-list roster-list">
           {getCouncil().map((c) => (
             <li key={c.id}>
+              <span class="roster-face" aria-hidden="true">
+                {PORTRAITS[c.id] ?? '🧑'}
+              </span>
               <strong>{characterName(c.id, overrides)}</strong> — {c.role}
             </li>
           ))}
