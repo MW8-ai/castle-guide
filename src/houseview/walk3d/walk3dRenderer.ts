@@ -18,6 +18,8 @@ const WALL_THICKNESS = 0.2;
 const DOOR_WIDTH = 3;
 const AVATAR_RADIUS = 0.9;
 const MOVE_SPEED = 9; // feet/second
+const JUMP_SPEED = 10; // feet/second, initial upward velocity
+const GRAVITY = 26; // feet/second^2
 
 interface RoomRect {
   x: number;
@@ -238,6 +240,9 @@ export const walk3dRenderer: HouseRendererPlugin = {
     let avatarSpawned = false;
     let wallSegs: WallSeg[] = [];
     const keys = new Set<string>();
+    let avatarY = 0;
+    let jumpVelocity = 0;
+    let isJumping = false;
 
     function collidesAt(x: number, z: number): boolean {
       for (const w of wallSegs) {
@@ -316,7 +321,17 @@ export const walk3dRenderer: HouseRendererPlugin = {
       distance = Math.max(5, Math.min(60, distance + (e.deltaY > 0 ? 2 : -2)));
       applyCamera();
     };
-    const onKeyDown = (e: KeyboardEvent) => keys.add(e.key.toLowerCase());
+    const onKeyDown = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      keys.add(k);
+      if (k === ' ') {
+        e.preventDefault();
+        if (!isJumping) {
+          isJumping = true;
+          jumpVelocity = JUMP_SPEED;
+        }
+      }
+    };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
 
     let current: HouseViewModel = model;
@@ -571,7 +586,16 @@ export const walk3dRenderer: HouseRendererPlugin = {
           avatarGroup.rotation.y = Math.atan2(moveX, moveZ);
         }
       }
-      avatarGroup.position.set(avatarPos.x, 0, avatarPos.z);
+      if (isJumping) {
+        avatarY += jumpVelocity * dt;
+        jumpVelocity -= GRAVITY * dt;
+        if (avatarY <= 0) {
+          avatarY = 0;
+          isJumping = false;
+          jumpVelocity = 0;
+        }
+      }
+      avatarGroup.position.set(avatarPos.x, avatarY, avatarPos.z);
       target.set(avatarPos.x, 2.5, avatarPos.z);
       applyCamera();
 
