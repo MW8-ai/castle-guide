@@ -38,6 +38,8 @@ interface Props {
   id?: string;
 }
 
+const ROOM_CHIP_CAP = 8;
+
 function money(n: number): string {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 10_000) return `$${Math.round(n / 1000)}k`;
@@ -80,6 +82,7 @@ export function HousePage({ id }: Props) {
   const [wallsTranslucent, setWallsTranslucent] = useState(false);
   const [rendererId, setRendererId] = useState('iso');
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomsExpanded, setRoomsExpanded] = useState(false);
   const [selected, setSelected] = useState<Item | null>(null);
   const [editingIdentity, setEditingIdentity] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -216,6 +219,7 @@ export function HousePage({ id }: Props) {
     setActiveFloor(floor);
     setRoomId(null);
     setSelected(null);
+    setRoomsExpanded(false);
   }
 
   function toggleWallsTranslucent() {
@@ -521,7 +525,10 @@ export function HousePage({ id }: Props) {
             </div>
             {currentFloorRooms.length > 0 && (
               <div class="live-room-jump">
-                {currentFloorRooms.slice(0, 12).map((r) => (
+                {(roomsExpanded
+                  ? currentFloorRooms
+                  : currentFloorRooms.slice(0, ROOM_CHIP_CAP)
+                ).map((r) => (
                   <button
                     key={r.id}
                     type="button"
@@ -531,6 +538,15 @@ export function HousePage({ id }: Props) {
                     {r.name}
                   </button>
                 ))}
+                {!roomsExpanded && currentFloorRooms.length > ROOM_CHIP_CAP && (
+                  <button
+                    type="button"
+                    class="live-room-more"
+                    onClick={() => setRoomsExpanded(true)}
+                  >
+                    +{currentFloorRooms.length - ROOM_CHIP_CAP} more
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -547,9 +563,10 @@ export function HousePage({ id }: Props) {
               <button
                 type="button"
                 class="live-link-btn"
+                title={wallsTranslucent ? 'Show walls' : 'See through walls'}
                 onClick={toggleWallsTranslucent}
               >
-                {wallsTranslucent ? '🧱 Show walls' : '👁 See through walls'}
+                {wallsTranslucent ? '🧱 Solid' : '👁 Ghost'}
               </button>
             )}
             {viewMode === 'walk' && (
@@ -572,9 +589,10 @@ export function HousePage({ id }: Props) {
               <button
                 type="button"
                 class="live-link-btn"
+                title="Edit floor plan"
                 onClick={() => go('property', property.id, 'floorplan?floor=' + activeFloor)}
               >
-                ✏️ Edit floor plan
+                ✏️ Floor plan
               </button>
             )}
           </div>

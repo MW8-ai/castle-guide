@@ -53,12 +53,6 @@ export function SettingsPage() {
     setMsg('Realtor gift footer saved (LIGHT white-label).');
   }
 
-  async function saveRenderer() {
-    const s = await ensureStorageReady();
-    await s.setRendererPreference(rendererId);
-    setMsg(`Default renderer: ${rendererId}`);
-  }
-
   return (
     <section class="page">
       <p class="eyebrow">
@@ -71,22 +65,16 @@ export function SettingsPage() {
       {msg && <p class="ok-text">{msg}</p>}
 
       <div class="card">
-        <h2>House renderer default</h2>
-        <select
-          value={rendererId}
-          onChange={(e) =>
-            setRendererId((e.target as HTMLSelectElement).value)
-          }
-        >
-          {listRenderers().map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-        <button type="button" class="btn primary" onClick={() => void saveRenderer()}>
-          Save renderer
-        </button>
+        <h2>House renderer</h2>
+        <p class="muted">
+          Currently{' '}
+          <strong>
+            {listRenderers().find((r) => r.id === rendererId)?.label ?? rendererId}
+          </strong>
+          . Switched from the dropdown in the house view's own HUD, which
+          saves instantly — this is just a reflection of that choice, not a
+          second control.
+        </p>
       </div>
 
       <div class="card">
