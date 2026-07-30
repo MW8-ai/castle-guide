@@ -1,7 +1,10 @@
+import { useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { useActiveCastle } from './ActiveCastle';
 import { href, go } from './paths';
 import { HouseGhostBackdrop } from './HouseGhostBackdrop';
+import { ensureStorageReady } from './storageContext';
+import { upcomingTasks } from '../houseview';
 
 interface Props {
   children: ComponentChildren;
@@ -22,8 +25,32 @@ const NAV: { id: string; label: string; segment: string; icon: string }[] = [
 ];
 
 export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
-  const { property, loading } = useActiveCastle();
+  const { property, loading, refresh } = useActiveCastle();
   const pid = property?.id;
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [dateDraft, setDateDraft] = useState('');
+
+  const upNext = property ? upcomingTasks(property, 4) : [];
+
+  function startReschedule(taskId: string, current: string | null) {
+    setEditingTaskId(taskId);
+    setDateDraft(current ?? new Date().toISOString().slice(0, 10));
+  }
+
+  async function saveReschedule(taskId: string) {
+    if (!pid || !dateDraft) return;
+    const s = await ensureStorageReady();
+    await s.rescheduleTask(pid, taskId, dateDraft);
+    setEditingTaskId(null);
+    await refresh();
+  }
+
+  async function markTaskDone(taskId: string) {
+    if (!pid) return;
+    const s = await ensureStorageReady();
+    await s.completeTask(pid, taskId);
+    await refresh();
+  }
 
   function navTo(segment: string) {
     if (!pid) {
@@ -92,25 +119,97 @@ export function AppShell({ children, theme, onToggleTheme, path = '' }: Props) {
             {property && <div class="brand-sub">{property.name}</div>}
           </div>
         </a>
-        <nav class="sidebar-nav">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              class={
-                isActive(item.segment) ? 'sidebar-link active' : 'sidebar-link'
-              }
-              title={item.label}
-              disabled={!pid && item.segment !== 'settings'}
-              onClick={() => navTo(item.segment)}
-            >
-              <span class="sidebar-ico" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span class="sidebar-label">{item.label}</span>
-            </button>
-          ))}
-        </nav>
+        <div class="sidebar-scroll">
+          <nav class="sidebar-nav">
+            {NAV.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                class={
+                  isActive(item.segment) ? 'sidebar-link active' : 'sidebar-link'
+                }
+                title={item.label}
+                disabled={!pid && item.segment !== 'settings'}
+                onClick={() => navTo(item.segment)}
+              >
+                <span class="sidebar-ico" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span class="sidebar-label">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+          {pid && (
+            <div class="sidebar-upnext">
+              <div class="sidebar-upnext-head">
+                <span>Up next</span>
+                <button type="button" onClick={() => navTo('maintain')}>
+                  All
+                </button>
+              </div>
+              {upNext.length === 0 ? (
+                <p class="sidebar-upnext-empty">Nothing scheduled</p>
+              ) : (
+                <ul class="sidebar-upnext-list">
+                  {upNext.map((t) => {
+                    const due = t.dueInDays;
+                    const tone =
+                      due != null && due < 0
+                        ? 'overdue'
+                        : due != null && due <= 14
+                          ? 'soon'
+                          : 'ok';
+                    return (
+                      <li key={t.id} class={`sidebar-upnext-item ${tone}`}>
+                        <div class="sidebar-upnext-main">
+                          <strong>{t.title}</strong>
+                          {editingTaskId === t.id ? (
+                            <input
+                              type="date"
+                              value={dateDraft}
+                              autoFocus
+                              onInput={(e) =>
+                                setDateDraft((e.target as HTMLInputElement).value)
+                              }
+                              onBlur={() => void saveReschedule(t.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') void saveReschedule(t.id);
+                                if (e.key === 'Escape') setEditingTaskId(null);
+                              }}
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              class="sidebar-upnext-date"
+                              title="Reschedule"
+                              onClick={() => startReschedule(t.id, t.nextDue)}
+                            >
+                              {due == null
+                                ? (t.nextDue ?? 'No date')
+                                : due < 0
+                                  ? `${Math.abs(due)}d overdue`
+                                  : due === 0
+                                    ? 'Due today'
+                                    : `Due in ${due}d`}
+                            </button>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          class="sidebar-upnext-check"
+                          title="Mark done"
+                          onClick={() => void markTaskDone(t.id)}
+                        >
+                          ✓
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         <div class="sidebar-foot">
           <button
             type="button"
