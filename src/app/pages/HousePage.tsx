@@ -19,6 +19,7 @@ import {
   FLOOR_LABELS,
   roomFloorOf,
   getRenderer,
+  listRenderers,
 } from '../../houseview';
 import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import type { HouseRendererHandle } from '../../houseview';
@@ -84,6 +85,7 @@ export function HousePage({ id }: Props) {
   const [viewMode, setViewMode] = useState<'walk' | 'art'>('walk');
   const [activeFloor, setActiveFloor] = useState<RoomFloor>('ground');
   const [wallsTranslucent, setWallsTranslucent] = useState(false);
+  const [rendererId, setRendererId] = useState('iso');
   const [roomId, setRoomId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Item | null>(null);
   const [editingIdentity, setEditingIdentity] = useState(false);
@@ -94,6 +96,36 @@ export function HousePage({ id }: Props) {
 
   const propertyId = id || active?.id;
   const loadToken = useRef(0);
+
+  function floorModel(p: Property) {
+    const fullModel = buildHouseViewModel(p).model;
+    const floorRoomIds = new Set(
+      p.rooms.filter((r) => roomFloorOf(r) === activeFloor).map((r) => r.id)
+    );
+    return {
+      ...fullModel,
+      rooms: fullModel.rooms.filter((r) => floorRoomIds.has(r.id)),
+      placements: fullModel.placements.filter((pl) =>
+        floorRoomIds.has(pl.roomId)
+      ),
+    };
+  }
+
+  function rendererCallbacks() {
+    return {
+      onSelectItem: (itemId: string) => {
+        const item =
+          propRef.current?.items.find((i) => i.id === itemId) ?? null;
+        setSelected(item);
+      },
+      onSelectRoom: (rid: string) => setRoomId(rid),
+      onEnterRoom: (rid: string | null) => {
+        setRoomId(rid);
+        if (!rid) setSelected(null);
+      },
+      onMovePlacement: () => {},
+    };
+  }
 
   async function load() {
     if (!propertyId) return;
@@ -112,21 +144,12 @@ export function HousePage({ id }: Props) {
     setProperty(p);
     const profile = await s.getProfile();
     const nextRendererId = profile?.settings.activeRendererId ?? 'iso';
+    setRendererId(nextRendererId);
     await refreshActive();
     if (token !== loadToken.current) return;
 
     if (viewMode !== 'walk') return;
-    const fullModel = buildHouseViewModel(p).model;
-    const floorRoomIds = new Set(
-      p.rooms.filter((r) => roomFloorOf(r) === activeFloor).map((r) => r.id)
-    );
-    const model = {
-      ...fullModel,
-      rooms: fullModel.rooms.filter((r) => floorRoomIds.has(r.id)),
-      placements: fullModel.placements.filter((pl) =>
-        floorRoomIds.has(pl.roomId)
-      ),
-    };
+    const model = floorModel(p);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         void (async () => {
@@ -139,19 +162,7 @@ export function HousePage({ id }: Props) {
           const handle = await getRenderer(nextRendererId).mount(
             hostRef.current,
             model,
-            {
-              onSelectItem: (itemId) => {
-                const item =
-                  propRef.current?.items.find((i) => i.id === itemId) ?? null;
-                setSelected(item);
-              },
-              onSelectRoom: (rid) => setRoomId(rid),
-              onEnterRoom: (rid) => {
-                setRoomId(rid);
-                if (!rid) setSelected(null);
-              },
-              onMovePlacement: () => {},
-            }
+            rendererCallbacks()
           );
           // The dynamic import for a heavier renderer (e.g. walk3d) can
           // resolve after the user has already navigated away — don't
@@ -165,6 +176,33 @@ export function HousePage({ id }: Props) {
         })();
       });
     });
+  }
+
+  // A direct renderer swap, separate from load() — this is a UI-driven
+  // "try this one instead" action, not a data reload, so it shouldn't run
+  // through the fetch/placements-sync path or share load()'s effect deps
+  // (mixing the two caused a real mount race before — see PR #46).
+  async function switchRenderer(id: string) {
+    setRendererId(id);
+    const s = await ensureStorageReady();
+    await s.setRendererPreference(id);
+    const p = propRef.current;
+    if (!p || !hostRef.current || viewMode !== 'walk') return;
+    const token = ++loadToken.current;
+    handleRef.current?.destroy();
+    handleRef.current = null;
+    const model = floorModel(p);
+    const handle = await getRenderer(id).mount(
+      hostRef.current,
+      model,
+      rendererCallbacks()
+    );
+    if (!hostRef.current || token !== loadToken.current) {
+      handle.destroy();
+      return;
+    }
+    handleRef.current = handle;
+    handleRef.current.setWallsTranslucent?.(wallsTranslucent);
   }
 
   useEffect(() => {
@@ -535,6 +573,22 @@ export function HousePage({ id }: Props) {
               >
                 {wallsTranslucent ? '🧱 Show walls' : '👁 See through walls'}
               </button>
+            )}
+            {viewMode === 'walk' && (
+              <select
+                class="live-link-btn live-renderer-switch"
+                aria-label="Renderer"
+                value={rendererId}
+                onChange={(e) =>
+                  void switchRenderer((e.target as HTMLSelectElement).value)
+                }
+              >
+                {listRenderers().map((r) => (
+                  <option key={r.id} value={r.id}>
+                    🎮 {r.label}
+                  </option>
+                ))}
+              </select>
             )}
             {viewMode === 'walk' && (
               <button
