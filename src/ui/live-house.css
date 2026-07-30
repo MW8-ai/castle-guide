@@ -125,7 +125,7 @@
   gap: 0.3rem;
   padding: 0.3rem 0.85rem 0.4rem;
   background: var(--bar-bg-soft);
-  align-items: flex-end;
+  align-items: flex-start;
 }
 
 .live-floor-tabs {
@@ -211,8 +211,8 @@
   background: var(--overlay-bg);
   border: 1px solid var(--overlay-border);
   border-radius: 10px;
-  padding: 0.35rem 0.65rem;
-  min-width: 5.5rem;
+  padding: 0.3rem 0.55rem;
+  min-width: 4.6rem;
   font: inherit;
   color: inherit;
   cursor: pointer;
@@ -511,8 +511,8 @@
 .live-room-jump {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.35rem;
+  justify-content: flex-start;
+  gap: 0.3rem;
   max-width: 100%;
 }
 
@@ -521,9 +521,9 @@
   background: var(--overlay-bg);
   color: var(--text-muted);
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 0.3rem 0.65rem;
+  padding: 0.22rem 0.5rem;
   border-radius: 999px;
   cursor: pointer;
   flex-shrink: 0;
@@ -534,6 +534,11 @@
   background: var(--overlay-bg);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.live-room-more {
+  color: var(--accent-2) !important;
+  border-style: dashed !important;
 }
 
 .tiny {
