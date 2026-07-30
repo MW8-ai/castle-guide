@@ -81,6 +81,7 @@ export function InventoryPage({ id }: Props) {
   const { refresh: refreshActive } = useActiveCastle();
   const [property, setProperty] = useState<Property | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
   const [brand, setBrand] = useState('');
   const [model, setModel] = useState('');
   const [category, setCategory] = useState('refrigerator');
@@ -453,10 +454,10 @@ export function InventoryPage({ id }: Props) {
         <div class="btn-row">
           <button
             type="button"
-            class="btn"
-            onClick={() => setShowAddRoom((v) => !v)}
+            class="btn primary"
+            onClick={() => setShowAddMenu((v) => !v)}
           >
-            {showAddRoom ? 'Cancel' : 'Add room'}
+            {showAddMenu ? 'Cancel' : '+ Add'}
           </button>
           <button
             type="button"
@@ -464,27 +465,6 @@ export function InventoryPage({ id }: Props) {
             onClick={() => go('property', propertyId, 'floorplan')}
           >
             ✏️ Edit floor plan
-          </button>
-          <button
-            type="button"
-            class="btn primary"
-            onClick={() => setShowAdd((v) => !v)}
-          >
-            {showAdd ? 'Cancel' : 'Add item'}
-          </button>
-          <button
-            type="button"
-            class="btn"
-            onClick={() => setShowAddShutoff((v) => !v)}
-          >
-            {showAddShutoff ? 'Cancel' : '⛔ Add shutoff'}
-          </button>
-          <button
-            type="button"
-            class="btn"
-            onClick={() => setShowAddConsumable((v) => !v)}
-          >
-            {showAddConsumable ? 'Cancel' : '🧻 Add filter/supply'}
           </button>
           <select
             class="doc-type-select"
@@ -512,6 +492,50 @@ export function InventoryPage({ id }: Props) {
             Back to map
           </button>
         </div>
+        {showAddMenu && (
+          <div class="btn-row add-menu-row">
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => {
+                setShowAddRoom(true);
+                setShowAddMenu(false);
+              }}
+            >
+              Room
+            </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => {
+                setShowAdd(true);
+                setShowAddMenu(false);
+              }}
+            >
+              Item
+            </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => {
+                setShowAddShutoff(true);
+                setShowAddMenu(false);
+              }}
+            >
+              ⛔ Emergency shutoff
+            </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => {
+                setShowAddConsumable(true);
+                setShowAddMenu(false);
+              }}
+            >
+              🧻 Filter / supply
+            </button>
+          </div>
+        )}
       </header>
 
       {showAddShutoff && (
@@ -558,6 +582,13 @@ export function InventoryPage({ id }: Props) {
             </label>
             <button type="submit" class="btn primary">
               Save
+            </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => setShowAddShutoff(false)}
+            >
+              Cancel
             </button>
           </div>
         </form>
@@ -695,6 +726,13 @@ export function InventoryPage({ id }: Props) {
             <button type="submit" class="btn primary">
               Save
             </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => setShowAddConsumable(false)}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
@@ -823,6 +861,13 @@ export function InventoryPage({ id }: Props) {
             <button type="submit" class="btn primary">
               Save
             </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => setShowAddRoom(false)}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       )}
@@ -877,6 +922,13 @@ export function InventoryPage({ id }: Props) {
             </label>
             <button type="submit" class="btn primary">
               Save
+            </button>
+            <button
+              type="button"
+              class="btn ghost sm"
+              onClick={() => setShowAdd(false)}
+            >
+              Cancel
             </button>
           </div>
         </form>

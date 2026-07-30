@@ -188,6 +188,10 @@
 }
 
 .live-hud-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
   pointer-events: none;
 }
 
@@ -226,6 +230,36 @@
   opacity: 0.95;
 }
 
+/* Home health is the one summary number that changes what you should do
+   next — give it a touch more weight than the other four stat chips
+   instead of five identical boxes. */
+.live-stat-chip.health-glow,
+.live-stat-chip.health-good,
+.live-stat-chip.health-warm,
+.live-stat-chip.health-alert,
+.live-stat-chip.health-toxic {
+  padding: 0.4rem 0.75rem;
+  border-left: 3px solid var(--border);
+}
+.live-stat-chip.health-glow strong,
+.live-stat-chip.health-good strong,
+.live-stat-chip.health-warm strong,
+.live-stat-chip.health-alert strong,
+.live-stat-chip.health-toxic strong {
+  font-size: 0.98rem;
+}
+.live-stat-chip.health-glow,
+.live-stat-chip.health-good {
+  border-left-color: var(--ok);
+}
+.live-stat-chip.health-warm,
+.live-stat-chip.health-alert {
+  border-left-color: var(--accent-warm);
+}
+.live-stat-chip.health-toxic {
+  border-left-color: var(--danger);
+}
+
 .live-stat-k {
   display: block;
   font-size: 0.65rem;
@@ -262,6 +296,22 @@
 
 .live-link-btn:hover {
   color: var(--accent);
+}
+
+/* The Reference-pic / walls-toggle / renderer-select / floor-plan row —
+   a button, a button, a <select>, and a button were visually three
+   different control types even though they're one row of adjacent
+   toggles. Giving all four the same chip look (reusing the floor-tab
+   chip language already established elsewhere on this page) makes them
+   read as one family regardless of what element each one actually is. */
+.live-hud-pill {
+  background: var(--overlay-bg-soft);
+  border: 1px solid var(--overlay-border);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+}
+.live-hud-pill:hover {
+  border-color: var(--accent-2);
 }
 
 .live-renderer-switch {

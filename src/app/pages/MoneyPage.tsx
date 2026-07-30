@@ -193,6 +193,7 @@ export function MoneyPage({ id }: Props) {
       {tab === 'costs' && (
         <div class="card">
           <h2>Repair / replace cost library</h2>
+          <div class="table-scroll">
           <table class="data-table">
             <thead>
               <tr>
@@ -242,6 +243,7 @@ export function MoneyPage({ id }: Props) {
               ))}
             </tbody>
           </table>
+          </div>
           <Disclaimer />
         </div>
       )}

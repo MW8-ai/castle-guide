@@ -64,6 +64,8 @@ export function SettingsPage() {
 
       {msg && <p class="ok-text">{msg}</p>}
 
+      <h2 class="settings-tier-label">Settings</h2>
+
       <div class="card">
         <h2>House renderer</h2>
         <p class="muted">
@@ -130,17 +132,6 @@ export function SettingsPage() {
       </div>
 
       <div class="card">
-        <h2>Label OCR / photo triage (manual mode)</h2>
-        <p class="muted">
-          Copy into any LLM. Photo triage is informational, not an inspection.
-        </p>
-        <h3>Label OCR prompt</h3>
-        <pre class="code-block">{ocrPrompt}</pre>
-        <h3>Photo triage prompt</h3>
-        <pre class="code-block">{triagePrompt}</pre>
-      </div>
-
-      <div class="card">
         <h2>Realtor gift mode (LIGHT)</h2>
         <p class="muted">Shows in gift footer when set — white-label depth OPEN.</p>
         <div class="form-grid">
@@ -171,7 +162,20 @@ export function SettingsPage() {
         </button>
       </div>
 
-      <div class="card">
+      <h2 class="settings-tier-label">Reference</h2>
+
+      <div class="card reference-card">
+        <h2>Label OCR / photo triage (manual mode)</h2>
+        <p class="muted">
+          Copy into any LLM. Photo triage is informational, not an inspection.
+        </p>
+        <h3>Label OCR prompt</h3>
+        <pre class="code-block">{ocrPrompt}</pre>
+        <h3>Photo triage prompt</h3>
+        <pre class="code-block">{triagePrompt}</pre>
+      </div>
+
+      <div class="card reference-card">
         <h2>Coming later</h2>
         <ul class="plain-list">
           <li>

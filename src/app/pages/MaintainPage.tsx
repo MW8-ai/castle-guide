@@ -546,7 +546,7 @@ export function MaintainPage({ id }: Props) {
             <button
               key={tpl.id}
               type="button"
-              class="btn"
+              class="btn ghost sm"
               onClick={() => void addFromTemplate(tpl.id)}
             >
               + {tpl.title}
