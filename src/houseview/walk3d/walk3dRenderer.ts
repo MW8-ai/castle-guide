@@ -198,28 +198,40 @@ export const walk3dRenderer: HouseRendererPlugin = {
     const sceneRoot = new THREE.Group();
     scene.add(sceneRoot);
 
-    // ── Avatar — simple capsule + head, visible so this reads as "you",
-    // not a disembodied camera. ──
+    // ── Avatar — a legs/torso/arms/head figure so this reads as a person,
+    // not a single tall shaft (a lone capsule-with-a-ball-on-top read as
+    // exactly that — fixed by breaking the silhouette into distinct parts). ──
     const avatarGroup = new THREE.Group();
-    const avatarBody = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.8, 3, 4, 10),
-      new THREE.MeshStandardMaterial({ color: 0x3d9a5f })
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xf0c8a0 });
+    const sweaterMat = new THREE.MeshStandardMaterial({ color: 0x3d9a5f });
+    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x3a4a6a });
+
+    const legs = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.7, 0.5), pantsMat);
+    legs.position.y = 0.85;
+    avatarGroup.add(legs);
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.3, 1.6, 0.7), sweaterMat);
+    torso.position.y = 2.5;
+    avatarGroup.add(torso);
+
+    const armGeo = new THREE.CapsuleGeometry(0.22, 1.1, 4, 8);
+    const armL = new THREE.Mesh(armGeo, sweaterMat);
+    armL.position.set(-0.87, 2.55, 0);
+    avatarGroup.add(armL);
+    const armR = new THREE.Mesh(armGeo, sweaterMat);
+    armR.position.set(0.87, 2.55, 0);
+    avatarGroup.add(armR);
+
+    const neck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.18, 0.18, 0.25, 8),
+      skinMat
     );
-    avatarBody.position.y = 2.1;
-    avatarGroup.add(avatarBody);
-    const avatarHead = new THREE.Mesh(
-      new THREE.SphereGeometry(0.6, 14, 10),
-      new THREE.MeshStandardMaterial({ color: 0xf0c8a0 })
-    );
+    neck.position.y = 3.425;
+    avatarGroup.add(neck);
+
+    const avatarHead = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), skinMat);
     avatarHead.position.y = 4.1;
     avatarGroup.add(avatarHead);
-    const avatarNose = new THREE.Mesh(
-      new THREE.ConeGeometry(0.12, 0.35, 8),
-      new THREE.MeshStandardMaterial({ color: 0xd8a878 })
-    );
-    avatarNose.rotation.x = Math.PI / 2;
-    avatarNose.position.set(0, 4.05, 0.55);
-    avatarGroup.add(avatarNose);
     scene.add(avatarGroup);
 
     let avatarPos = new THREE.Vector3(0, 0, 0);
