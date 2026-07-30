@@ -128,31 +128,6 @@
   align-items: flex-start;
 }
 
-.live-floor-tabs {
-  display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 0.35rem;
-  max-width: 100%;
-}
-.live-floor-tabs button {
-  border: 1px solid var(--overlay-border);
-  background: var(--overlay-bg-soft);
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.28rem 0.6rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-.live-floor-tabs button.active {
-  background: var(--overlay-bg);
-  border-color: var(--accent);
-  color: var(--accent);
-  cursor: default;
-}
-
 .live-floor-empty {
   position: absolute;
   top: 45%;

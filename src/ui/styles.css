@@ -1225,6 +1225,35 @@ select:hover {
   color: #062014;
 }
 
+/* Floor-tab pills — shared by the house view and the floor-plan editor
+   via the FloorSwitcher component so the two never drift in style like
+   they used to (house view used pills, floor-plan editor used the
+   heavier boxed .tab style above). */
+.floor-switcher {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+.floor-switcher button {
+  border: 1px solid var(--overlay-border, var(--border));
+  background: var(--overlay-bg-soft, var(--bg-elevated));
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.floor-switcher button.active {
+  background: var(--overlay-bg, var(--bg-elevated));
+  border-color: var(--accent);
+  color: var(--accent);
+  cursor: default;
+}
+
 .table-scroll {
   overflow-x: auto;
 }

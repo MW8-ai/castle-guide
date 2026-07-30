@@ -8,6 +8,7 @@ import {
   resolveRoomPosition,
   resolveRoomResize,
   MIN_ROOM_FT,
+  FloorSwitcher,
   type PositionedRect,
 } from '../../houseview';
 import { go } from '../paths';
@@ -249,21 +250,13 @@ export function FloorPlanPage({ id }: Props) {
         sq ft of rooms on {FLOOR_LABELS[floor].toLowerCase()}
       </p>
 
-      <nav class="tabs">
-        {FLOORS.map((f) => (
-          <button
-            key={f}
-            type="button"
-            class={f === floor ? 'tab active' : 'tab'}
-            onClick={() => {
-              setFloor(f);
-              setSelectedId(null);
-            }}
-          >
-            {FLOOR_LABELS[f]}
-          </button>
-        ))}
-      </nav>
+      <FloorSwitcher
+        active={floor}
+        onSelect={(f) => {
+          setFloor(f);
+          setSelectedId(null);
+        }}
+      />
 
       <div class="floorplan-canvas-wrap">
         <svg

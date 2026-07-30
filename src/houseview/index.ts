@@ -23,6 +23,7 @@ export {
 export { listRenderers, getRenderer } from './registry';
 export { ImageHouseView } from './imageMap/ImageHouseView';
 export { FLOORS, FLOOR_LABELS, roomFloorOf } from './floors';
+export { FloorSwitcher } from './FloorSwitcher';
 export {
   resolveRoomPosition,
   resolveRoomResize,

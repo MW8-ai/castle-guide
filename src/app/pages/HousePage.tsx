@@ -15,11 +15,11 @@ import {
   repairCostEstimate,
   buildListCost,
   equityFromProperty,
-  FLOORS,
   FLOOR_LABELS,
   roomFloorOf,
   getRenderer,
   listRenderers,
+  FloorSwitcher,
 } from '../../houseview';
 import { ImageHouseView } from '../../houseview/imageMap/ImageHouseView';
 import type { HouseRendererHandle } from '../../houseview';
@@ -509,20 +509,11 @@ export function HousePage({ id }: Props) {
 
         {viewMode === 'walk' && (
           <div class="live-room-nav">
-            <div class="live-floor-tabs">
-              {FLOORS.map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  class={f === activeFloor ? 'active' : ''}
-                  disabled={f === activeFloor}
-                  onClick={() => switchFloor(f)}
-                >
-                  {FLOOR_LABELS[f]}
-                  {!floorsWithRooms.has(f) && <span class="muted tiny"> · empty</span>}
-                </button>
-              ))}
-            </div>
+            <FloorSwitcher
+              active={activeFloor}
+              floorsWithRooms={floorsWithRooms}
+              onSelect={switchFloor}
+            />
             {currentFloorRooms.length > 0 && (
               <div class="live-room-jump">
                 {(roomsExpanded
